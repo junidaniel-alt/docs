@@ -7,6 +7,12 @@
       "skillPath": "tools/image/ai-image-generation/SKILL.md",
       "computedHash": "8aec5218368ccd863f5281f3d27bf4a00b8e03e4f6dc805188063eeefb4b264a"
     },
+    "ai-video-generation": {
+      "source": "inference-sh/skills",
+      "sourceType": "github",
+      "skillPath": "tools/video/ai-video-generation/SKILL.md",
+      "computedHash": "f36aabba18efd7d81e4c404bb5eaf2ba5154f20f10d0b1aa7562d59b7b3c2afc"
+    },
     "belt": {
       "source": "belt-sh/cli",
       "sourceType": "github",
