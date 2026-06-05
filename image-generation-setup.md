@@ -1,11 +1,16 @@
-# AI Image Generation — Setup
+# AI Image & Video Generation — Setup
 
-Como gerar imagens com a skill `ai-image-generation` (FLUX, GPT-Image, Gemini,
-Grok, Seedream e +50 modelos via [inference.sh](https://inference.sh) / CLI `belt`).
+Como gerar **imagens** (FLUX, GPT-Image, Gemini, Grok, Seedream, +50 modelos) e
+**vídeos/animações** (Veo, Seedance, HappyHorse, Wan, Grok, +40 modelos) via
+[inference.sh](https://inference.sh) / CLI `belt`.
 
-A skill já está versionada neste repo em `.claude/skills/ai-image-generation/`,
-junto com a skill de apoio `.claude/skills/belt/`. O que falta é deixar o
-ambiente capaz de **executar** o `belt` — abaixo estão os dois cenários.
+As skills já estão versionadas neste repo:
+- `.claude/skills/ai-image-generation/` — geração de imagem
+- `.claude/skills/ai-video-generation/` — geração de vídeo/animação
+- `.claude/skills/belt/` — doc do CLI de apoio
+
+O que falta é deixar o ambiente capaz de **executar** o `belt` — abaixo estão os
+dois cenários.
 
 ---
 
@@ -92,9 +97,40 @@ Listar todos: `belt app store --category image`
 
 ---
 
+## Modelos de vídeo / animação
+
+| Modelo | App ID | Melhor para |
+|--------|--------|-------------|
+| Veo 3.1 Fast | `google/veo-3-1-fast` | texto→vídeo rápido, com áudio opcional |
+| Veo 3.1 | `google/veo-3-1` | melhor qualidade, interpolação de frames |
+| Seedance 2.0 | `bytedance/seedance-2-0` | texto/imagem/ref→vídeo com áudio, até 1080p |
+| HappyHorse I2V | `alibaba/happyhorse-1-0-i2v` | animar imagens, até 1080P/15s |
+| Wan 2.5 | `falai/wan-2-5` | animar qualquer imagem (image→video) |
+| Grok Video | `xai/grok-imagine-video` | duração configurável |
+| Topaz Video Upscaler | `falai/topaz-video-upscaler` | upscaling de vídeo |
+
+Listar todos: `belt app store --category video`
+
+### Texto → vídeo
+```bash
+belt app run google/veo-3-1-fast \
+  --input '{"prompt": "a fast blue cartoon hedgehog dashing through a green hill, speed lines, dynamic camera"}' \
+  --save video.mp4
+```
+
+### Imagem → vídeo (anima uma imagem existente)
+```bash
+belt app run falai/wan-2-5 \
+  --input '{"image_url": "https://sua-imagem.png", "prompt": "running fast, motion blur, dynamic camera"}' \
+  --save animacao.mp4
+```
+
+---
+
 ## Alternativa sem inference.sh
 
 Os conectores MCP (ex.: **Canva**) roteiam o tráfego pelos servidores da Anthropic,
 então funcionam **sem** alterar a política de rede do ambiente — são uma opção
 de fallback quando o `belt`/inference.sh não estiver disponível. A qualidade é de
-design/pôster, não de foto IA pura.
+design/pôster, não de foto IA pura. O Canva também exporta GIF/MP4 e tem o botão
+**"Animar"** no editor para gerar movimento simples — mas não é animação por IA.
