@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"PROTOCOLO DAMHA (ver CLAUDE.md): Antes de qualquer projeto novo da Damha, consultar o cofre Obsidian (segundo cerebro de Daniel) via conector Microsoft 365/OneDrive — driveId b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4, pasta CEREBRO DO CLOUDE. Seguir a Regra Primordial (D5): memoria -> !MAPA -> nucleo (ARQUITETURA + PAD_Manual + TEMPLATES) -> notas do escopo -> PENDENCIAS_Abertas. O cofre e a fonte mestra; em conflito, o cofre vence. NUNCA commitar conteudo confidencial do cofre no git.\"}}'",
+            "statusMessage": "Carregando protocolo Damha"
+          }
+        ]
+      }
+    ]
+  }
+}
