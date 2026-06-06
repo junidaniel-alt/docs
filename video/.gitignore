@@ -7,3 +7,5 @@ out/
 # Dependencies / caches
 node_modules/
 .hyperframes/
+snapshots/
+.hyperframes/
