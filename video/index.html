@@ -10,649 +10,385 @@
     <script src="assets/gsap.min.js"></script>
     <style>
       @font-face {
-        font-family: "Fredoka";
-        font-weight: 300 700;
+        font-family: "Orbitron";
+        font-weight: 400 900;
         font-style: normal;
         font-display: block;
-        src: url("assets/fonts/fredoka.woff2") format("woff2");
-      }
-      @font-face {
-        font-family: "Luckiest Guy";
-        font-weight: 400;
-        font-style: normal;
-        font-display: block;
-        src: url("assets/fonts/luckiestguy.woff2") format("woff2");
-      }
-      :root {
-        --blue: #00a2ff;
-        --blue-deep: #0061c2;
-        --red: #ff3b30;
-        --skin: #f6c915;
-        --shirt: #1fa3e0;
-        --pants: #3cb84a;
-        --lime: #7ed957;
-        --purple: #8b5cf6;
-        --ink: #16233a;
+        src: url("assets/fonts/orbitron.woff2") format("woff2");
       }
       * { box-sizing: border-box; }
       body {
-        margin: 0;
-        width: 1080px;
-        height: 1920px;
-        overflow: hidden;
-        background: #000;
-        font-family: "Fredoka", "Luckiest Guy", sans-serif;
+        margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #03060f;
+        font-family: "Orbitron", sans-serif;
       }
-      .scene {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 1080px;
-        height: 1920px;
-        overflow: hidden;
-      }
+      .scene { position: absolute; inset: 0; width: 1080px; height: 1920px; overflow: hidden; }
+      #act1 { z-index: 1; }
+      #act2 { z-index: 2; opacity: 0; }
+      #act3 { z-index: 3; opacity: 0; }
 
-      /* ---------- SCENE 1 ---------- */
-      #scene1 {
-        z-index: 1;
-        background: radial-gradient(circle at 50% 38%, #1d3a6b 0%, #0d1a30 55%, #070e1c 100%);
+      .bg-space {
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(circle at 50% 42%, #123 0%, #06101f 45%, #03060f 100%);
       }
-      .studs {
-        position: absolute;
-        inset: -40px;
-        background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0 14px, transparent 15px);
-        background-size: 96px 96px;
+      .bg-aurora {
+        position: absolute; inset: -10%;
+        background:
+          radial-gradient(40% 30% at 30% 20%, rgba(177, 75, 255, 0.35), transparent 70%),
+          radial-gradient(45% 35% at 75% 30%, rgba(25, 240, 255, 0.30), transparent 70%);
+      }
+      /* neon perspective grid */
+      .grid {
+        position: absolute; left: -60%; width: 220%; height: 1200px; bottom: -120px;
+        background-image:
+          repeating-linear-gradient(0deg, rgba(25, 240, 255, 0.55) 0 3px, transparent 3px 80px),
+          repeating-linear-gradient(90deg, rgba(25, 240, 255, 0.45) 0 3px, transparent 3px 80px);
+        transform: perspective(620px) rotateX(74deg);
+        transform-origin: bottom center;
+        mask-image: linear-gradient(to top, #000 0%, #000 30%, transparent 85%);
+        -webkit-mask-image: linear-gradient(to top, #000 0%, #000 30%, transparent 85%);
+        opacity: 0.85;
+      }
+      .grid.violet {
+        top: -120px; bottom: auto; transform: perspective(620px) rotateX(-74deg);
+        transform-origin: top center;
+        background-image:
+          repeating-linear-gradient(0deg, rgba(177, 75, 255, 0.40) 0 3px, transparent 3px 80px),
+          repeating-linear-gradient(90deg, rgba(177, 75, 255, 0.32) 0 3px, transparent 3px 80px);
+        mask-image: linear-gradient(to bottom, #000 0%, #000 25%, transparent 80%);
+        -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 25%, transparent 80%);
         opacity: 0.6;
       }
-      .glow-ring {
-        position: absolute;
-        left: 50%;
-        top: 36%;
-        width: 760px;
-        height: 760px;
-        margin: -380px 0 0 -380px;
+      .beam {
+        position: absolute; top: -10%; width: 240px; height: 130%;
+        background: linear-gradient(to bottom, rgba(25, 240, 255, 0), rgba(25, 240, 255, 0.18), rgba(25, 240, 255, 0));
+        transform: rotate(12deg); filter: blur(8px); mix-blend-mode: screen;
+      }
+      .beam.b2 { background: linear-gradient(to bottom, rgba(177, 75, 255, 0), rgba(177, 75, 255, 0.18), rgba(177, 75, 255, 0)); transform: rotate(-14deg); }
+
+      .fx { position: absolute; inset: 0; pointer-events: none; }
+      .dotp { position: absolute; border-radius: 50%; }
+
+      /* HUD */
+      .corner { position: absolute; width: 90px; height: 90px; border: 3px solid rgba(25, 240, 255, 0.7); }
+      .corner.tl { left: 46px; top: 46px; border-right: 0; border-bottom: 0; }
+      .corner.tr { right: 46px; top: 46px; border-left: 0; border-bottom: 0; }
+      .corner.bl { left: 46px; bottom: 46px; border-right: 0; border-top: 0; }
+      .corner.br { right: 46px; bottom: 46px; border-left: 0; border-top: 0; }
+      .hud-tag {
+        position: absolute; font-family: "Orbitron"; font-weight: 500; font-size: 26px;
+        letter-spacing: 5px; color: #6fe9ff; text-shadow: 0 0 12px rgba(25, 240, 255, 0.8);
+      }
+
+      /* ACT 1 title */
+      .a1-wrap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+      .a1-pre { font-weight: 500; font-size: 34px; letter-spacing: 12px; color: #6fe9ff; text-shadow: 0 0 16px rgba(25, 240, 255, 0.9); margin-bottom: 26px; }
+      .a1-name {
+        font-weight: 900; font-size: 132px; letter-spacing: 6px; color: #eafdff; margin: 0;
+        text-shadow: 0 0 8px #fff, 0 0 26px #19f0ff, 0 0 60px #19f0ff, 0 0 90px rgba(25, 240, 255, 0.6);
+      }
+      .a1-line { width: 0; height: 4px; margin: 34px 0; background: linear-gradient(90deg, transparent, #19f0ff, transparent); box-shadow: 0 0 16px #19f0ff; }
+      .a1-sub { font-weight: 500; font-size: 30px; letter-spacing: 8px; color: #b6f6ff; text-shadow: 0 0 10px rgba(25, 240, 255, 0.7); }
+
+      /* ACT 2 hero */
+      .platform {
+        position: absolute; left: 50%; bottom: 470px; width: 660px; height: 180px; margin-left: -330px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(0, 162, 255, 0.35) 0%, rgba(0, 162, 255, 0) 70%);
+        background: radial-gradient(ellipse at center, rgba(25, 240, 255, 0.95) 0%, rgba(25, 240, 255, 0.35) 38%, rgba(25, 240, 255, 0) 70%);
+        filter: blur(3px);
       }
-      .s1-wrap {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 120px 90px;
-        text-align: center;
+      .ring {
+        position: absolute; left: 50%; top: 50%; border-radius: 50%; border: 3px dashed rgba(25, 240, 255, 0.55);
+        transform: translate(-50%, -50%);
       }
-      .tag {
-        font-family: "Fredoka", sans-serif;
-        font-weight: 700;
-        font-size: 34px;
-        letter-spacing: 6px;
-        color: #9fd8ff;
-        background: rgba(0, 162, 255, 0.16);
-        border: 3px solid rgba(0, 162, 255, 0.55);
-        padding: 14px 30px;
-        border-radius: 999px;
-        margin-bottom: 44px;
+      .ring.r1 { width: 720px; height: 720px; margin-top: -120px; }
+      .ring.r2 { width: 560px; height: 560px; margin-top: -120px; border-style: solid; border-color: rgba(177, 75, 255, 0.45); }
+      .hero-wrap { position: absolute; left: 50%; bottom: 470px; width: 560px; margin-left: -280px; }
+      .hero {
+        width: 100%; display: block;
+        filter:
+          drop-shadow(0 0 24px rgba(25, 240, 255, 0.6))
+          drop-shadow(5px 0 0 rgba(255, 40, 170, 0.35))
+          drop-shadow(-5px 0 0 rgba(0, 229, 255, 0.40))
+          saturate(1.08) contrast(1.06);
       }
-      .title-top {
-        font-family: "Luckiest Guy", "Fredoka", sans-serif;
-        font-size: 78px;
-        color: #ffd84d;
-        letter-spacing: 2px;
-        text-shadow: 0 6px 0 #b8860b, 0 10px 18px rgba(0, 0, 0, 0.5);
-        margin: 0;
+      .hero-reflect {
+        position: absolute; left: 50%; bottom: 320px; width: 560px; margin-left: -280px;
+        transform: scaleY(-1); opacity: 0.16; filter: blur(2px);
+        mask-image: linear-gradient(to top, rgba(0,0,0,0.7), transparent 55%);
+        -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.7), transparent 55%);
       }
-      .title-name {
-        font-family: "Luckiest Guy", "Fredoka", sans-serif;
-        font-size: 150px;
-        line-height: 0.92;
-        color: #ffffff;
-        letter-spacing: 1px;
-        text-shadow: 0 8px 0 var(--blue-deep), 0 14px 0 #003a73, 0 22px 30px rgba(0, 0, 0, 0.55);
-        -webkit-text-stroke: 6px #00a2ff;
-        margin: 6px 0 40px;
+      .hero-reflect img { width: 100%; display: block; }
+      .holo-lines {
+        position: absolute; left: 50%; bottom: 470px; width: 560px; height: 980px; margin-left: -280px;
+        background: repeating-linear-gradient(0deg, rgba(180, 250, 255, 0.10) 0 2px, transparent 2px 6px);
+        mix-blend-mode: screen; pointer-events: none;
       }
-      .subtitle {
-        font-family: "Fredoka", sans-serif;
-        font-weight: 600;
-        font-size: 40px;
-        color: #cfe7ff;
-        letter-spacing: 2px;
-        margin-bottom: 30px;
+      .scanbar {
+        position: absolute; left: 50%; width: 600px; margin-left: -300px; height: 6px;
+        background: linear-gradient(90deg, transparent, rgba(180, 250, 255, 0.85), transparent);
+        box-shadow: 0 0 18px rgba(25, 240, 255, 0.9);
       }
-      .load-track {
-        width: 660px;
-        height: 46px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.12);
-        border: 4px solid rgba(255, 255, 255, 0.35);
-        overflow: hidden;
-        position: relative;
+      .a2-name {
+        position: absolute; left: 0; right: 0; top: 250px; text-align: center;
+        font-weight: 900; font-size: 110px; letter-spacing: 5px; color: #eafdff; margin: 0;
+        text-shadow: 0 0 8px #fff, 0 0 26px #19f0ff, 0 0 64px #19f0ff;
       }
-      .load-fill {
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 100%;
-        transform-origin: left center;
-        border-radius: 999px;
-        background: linear-gradient(90deg, #00ffa3, #00c2ff);
+      .a2-tag {
+        position: absolute; left: 0; right: 0; top: 178px; text-align: center;
+        font-weight: 700; font-size: 30px; letter-spacing: 10px; color: #ff5bd0; text-shadow: 0 0 16px rgba(255, 91, 208, 0.9);
       }
+      .stats { position: absolute; left: 0; right: 0; bottom: 250px; display: flex; gap: 26px; justify-content: center; }
+      .stat {
+        font-weight: 700; font-size: 34px; letter-spacing: 3px; color: #d9fbff;
+        border: 2px solid rgba(25, 240, 255, 0.7); border-radius: 8px; padding: 12px 26px;
+        background: rgba(8, 30, 50, 0.5); box-shadow: 0 0 18px rgba(25, 240, 255, 0.35), inset 0 0 16px rgba(25, 240, 255, 0.15);
+      }
+      .stat b { color: #19f0ff; }
 
-      /* ---------- SCENE 2 ---------- */
-      #scene2 {
-        z-index: 2;
-        opacity: 0;
-        background: radial-gradient(circle at 50% 32%, #54c0ff 0%, #1f8fe6 48%, #0b6fc4 100%);
+      /* ACT 3 */
+      .a3-wrap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 80px; }
+      .hexframe {
+        width: 320px; height: 320px; margin-bottom: 56px; position: relative; border-radius: 50%;
+        overflow: hidden; border: 5px solid rgba(25, 240, 255, 0.9);
+        box-shadow: 0 0 40px rgba(25, 240, 255, 0.7), inset 0 0 30px rgba(25, 240, 255, 0.4);
       }
-      .rays {
-        position: absolute;
-        left: 50%;
-        top: 150px;
-        width: 1500px;
-        height: 1500px;
-        margin-left: -750px;
-        background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.16) 0deg 7deg, rgba(255, 255, 255, 0) 7deg 18deg);
+      .hexframe img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 10%; filter: saturate(1.05) contrast(1.05); }
+      .a3-title {
+        font-weight: 900; font-size: 130px; line-height: 0.95; letter-spacing: 4px; color: #eafdff; margin: 0 0 18px;
+        text-shadow: 0 0 10px #fff, 0 0 30px #19f0ff, 0 0 70px #19f0ff;
+      }
+      .a3-player { font-weight: 700; font-size: 34px; letter-spacing: 12px; color: #ff5bd0; text-shadow: 0 0 16px rgba(255,91,208,0.9); margin-bottom: 48px; }
+      .a3-btn {
+        font-weight: 700; font-size: 52px; letter-spacing: 6px; color: #03060f;
+        background: linear-gradient(90deg, #19f0ff, #6fe9ff); padding: 24px 78px; border-radius: 12px;
+        display: inline-flex; align-items: center; gap: 20px; box-shadow: 0 0 40px rgba(25, 240, 255, 0.8);
+      }
+      .a3-credit { margin-top: 64px; font-weight: 500; font-size: 32px; letter-spacing: 3px; color: #b6f6ff; }
+
+      .tri { width: 0; height: 0; border-top: 22px solid transparent; border-bottom: 22px solid transparent; border-left: 34px solid #03060f; }
+      .heart { display: inline-block; width: 28px; height: 28px; background: #ff5bd0; transform: rotate(-45deg); position: relative; vertical-align: -0.3em; margin: 0 6px; }
+      .heart::before, .heart::after { content: ""; position: absolute; width: 28px; height: 28px; background: #ff5bd0; border-radius: 50%; }
+      .heart::before { top: -14px; left: 0; }
+      .heart::after { left: 14px; top: 0; }
+
+      /* global overlays */
+      .vignette { position: absolute; inset: 0; z-index: 40; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.55) 100%); }
+      .grain {
+        position: absolute; inset: -50%; z-index: 41; pointer-events: none; opacity: 0.07; mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+      }
+      .flash { position: absolute; inset: 0; z-index: 50; background: #cdfcff; opacity: 0; pointer-events: none; }
+      .energy {
+        position: absolute; left: 50%; top: 46%; width: 1600px; height: 1600px; margin: -800px 0 0 -800px; z-index: 0;
+        background: repeating-conic-gradient(from 0deg, rgba(25,240,255,0.18) 0deg 3deg, transparent 3deg 10deg);
         border-radius: 50%;
-        z-index: 0;
-        -webkit-mask-image: radial-gradient(circle, #000 0%, #000 40%, transparent 72%);
-        mask-image: radial-gradient(circle, #000 0%, #000 40%, transparent 72%);
+        mask-image: radial-gradient(circle, #000 0%, transparent 60%);
+        -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 60%);
       }
-      .baseplate {
-        position: absolute;
-        left: -40px;
-        right: -40px;
-        bottom: -20px;
-        height: 360px;
-        background: #2fa148;
-        background-image: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0 16px, transparent 17px);
-        background-size: 110px 110px;
-        border-top: 12px solid #267e3a;
-        z-index: 1;
-      }
-      .s2-wrap {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        padding: 150px 80px 0;
-        z-index: 3;
-      }
-      .ribbon {
-        font-family: "Luckiest Guy", "Fredoka", sans-serif;
-        font-size: 46px;
-        color: #fff;
-        letter-spacing: 3px;
-        background: var(--red);
-        padding: 18px 56px;
-        border-radius: 18px;
-        border: 5px solid #fff;
-        box-shadow: 0 10px 0 #b3271f, 0 16px 26px rgba(0, 0, 0, 0.35);
-        margin-bottom: 40px;
-      }
-      .avatar-anchor { position: relative; }
-      .avatar-glow {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        width: 820px;
-        height: 820px;
-        margin: -410px 0 0 -410px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(255, 232, 120, 0.55) 0%, rgba(255, 232, 120, 0) 65%);
-        z-index: -1;
-      }
-      .avatar-card {
-        width: 540px;
-        height: 660px;
-        border-radius: 40px;
-        background: #fff;
-        border: 14px solid #ffd84d;
-        box-shadow: 0 22px 0 #caa517, 0 30px 60px rgba(0, 0, 0, 0.4);
-        overflow: hidden;
-        position: relative;
-      }
-      .avatar-card img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: 50% 8%;
-        display: block;
-      }
-      .avatar-shine {
-        position: absolute;
-        top: 0;
-        left: -60%;
-        width: 50%;
-        height: 100%;
-        background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-        transform: skewX(-18deg);
-      }
-      .name-plate {
-        font-family: "Luckiest Guy", "Fredoka", sans-serif;
-        font-size: 118px;
-        line-height: 1;
-        color: #fff;
-        letter-spacing: 1px;
-        margin: 38px 0 26px;
-        text-shadow: 0 7px 0 #0061c2, 0 12px 0 #004a96, 0 18px 26px rgba(0, 0, 0, 0.45);
-        -webkit-text-stroke: 5px #0a4f93;
-      }
-      .chips { display: flex; gap: 24px; justify-content: center; }
-      .chip {
-        font-family: "Fredoka", sans-serif;
-        font-weight: 700;
-        font-size: 40px;
-        color: var(--ink);
-        background: #ffe97a;
-        border: 5px solid #fff;
-        padding: 14px 30px;
-        border-radius: 16px;
-        box-shadow: 0 8px 0 #d6b53e;
-        white-space: nowrap;
-      }
-      .chip.green { background: var(--lime); box-shadow: 0 8px 0 #4ea035; color: #14401a; }
-      .chip.stars { background: #fff; color: var(--red); box-shadow: 0 8px 0 #d0d0d0; letter-spacing: 4px; }
-
-      /* ---------- SCENE 3 ---------- */
-      #scene3 {
-        z-index: 3;
-        opacity: 0;
-        background: radial-gradient(circle at 50% 40%, #6a5cff 0%, #3f2fd6 55%, #261c9c 100%);
-      }
-      .s3-wrap {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 120px 80px;
-        text-align: center;
-        z-index: 3;
-      }
-      .mini-avatar {
-        width: 300px;
-        height: 300px;
-        border-radius: 50%;
-        overflow: hidden;
-        border: 12px solid #fff;
-        box-shadow: 0 16px 0 rgba(0, 0, 0, 0.25), 0 22px 44px rgba(0, 0, 0, 0.4);
-        margin-bottom: 50px;
-      }
-      .mini-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 10%; }
-      .go-title {
-        font-family: "Luckiest Guy", "Fredoka", sans-serif;
-        font-size: 156px;
-        line-height: 0.92;
-        color: #ffe24d;
-        letter-spacing: 1px;
-        margin: 0 0 56px;
-        text-shadow: 0 9px 0 #b8860b, 0 16px 0 #8a6508, 0 24px 34px rgba(0, 0, 0, 0.5);
-        -webkit-text-stroke: 5px #6b4e00;
-      }
-      .play-btn {
-        font-family: "Luckiest Guy", "Fredoka", sans-serif;
-        font-size: 70px;
-        color: #fff;
-        letter-spacing: 3px;
-        background: #2ecc55;
-        padding: 30px 90px;
-        border-radius: 28px;
-        border: 7px solid #fff;
-        box-shadow: 0 14px 0 #1f9e40, 0 22px 38px rgba(0, 0, 0, 0.4);
-        display: inline-flex;
-        align-items: center;
-        gap: 22px;
-      }
-      .credit {
-        font-family: "Fredoka", sans-serif;
-        font-weight: 600;
-        font-size: 38px;
-        color: #ffffff;
-        margin-top: 70px;
-        letter-spacing: 1px;
-      }
-
-      /* ---------- NOOB ---------- */
-      .anchor { position: absolute; }
-      .noob { position: relative; width: 96px; }
-      .noob .head {
-        width: 86px; height: 76px; background: var(--noob-skin, var(--skin));
-        border-radius: 12px; margin: 0 auto; position: relative;
-        box-shadow: inset -9px -9px 0 rgba(0, 0, 0, 0.13);
-      }
-      .noob .eye { position: absolute; top: 28px; width: 11px; height: 18px; background: #20242b; border-radius: 3px; }
-      .noob .eye.l { left: 22px; }
-      .noob .eye.r { right: 22px; }
-      .noob .mouth {
-        position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
-        width: 30px; height: 15px; border-bottom: 6px solid #20242b; border-radius: 0 0 16px 16px;
-      }
-      .noob .body { position: relative; width: 92px; margin: 7px auto 0; }
-      .noob .torso {
-        width: 92px; height: 78px; background: var(--noob-shirt, var(--shirt));
-        border-radius: 10px; box-shadow: inset -9px -9px 0 rgba(0, 0, 0, 0.13);
-      }
-      .noob .arm {
-        position: absolute; top: 0; width: 22px; height: 74px; background: var(--noob-skin, var(--skin));
-        border-radius: 7px; box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.13);
-      }
-      .noob .arm.l { left: -24px; }
-      .noob .arm.r { right: -24px; }
-      .noob .legs { display: flex; gap: 8px; justify-content: center; margin-top: 5px; }
-      .noob .leg {
-        width: 38px; height: 56px; background: var(--noob-pants, var(--pants));
-        border-radius: 7px; box-shadow: inset -7px -7px 0 rgba(0, 0, 0, 0.13);
-      }
-
-      .coin {
-        position: absolute; width: 56px; height: 56px; border-radius: 12px;
-        background: linear-gradient(135deg, #ffe14d, #f5a623);
-        border: 4px solid #fff5c2; box-shadow: 0 6px 0 #c9881a;
-        display: flex; align-items: center; justify-content: center;
-        font-family: "Luckiest Guy", sans-serif; font-size: 30px; color: #a8631a;
-      }
-      .confetti { position: absolute; width: 26px; height: 26px; border-radius: 4px; }
-
-      /* FX: sparkles + flash */
-      .fx { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
-      .spark { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 14px 4px rgba(255, 255, 255, 0.9); }
-      .spark.gold { background: #ffe14d; box-shadow: 0 0 14px 4px rgba(255, 225, 77, 0.9); }
-      .flash { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 50; pointer-events: none; }
-
-      /* CSS glyph shapes */
-      .cstar {
-        display: inline-block; width: 0.95em; height: 0.95em; background: currentColor;
-        clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-        vertical-align: -0.1em;
-      }
-      .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: currentColor; vertical-align: 0.15em; margin: 0 14px; }
-      .stars-row { display: inline-flex; gap: 8px; align-items: center; color: #ffb300; font-size: 44px; }
-      .tri { width: 0; height: 0; border-top: 28px solid transparent; border-bottom: 28px solid transparent; border-left: 44px solid #fff; margin-right: 4px; }
-      .heart {
-        display: inline-block; width: 34px; height: 34px; background: #ff7eb6;
-        transform: rotate(-45deg); position: relative; vertical-align: -0.35em; margin: 0 6px;
-      }
-      .heart::before, .heart::after { content: ""; position: absolute; width: 34px; height: 34px; background: #ff7eb6; border-radius: 50%; }
-      .heart::before { top: -17px; left: 0; }
-      .heart::after { left: 17px; top: 0; }
     </style>
   </head>
   <body>
-    <div
-      id="root"
-      data-composition-id="main"
-      data-width="1080"
-      data-height="1920"
-      data-start="0"
-      data-duration="16"
-    >
-      <!-- ===================== SCENE 1 ===================== -->
-      <div id="scene1" class="scene" data-layout-allow-overflow>
-        <div class="studs" data-layout-allow-overflow></div>
-        <div class="glow-ring" id="s1-glow"></div>
-        <div class="anchor" id="s1-coin1" style="left: 120px; top: 360px"><div class="coin">R$</div></div>
-        <div class="anchor" id="s1-coin2" style="left: 880px; top: 480px"><div class="coin">R$</div></div>
-        <div class="anchor" id="s1-noobL" style="left: 90px; top: 1320px; transform: scale(1.25)">
-          <div class="noob" style="--noob-shirt: #ff3b30; --noob-pants: #3a3f8f">
-            <div class="head"><div class="eye l"></div><div class="eye r"></div><div class="mouth"></div></div>
-            <div class="body"><div class="arm l"></div><div class="torso"></div><div class="arm r"></div></div>
-            <div class="legs"><div class="leg"></div><div class="leg"></div></div>
-          </div>
+    <div id="root" data-composition-id="main" data-width="1080" data-height="1920" data-start="0" data-duration="16">
+
+      <!-- ===================== ACT 1 : BOOT ===================== -->
+      <div id="act1" class="scene" data-layout-allow-overflow>
+        <div class="bg-space"></div>
+        <div class="bg-aurora" id="a1-aurora"></div>
+        <div class="grid" id="a1-grid" data-layout-allow-overflow></div>
+        <div class="grid violet" id="a1-gridv" data-layout-allow-overflow></div>
+        <div class="beam" id="a1-beam1" style="left: 150px" data-layout-allow-overflow></div>
+        <div class="beam b2" id="a1-beam2" style="right: 120px" data-layout-allow-overflow></div>
+        <div class="fx" id="a1-fx"></div>
+        <div class="a1-wrap">
+          <div class="a1-pre" id="a1-pre">INICIALIZANDO SISTEMA</div>
+          <h1 class="a1-name" id="a1-name">MANUELLA</h1>
+          <div class="a1-line" id="a1-linebar"></div>
+          <div class="a1-sub" id="a1-sub">// MUNDO  ONLINE  •  NÍVEL 99</div>
         </div>
-        <div class="anchor" id="s1-noobR" style="left: 830px; top: 1320px; transform: scale(1.25)">
-          <div class="noob" style="--noob-shirt: #1fa3e0; --noob-pants: #7ed957">
-            <div class="head"><div class="eye l"></div><div class="eye r"></div><div class="mouth"></div></div>
-            <div class="body"><div class="arm l"></div><div class="torso"></div><div class="arm r"></div></div>
-            <div class="legs"><div class="leg"></div><div class="leg"></div></div>
-          </div>
-        </div>
-        <div class="s1-wrap">
-          <div class="tag" id="s1-tag"><span class="dot"></span>ROBLOX EDITION<span class="dot"></span></div>
-          <h2 class="title-top" id="s1-top">MUNDO DA</h2>
-          <h1 class="title-name" id="s1-name">MANUELLA</h1>
-          <div class="subtitle" id="s1-sub">CARREGANDO JOGO...</div>
-          <div class="load-track" id="s1-track"><div class="load-fill" id="s1-fill"></div></div>
-        </div>
-        <div class="fx" id="s1-fx"></div>
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="hud-tag" id="a1-hud1" style="left: 60px; top: 160px">SYS//BOOT</div>
+        <div class="hud-tag" id="a1-hud2" style="right: 60px; bottom: 160px; text-align: right">v9.9.9</div>
       </div>
 
-      <!-- ===================== SCENE 2 ===================== -->
-      <div id="scene2" class="scene">
-        <div class="rays" id="s2-rays"></div>
-        <div class="baseplate" data-layout-allow-overflow></div>
-        <div class="s2-wrap">
-          <div class="ribbon" id="s2-ribbon"><span class="cstar"></span> JOGADORA 1 <span class="cstar"></span></div>
-          <div class="avatar-anchor" id="s2-avatar-pos">
-            <div class="avatar-glow" id="s2-aglow"></div>
-            <div class="avatar-card" id="s2-card">
-              <img src="assets/daughter.jpg" alt="jogadora" crossorigin="anonymous" />
-              <div class="avatar-shine" id="s2-shine" data-layout-allow-overflow></div>
-            </div>
-          </div>
-          <div class="name-plate" id="s2-name">MANUELLA</div>
-          <div class="chips">
-            <div class="chip" id="s2-c1">NÍVEL 99</div>
-            <div class="chip green" id="s2-c2">PRO</div>
-            <div class="chip stars" id="s2-c3"><span class="stars-row"><span class="cstar"></span><span class="cstar"></span><span class="cstar"></span></span></div>
-          </div>
+      <!-- ===================== ACT 2 : HERO ===================== -->
+      <div id="act2" class="scene" data-layout-allow-overflow>
+        <div class="bg-space"></div>
+        <div class="bg-aurora"></div>
+        <div class="grid" data-layout-allow-overflow></div>
+        <div class="energy" id="a2-energy" data-layout-allow-overflow></div>
+        <div class="beam" style="left: 120px" data-layout-allow-overflow></div>
+        <div class="beam b2" style="right: 100px" data-layout-allow-overflow></div>
+        <div class="ring r1" id="a2-ring1" data-layout-allow-overflow></div>
+        <div class="ring r2" id="a2-ring2" data-layout-allow-overflow></div>
+        <div class="fx" id="a2-fx"></div>
+
+        <div class="a2-tag" id="a2-tag">★ JOGADORA 1 ★</div>
+        <h1 class="a2-name" id="a2-name">MANUELLA</h1>
+
+        <div class="platform" id="a2-platform" data-layout-allow-overflow></div>
+        <div class="hero-reflect" data-layout-allow-overflow><img src="assets/manu_cutout2.png" alt="" /></div>
+        <div class="hero-wrap" id="a2-hero" data-layout-allow-overflow><img class="hero" src="assets/manu_cutout.png" alt="jogadora" crossorigin="anonymous" /></div>
+        <div class="holo-lines" id="a2-holo" data-layout-allow-overflow></div>
+        <div class="scanbar" id="a2-scan" style="top: 360px"></div>
+
+        <div class="stats" id="a2-stats">
+          <div class="stat">NÍVEL <b>99</b></div>
+          <div class="stat">PRO</div>
+          <div class="stat">★ ★ ★</div>
         </div>
-        <div class="anchor" id="s2-noob1" style="left: 70px; top: 1230px; transform: scale(1.15)">
-          <div class="noob" style="--noob-shirt: #ff3b30; --noob-pants: #3a3f8f">
-            <div class="head"><div class="eye l"></div><div class="eye r"></div><div class="mouth"></div></div>
-            <div class="body"><div class="arm l"></div><div class="torso"></div><div class="arm r"></div></div>
-            <div class="legs"><div class="leg"></div><div class="leg"></div></div>
-          </div>
-        </div>
-        <div class="anchor" id="s2-noob2" style="left: 880px; top: 1180px; transform: scale(1.3)">
-          <div class="noob" style="--noob-shirt: #8b5cf6; --noob-pants: #1fa3e0">
-            <div class="head"><div class="eye l"></div><div class="eye r"></div><div class="mouth"></div></div>
-            <div class="body"><div class="arm l"></div><div class="torso"></div><div class="arm r"></div></div>
-            <div class="legs"><div class="leg"></div><div class="leg"></div></div>
-          </div>
-        </div>
-        <div class="anchor" id="s2-noob3" style="left: 470px; top: 1500px; transform: scale(1)">
-          <div class="noob" style="--noob-shirt: #2ecc55; --noob-pants: #f5a623">
-            <div class="head"><div class="eye l"></div><div class="eye r"></div><div class="mouth"></div></div>
-            <div class="body"><div class="arm l"></div><div class="torso"></div><div class="arm r"></div></div>
-            <div class="legs"><div class="leg"></div><div class="leg"></div></div>
-          </div>
-        </div>
-        <div class="confetti-box" id="s2-confetti"></div>
-        <div class="fx" id="s2-fx"></div>
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="hud-tag" style="left: 60px; top: 160px">TARGET//LOCKED</div>
       </div>
 
-      <!-- ===================== SCENE 3 ===================== -->
-      <div id="scene3" class="scene" data-layout-allow-overflow>
-        <div class="studs" data-layout-allow-overflow></div>
-        <div class="s3-wrap">
-          <div class="mini-avatar" id="s3-avatar">
-            <img src="assets/daughter2.jpg" alt="jogadora" crossorigin="anonymous" />
-          </div>
-          <h1 class="go-title" id="s3-title">BORA JOGAR!</h1>
-          <div class="play-btn" id="s3-btn"><span class="tri"></span> JOGAR</div>
-          <div class="credit" id="s3-credit">feito com <span class="heart"></span> pelo papai</div>
+      <!-- ===================== ACT 3 : GO ===================== -->
+      <div id="act3" class="scene" data-layout-allow-overflow>
+        <div class="bg-space"></div>
+        <div class="bg-aurora"></div>
+        <div class="grid" data-layout-allow-overflow></div>
+        <div class="energy" id="a3-energy" data-layout-allow-overflow></div>
+        <div class="fx" id="a3-fx"></div>
+        <div class="a3-wrap">
+          <div class="hexframe" id="a3-frame"><img src="assets/daughter2.jpg" alt="jogadora" crossorigin="anonymous" /></div>
+          <div class="a3-player" id="a3-player">PLAYER ONE</div>
+          <h1 class="a3-title" id="a3-title">BORA JOGAR</h1>
+          <div class="a3-btn" id="a3-btn"><span class="tri"></span> INICIAR</div>
+          <div class="a3-credit" id="a3-credit">feito com <span class="heart"></span> pelo papai</div>
         </div>
-        <div class="anchor" id="s3-noob1" style="left: 60px; top: 250px; transform: scale(1.1)">
-          <div class="noob" style="--noob-shirt: #ff3b30; --noob-pants: #1fa3e0">
-            <div class="head"><div class="eye l"></div><div class="eye r"></div><div class="mouth"></div></div>
-            <div class="body"><div class="arm l"></div><div class="torso"></div><div class="arm r"></div></div>
-            <div class="legs"><div class="leg"></div><div class="leg"></div></div>
-          </div>
-        </div>
-        <div class="anchor" id="s3-noob2" style="left: 870px; top: 280px; transform: scale(1.1)">
-          <div class="noob" style="--noob-shirt: #ffe14d; --noob-pants: #2ecc55">
-            <div class="head"><div class="eye l"></div><div class="eye r"></div><div class="mouth"></div></div>
-            <div class="body"><div class="arm l"></div><div class="torso"></div><div class="arm r"></div></div>
-            <div class="legs"><div class="leg"></div><div class="leg"></div></div>
-          </div>
-        </div>
-        <div class="confetti-box" id="s3-confetti"></div>
-        <div class="fx" id="s3-fx"></div>
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
       </div>
 
-      <!-- transition flash overlay -->
+      <!-- global overlays -->
+      <div class="energy" style="display:none"></div>
+      <div class="vignette"></div>
+      <div class="grain" id="grain" data-layout-allow-overflow></div>
       <div class="flash" id="flash"></div>
 
-      <!-- ===================== AUDIO ===================== -->
-      <audio id="narration" src="assets/narration.wav" data-start="0.4" data-duration="10.7" data-track-index="8" data-volume="1"></audio>
-      <audio id="music" src="assets/music.wav" data-start="0" data-duration="16" data-track-index="9" data-volume="0.22"></audio>
+      <!-- audio -->
+      <audio id="narration" src="assets/narration.wav" data-start="0.5" data-duration="10.7" data-track-index="8" data-volume="1"></audio>
+      <audio id="music" src="assets/music.wav" data-start="0" data-duration="16" data-track-index="9" data-volume="0.5"></audio>
     </div>
 
     <script>
       var vars = (window.__hyperframes && window.__hyperframes.getVariables)
         ? window.__hyperframes.getVariables() : { playerName: "MANUELLA" };
       var NAME = (vars.playerName || "MANUELLA").toString().toUpperCase();
-      document.getElementById("s1-name").textContent = NAME;
-      document.getElementById("s2-name").textContent = NAME;
+      document.getElementById("a1-name").textContent = NAME;
+      document.getElementById("a2-name").textContent = NAME;
 
-      function mulberry32(a) {
-        return function () {
-          a |= 0; a = (a + 0x6d2b79f5) | 0;
-          var t = Math.imul(a ^ (a >>> 15), 1 | a);
-          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-        };
-      }
-      var COLORS = ["#ff3b30", "#ffe14d", "#2ecc55", "#00a2ff", "#8b5cf6", "#ff7eb6"];
+      function mulberry32(a){return function(){a|=0;a=(a+0x6d2b79f5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
 
-      function buildConfetti(boxId, seed) {
-        var box = document.getElementById(boxId), rnd = mulberry32(seed), pieces = [];
-        for (var i = 0; i < 16; i++) {
-          var c = document.createElement("div");
-          c.className = "confetti";
-          c.style.left = Math.round(rnd() * 1020) + "px";
-          c.style.top = "-40px";
-          c.style.background = COLORS[Math.floor(rnd() * COLORS.length)];
-          if (rnd() > 0.5) c.style.borderRadius = "50%";
-          box.appendChild(c);
-          pieces.push({ el: c, delay: rnd() * 1.6, dur: 2.6 + rnd() * 1.6, rot: rnd() * 720 - 360, drift: rnd() * 80 - 40 });
-        }
-        return pieces;
-      }
-
-      function buildSparks(boxId, seed, count) {
-        var box = document.getElementById(boxId), rnd = mulberry32(seed), arr = [];
-        for (var i = 0; i < count; i++) {
-          var s = document.createElement("div");
-          s.className = "spark" + (rnd() > 0.5 ? " gold" : "");
-          var sz = 8 + rnd() * 16;
-          s.style.width = s.style.height = sz + "px";
-          s.style.left = Math.round(rnd() * 1040) + "px";
-          s.style.top = Math.round(120 + rnd() * 1600) + "px";
-          box.appendChild(s);
-          arr.push({ el: s, delay: rnd() * 1.5, dur: 0.7 + rnd() * 0.9, drift: 40 + rnd() * 80 });
+      // bokeh particle field with depth
+      function buildField(boxId, seed, count){
+        var box=document.getElementById(boxId), rnd=mulberry32(seed), arr=[];
+        for(var i=0;i<count;i++){
+          var d=document.createElement("div"); d.className="dotp";
+          var depth=rnd(); var sz=4+depth*22;
+          d.style.width=d.style.height=sz+"px";
+          d.style.left=Math.round(rnd()*1080)+"px";
+          d.style.top=Math.round(rnd()*1920)+"px";
+          var col=rnd()>0.5?"25,240,255":"177,75,255";
+          d.style.background="rgba("+col+","+(0.35+depth*0.5)+")";
+          d.style.boxShadow="0 0 "+(8+depth*22)+"px rgba("+col+","+(0.6)+")";
+          box.appendChild(d);
+          arr.push({el:d,depth:depth,delay:rnd()*2,dur:1.0+rnd()*1.6,rise:60+depth*220});
         }
         return arr;
       }
+      var f1=buildField("a1-fx",101,22), f2=buildField("a2-fx",202,24), f3=buildField("a3-fx",303,22);
 
-      var conf2 = buildConfetti("s2-confetti", 1337);
-      var conf3 = buildConfetti("s3-confetti", 7331);
-      var spark1 = buildSparks("s1-fx", 11, 10);
-      var spark2 = buildSparks("s2-fx", 22, 14);
-      var spark3 = buildSparks("s3-fx", 33, 14);
+      window.__timelines=window.__timelines||{};
+      var tl=gsap.timeline({paused:true});
+      var T1=4.5, T2=10.0;
 
-      window.__timelines = window.__timelines || {};
-      var tl = gsap.timeline({ paused: true });
-
-      var T1 = 4.2;
-      var T2 = 9.5;
-
-      function twinkle(arr, startT, endT) {
-        arr.forEach(function (p) {
-          var reps = Math.max(1, Math.ceil((endT - startT) / (p.dur * 2)));
-          tl.fromTo(p.el, { opacity: 0, scale: 0.3 },
-            { opacity: 1, scale: 1.1, duration: p.dur, ease: "sine.inOut", repeat: reps, yoyo: true }, startT + p.delay);
-          tl.to(p.el, { y: -p.drift, duration: (endT - startT), ease: "none" }, startT + p.delay);
+      function fieldAnim(arr,startT,endT){
+        arr.forEach(function(p){
+          var rise=(endT-startT);
+          tl.to(p.el,{y:-p.rise*1.2,duration:rise,ease:"none"},startT);
+          var reps=Math.max(1,Math.ceil((endT-startT)/(p.dur*2)));
+          tl.fromTo(p.el,{opacity:0.15,scale:0.6},{opacity:1,scale:1.1,duration:p.dur,ease:"sine.inOut",repeat:reps,yoyo:true},startT+p.delay);
         });
       }
+      function gridScroll(sel,startT,endT){
+        tl.to(sel,{backgroundPosition:"0px 80px, 0px 0px",duration:1.0,ease:"none",repeat:Math.ceil((endT-startT))},startT);
+      }
+      function grainFlicker(startT,endT){
+        tl.to("#grain",{backgroundPosition:"60px 30px",duration:0.12,ease:"none",repeat:Math.ceil((endT-startT)/0.12),yoyo:true},startT);
+      }
+      grainFlicker(0,16);
 
-      /* ===== SCENE 1 ===== */
-      tl.from("#s1-tag", { y: -40, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.2);
-      tl.from("#s1-top", { y: -120, opacity: 0, duration: 0.6, ease: "back.out(2)" }, 0.35);
-      tl.from("#s1-name", { y: -260, opacity: 0, scale: 0.6, duration: 0.7, ease: "back.out(1.7)", transformOrigin: "center center" }, 0.5);
-      tl.from("#s1-sub", { opacity: 0, duration: 0.4, ease: "power2.out" }, 1.0);
-      tl.from("#s1-track", { opacity: 0, scaleX: 0, transformOrigin: "center", duration: 0.4, ease: "power2.out" }, 1.0);
-      tl.from("#s1-noobL", { y: 420, opacity: 0, duration: 0.6, ease: "back.out(1.6)" }, 1.1);
-      tl.from("#s1-noobR", { y: 420, opacity: 0, duration: 0.6, ease: "back.out(1.6)" }, 1.25);
-      tl.from("#s1-coin1", { y: -300, opacity: 0, duration: 0.5, ease: "bounce.out" }, 1.4);
-      tl.from("#s1-coin2", { y: -300, opacity: 0, duration: 0.5, ease: "bounce.out" }, 1.6);
-      tl.fromTo("#s1-fill", { scaleX: 0 }, { scaleX: 1, duration: 2.3, ease: "power1.inOut" }, 1.1);
-      tl.to("#s1-glow", { scale: 1.15, opacity: 0.7, duration: 1.2, ease: "sine.inOut", repeat: 2, yoyo: true, transformOrigin: "center center" }, 0.5);
-      tl.to("#s1-noobL .noob", { y: -26, duration: 0.5, ease: "sine.inOut", repeat: 5, yoyo: true }, 1.7);
-      tl.to("#s1-noobR .noob", { y: -26, duration: 0.55, ease: "sine.inOut", repeat: 5, yoyo: true }, 1.8);
-      tl.to("#s1-coin1 .coin", { rotationY: 360, duration: 1.1, ease: "none", repeat: 2 }, 1.9);
-      tl.to("#s1-coin2 .coin", { rotationY: 360, duration: 1.1, ease: "none", repeat: 2 }, 1.9);
-      tl.to("#s1-coin1", { y: "-=18", duration: 0.7, ease: "sine.inOut", repeat: 3, yoyo: true }, 2.0);
-      tl.to("#s1-coin2", { y: "-=18", duration: 0.8, ease: "sine.inOut", repeat: 3, yoyo: true }, 2.1);
-      twinkle(spark1, 0.6, T1);
+      /* ===== ACT 1 ===== */
+      gridScroll("#a1-grid",0,T1); gridScroll("#a1-gridv",0,T1);
+      tl.to("#act1",{scale:1.06,duration:T1,ease:"none",transformOrigin:"center 42%"},0);
+      tl.to("#a1-beam1",{opacity:0.6,duration:1.4,ease:"sine.inOut",repeat:2,yoyo:true},0.2);
+      tl.to("#a1-beam2",{opacity:0.6,duration:1.6,ease:"sine.inOut",repeat:2,yoyo:true},0.4);
+      tl.to("#a1-aurora",{opacity:0.7,duration:1.5,ease:"sine.inOut",repeat:2,yoyo:true},0);
+      tl.from("#a1-pre",{opacity:0,y:-30,letterSpacing:"40px",duration:0.7,ease:"power2.out"},0.3);
+      tl.from("#a1-name",{opacity:0,scale:1.4,filter:"blur(26px)",duration:0.8,ease:"power3.out"},0.6);
+      // glitch jitters on name
+      tl.set("#a1-name",{x:-12},1.45); tl.set("#a1-name",{x:10},1.5); tl.set("#a1-name",{x:0},1.56);
+      tl.set("#a1-name",{x:8},2.2); tl.set("#a1-name",{x:0},2.26);
+      tl.fromTo("#a1-linebar",{width:0,opacity:0},{width:560,opacity:1,duration:0.7,ease:"power2.out"},1.0);
+      tl.from("#a1-sub",{opacity:0,duration:0.5,ease:"power2.out"},1.5);
+      tl.to("#a1-name",{textShadow:"0 0 10px #fff,0 0 40px #19f0ff,0 0 100px #19f0ff",duration:1.0,ease:"sine.inOut",repeat:2,yoyo:true},1.6);
+      tl.from(["#a1-hud1","#a1-hud2"],{opacity:0,duration:0.5,stagger:0.1},0.8);
+      fieldAnim(f1,0.2,T1);
 
-      /* ===== TRANSITION 1 : push + flash ===== */
-      tl.set("#scene2", { opacity: 1, y: 1920 }, T1);
-      tl.to("#scene1", { y: -1920, duration: 0.6, ease: "power3.inOut" }, T1);
-      tl.to("#scene2", { y: 0, duration: 0.6, ease: "power3.inOut" }, T1);
-      tl.to("#flash", { opacity: 0.8, duration: 0.1, ease: "power2.out" }, T1 + 0.18);
-      tl.to("#flash", { opacity: 0, duration: 0.4, ease: "power2.in" }, T1 + 0.28);
+      /* ===== TRANSITION 1 ===== */
+      tl.set("#act2",{opacity:1,scale:1.12},T1);
+      tl.to("#act1",{opacity:0,scale:0.92,duration:0.5,ease:"power2.in"},T1);
+      tl.to("#act2",{scale:1,duration:0.7,ease:"power3.out"},T1);
+      tl.to("#flash",{opacity:0.9,duration:0.08,ease:"power2.out"},T1);
+      tl.to("#flash",{opacity:0,duration:0.45,ease:"power2.in"},T1+0.08);
 
-      /* ===== SCENE 2 ===== */
-      var s2 = 4.55;
-      tl.from("#s2-ribbon", { y: -90, opacity: 0, duration: 0.5, ease: "back.out(2)" }, s2);
-      tl.fromTo("#s2-aglow", { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out", transformOrigin: "center center" }, s2 + 0.1);
-      tl.from("#s2-card", { scale: 0.3, opacity: 0, rotation: -8, duration: 0.7, ease: "back.out(1.6)", transformOrigin: "center center" }, s2 + 0.1);
-      tl.from("#s2-name", { y: 80, opacity: 0, scale: 0.7, duration: 0.6, ease: "back.out(1.8)", transformOrigin: "center center" }, s2 + 0.5);
-      tl.from("#s2-c1", { y: 60, opacity: 0, duration: 0.4, ease: "power3.out" }, s2 + 0.75);
-      tl.from("#s2-c2", { y: 60, opacity: 0, duration: 0.4, ease: "back.out(2)" }, s2 + 0.85);
-      tl.from("#s2-c3", { y: 60, opacity: 0, duration: 0.4, ease: "power3.out" }, s2 + 0.95);
-      tl.from("#s2-noob1", { y: 360, opacity: 0, duration: 0.55, ease: "back.out(1.6)" }, s2 + 0.3);
-      tl.from("#s2-noob2", { y: 360, opacity: 0, duration: 0.55, ease: "back.out(1.6)" }, s2 + 0.45);
-      tl.from("#s2-noob3", { y: 360, opacity: 0, duration: 0.55, ease: "back.out(1.6)" }, s2 + 0.6);
-      tl.fromTo("#s2-shine", { x: 0 }, { x: 1180, duration: 1.1, ease: "power2.inOut", repeat: 1, repeatDelay: 2.0 }, s2 + 1.2);
+      /* ===== ACT 2 ===== */
+      var s2=T1+0.1;
+      tl.to("#a2-energy",{rotation:50,duration:6,ease:"none",transformOrigin:"center center"},s2);
+      tl.fromTo("#a2-energy",{opacity:0,scale:0.4},{opacity:0.9,scale:1,duration:0.6,ease:"power2.out"},s2);
+      tl.fromTo("#a2-platform",{opacity:0,scaleX:0.2},{opacity:1,scaleX:1,duration:0.6,ease:"power3.out",transformOrigin:"center center"},s2+0.05);
+      tl.from("#a2-hero",{opacity:0,y:160,scale:0.9,duration:0.8,ease:"power3.out"},s2+0.1);
+      tl.from(".hero-reflect",{opacity:0,duration:0.8,ease:"power2.out"},s2+0.3);
+      tl.from("#a2-tag",{opacity:0,y:-40,duration:0.5,ease:"back.out(2)"},s2+0.5);
+      tl.from("#a2-name",{opacity:0,scale:0.7,duration:0.55,ease:"back.out(1.8)",transformOrigin:"center center"},s2+0.55);
+      tl.from(".stat",{opacity:0,y:50,duration:0.45,stagger:0.1,ease:"power3.out"},s2+0.8);
+      tl.from(["#a2-ring1","#a2-ring2"],{opacity:0,scale:0.5,duration:0.6,stagger:0.1,ease:"power2.out",transformOrigin:"center center"},s2+0.2);
       // ambient
-      tl.to("#s2-rays", { rotation: 360, duration: 18, ease: "none", transformOrigin: "center center" }, s2);
-      tl.to("#s2-aglow", { opacity: 0.7, duration: 1.0, ease: "sine.inOut", repeat: 3, yoyo: true, transformOrigin: "center center" }, s2 + 0.7);
-      tl.to("#s2-card", { y: -16, duration: 0.9, ease: "sine.inOut", repeat: 3, yoyo: true }, s2 + 1.3);
-      tl.to("#s2-noob1 .noob", { y: -30, duration: 0.45, ease: "sine.inOut", repeat: 7, yoyo: true }, s2 + 1.0);
-      tl.to("#s2-noob2 .noob", { y: -34, duration: 0.5, ease: "sine.inOut", repeat: 6, yoyo: true }, s2 + 1.1);
-      tl.to("#s2-noob3 .noob", { y: -28, duration: 0.42, ease: "sine.inOut", repeat: 7, yoyo: true }, s2 + 1.2);
-      conf2.forEach(function (p) {
-        tl.fromTo(p.el, { y: 0, rotation: 0, opacity: 1 },
-          { y: 1500, x: p.drift, rotation: p.rot, duration: p.dur, ease: "none", repeat: 1 }, s2 + 0.4 + p.delay);
-      });
-      twinkle(spark2, s2, T2);
+      tl.to("#a2-ring1",{rotation:360,duration:14,ease:"none",transformOrigin:"center center"},s2);
+      tl.to("#a2-ring2",{rotation:-360,duration:16,ease:"none",transformOrigin:"center center"},s2);
+      tl.to("#a2-hero",{y:-14,duration:1.4,ease:"sine.inOut",repeat:3,yoyo:true},s2+1.0);
+      tl.to("#act2",{scale:1.05,duration:T2-5.25,ease:"none",transformOrigin:"center 42%"},5.25);
+      tl.fromTo("#a2-scan",{top:280,opacity:0.9},{top:1180,opacity:0.9,duration:2.2,ease:"none",repeat:2},s2+0.6);
+      tl.to("#a2-platform",{opacity:0.7,duration:1.0,ease:"sine.inOut",repeat:4,yoyo:true},s2+0.8);
+      fieldAnim(f2,s2,T2);
 
-      /* ===== TRANSITION 2 : zoom + flash ===== */
-      tl.set("#scene3", { opacity: 0, scale: 0.8, transformOrigin: "center center" }, T2 - 0.01);
-      tl.to("#scene2", { scale: 1.25, opacity: 0, duration: 0.55, ease: "power2.in", transformOrigin: "center center" }, T2);
-      tl.to("#scene3", { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.4)" }, T2 + 0.05);
-      tl.to("#flash", { opacity: 0.8, duration: 0.1, ease: "power2.out" }, T2);
-      tl.to("#flash", { opacity: 0, duration: 0.4, ease: "power2.in" }, T2 + 0.1);
-      tl.set("#scene2", { visibility: "hidden" }, T2 + 0.6);
+      /* ===== TRANSITION 2 ===== */
+      tl.set("#act3",{opacity:1,scale:1.12},T2);
+      tl.to("#act2",{opacity:0,scale:0.92,duration:0.5,ease:"power2.in"},T2);
+      tl.to("#act3",{scale:1,duration:0.7,ease:"power3.out"},T2);
+      tl.to("#flash",{opacity:0.95,duration:0.08,ease:"power2.out"},T2);
+      tl.to("#flash",{opacity:0,duration:0.5,ease:"power2.in"},T2+0.08);
+      tl.set("#act2",{visibility:"hidden"},T2+0.7);
 
-      /* ===== SCENE 3 ===== */
-      var s3 = 9.6;
-      tl.from("#s3-avatar", { scale: 0.2, opacity: 0, duration: 0.6, ease: "back.out(1.7)", transformOrigin: "center center" }, s3);
-      tl.from("#s3-title", { y: 90, opacity: 0, scale: 0.7, duration: 0.6, ease: "back.out(1.8)", transformOrigin: "center center" }, s3 + 0.25);
-      tl.from("#s3-btn", { y: 70, opacity: 0, duration: 0.5, ease: "back.out(2.2)" }, s3 + 0.5);
-      tl.from("#s3-credit", { opacity: 0, y: 30, duration: 0.5, ease: "power2.out" }, s3 + 1.3);
-      tl.from("#s3-noob1", { y: -300, opacity: 0, duration: 0.55, ease: "bounce.out" }, s3 + 0.3);
-      tl.from("#s3-noob2", { y: -300, opacity: 0, duration: 0.55, ease: "bounce.out" }, s3 + 0.45);
-      tl.to("#s3-avatar", { y: -14, duration: 0.9, ease: "sine.inOut", repeat: 4, yoyo: true }, s3 + 1.1);
-      tl.to("#s3-btn", { scale: 1.06, duration: 0.55, ease: "sine.inOut", repeat: 8, yoyo: true, transformOrigin: "center center" }, s3 + 1.0);
-      tl.to("#s3-noob1 .noob", { y: -26, duration: 0.45, ease: "sine.inOut", repeat: 11, yoyo: true }, s3 + 1.0);
-      tl.to("#s3-noob2 .noob", { y: -26, duration: 0.5, ease: "sine.inOut", repeat: 10, yoyo: true }, s3 + 1.1);
-      conf3.forEach(function (p) {
-        tl.fromTo(p.el, { y: 0, rotation: 0, opacity: 1 },
-          { y: 1500, x: p.drift, rotation: p.rot, duration: p.dur, ease: "none", repeat: 2 }, s3 + 0.4 + p.delay);
-      });
-      twinkle(spark3, s3, 16);
+      /* ===== ACT 3 ===== */
+      var s3=T2+0.1;
+      tl.to("#a3-energy",{rotation:40,duration:6,ease:"none",transformOrigin:"center center"},s3);
+      tl.fromTo("#a3-energy",{opacity:0,scale:0.4},{opacity:0.9,scale:1,duration:0.6,ease:"power2.out"},s3);
+      tl.from("#a3-frame",{opacity:0,scale:0.3,duration:0.6,ease:"back.out(1.7)",transformOrigin:"center center"},s3);
+      tl.from("#a3-player",{opacity:0,letterSpacing:"30px",duration:0.6,ease:"power2.out"},s3+0.3);
+      tl.from("#a3-title",{opacity:0,scale:0.7,y:40,duration:0.6,ease:"back.out(1.8)",transformOrigin:"center center"},s3+0.45);
+      tl.from("#a3-btn",{opacity:0,y:60,duration:0.5,ease:"back.out(2.2)"},s3+0.8);
+      tl.from("#a3-credit",{opacity:0,duration:0.6,ease:"power2.out"},s3+1.5);
+      // ambient
+      tl.to("#a3-frame",{y:-12,duration:1.2,ease:"sine.inOut",repeat:3,yoyo:true},s3+1.0);
+      tl.to("#a3-btn",{scale:1.05,duration:0.6,ease:"sine.inOut",repeat:6,yoyo:true,transformOrigin:"center center"},s3+1.0);
+      tl.to("#a3-title",{textShadow:"0 0 12px #fff,0 0 44px #19f0ff,0 0 110px #19f0ff",duration:1.0,ease:"sine.inOut",repeat:3,yoyo:true},s3+0.6);
+      tl.to("#act3",{scale:1.04,duration:16-10.8,ease:"none",transformOrigin:"center 46%"},10.8);
+      fieldAnim(f3,s3,16);
 
-      window.__timelines["main"] = tl;
+      window.__timelines["main"]=tl;
     </script>
   </body>
 </html>
