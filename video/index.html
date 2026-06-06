@@ -52,7 +52,7 @@
         overflow: hidden;
       }
 
-      /* ---------- SCENE 1 : loading ---------- */
+      /* ---------- SCENE 1 ---------- */
       #scene1 {
         z-index: 1;
         background: radial-gradient(circle at 50% 38%, #1d3a6b 0%, #0d1a30 55%, #070e1c 100%);
@@ -142,11 +142,24 @@
         background: linear-gradient(90deg, #00ffa3, #00c2ff);
       }
 
-      /* ---------- SCENE 2 : avatar ---------- */
+      /* ---------- SCENE 2 ---------- */
       #scene2 {
         z-index: 2;
         opacity: 0;
         background: radial-gradient(circle at 50% 32%, #54c0ff 0%, #1f8fe6 48%, #0b6fc4 100%);
+      }
+      .rays {
+        position: absolute;
+        left: 50%;
+        top: 150px;
+        width: 1500px;
+        height: 1500px;
+        margin-left: -750px;
+        background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.16) 0deg 7deg, rgba(255, 255, 255, 0) 7deg 18deg);
+        border-radius: 50%;
+        z-index: 0;
+        -webkit-mask-image: radial-gradient(circle, #000 0%, #000 40%, transparent 72%);
+        mask-image: radial-gradient(circle, #000 0%, #000 40%, transparent 72%);
       }
       .baseplate {
         position: absolute;
@@ -158,6 +171,7 @@
         background-image: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0 16px, transparent 17px);
         background-size: 110px 110px;
         border-top: 12px solid #267e3a;
+        z-index: 1;
       }
       .s2-wrap {
         position: absolute;
@@ -167,6 +181,7 @@
         align-items: center;
         justify-content: flex-start;
         padding: 150px 80px 0;
+        z-index: 3;
       }
       .ribbon {
         font-family: "Luckiest Guy", "Fredoka", sans-serif;
@@ -181,6 +196,17 @@
         margin-bottom: 40px;
       }
       .avatar-anchor { position: relative; }
+      .avatar-glow {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 820px;
+        height: 820px;
+        margin: -410px 0 0 -410px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 232, 120, 0.55) 0%, rgba(255, 232, 120, 0) 65%);
+        z-index: -1;
+      }
       .avatar-card {
         width: 540px;
         height: 660px;
@@ -233,7 +259,7 @@
       .chip.green { background: var(--lime); box-shadow: 0 8px 0 #4ea035; color: #14401a; }
       .chip.stars { background: #fff; color: var(--red); box-shadow: 0 8px 0 #d0d0d0; letter-spacing: 4px; }
 
-      /* ---------- SCENE 3 : play ---------- */
+      /* ---------- SCENE 3 ---------- */
       #scene3 {
         z-index: 3;
         opacity: 0;
@@ -248,6 +274,7 @@
         justify-content: center;
         padding: 120px 80px;
         text-align: center;
+        z-index: 3;
       }
       .mini-avatar {
         width: 300px;
@@ -287,129 +314,72 @@
         font-family: "Fredoka", sans-serif;
         font-weight: 600;
         font-size: 38px;
-        color: #d9d2ff;
+        color: #ffffff;
         margin-top: 70px;
         letter-spacing: 1px;
       }
-      .credit .h { color: #ff7eb6; }
 
-      /* ---------- NOOB CHARACTER ---------- */
+      /* ---------- NOOB ---------- */
       .anchor { position: absolute; }
       .noob { position: relative; width: 96px; }
       .noob .head {
-        width: 86px;
-        height: 76px;
-        background: var(--noob-skin, var(--skin));
-        border-radius: 12px;
-        margin: 0 auto;
-        position: relative;
+        width: 86px; height: 76px; background: var(--noob-skin, var(--skin));
+        border-radius: 12px; margin: 0 auto; position: relative;
         box-shadow: inset -9px -9px 0 rgba(0, 0, 0, 0.13);
       }
-      .noob .eye {
-        position: absolute;
-        top: 28px;
-        width: 11px;
-        height: 18px;
-        background: #20242b;
-        border-radius: 3px;
-      }
+      .noob .eye { position: absolute; top: 28px; width: 11px; height: 18px; background: #20242b; border-radius: 3px; }
       .noob .eye.l { left: 22px; }
       .noob .eye.r { right: 22px; }
       .noob .mouth {
-        position: absolute;
-        bottom: 14px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 30px;
-        height: 15px;
-        border-bottom: 6px solid #20242b;
-        border-radius: 0 0 16px 16px;
+        position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+        width: 30px; height: 15px; border-bottom: 6px solid #20242b; border-radius: 0 0 16px 16px;
       }
       .noob .body { position: relative; width: 92px; margin: 7px auto 0; }
       .noob .torso {
-        width: 92px;
-        height: 78px;
-        background: var(--noob-shirt, var(--shirt));
-        border-radius: 10px;
-        box-shadow: inset -9px -9px 0 rgba(0, 0, 0, 0.13);
+        width: 92px; height: 78px; background: var(--noob-shirt, var(--shirt));
+        border-radius: 10px; box-shadow: inset -9px -9px 0 rgba(0, 0, 0, 0.13);
       }
       .noob .arm {
-        position: absolute;
-        top: 0;
-        width: 22px;
-        height: 74px;
-        background: var(--noob-skin, var(--skin));
-        border-radius: 7px;
-        box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.13);
+        position: absolute; top: 0; width: 22px; height: 74px; background: var(--noob-skin, var(--skin));
+        border-radius: 7px; box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.13);
       }
       .noob .arm.l { left: -24px; }
       .noob .arm.r { right: -24px; }
       .noob .legs { display: flex; gap: 8px; justify-content: center; margin-top: 5px; }
       .noob .leg {
-        width: 38px;
-        height: 56px;
-        background: var(--noob-pants, var(--pants));
-        border-radius: 7px;
-        box-shadow: inset -7px -7px 0 rgba(0, 0, 0, 0.13);
+        width: 38px; height: 56px; background: var(--noob-pants, var(--pants));
+        border-radius: 7px; box-shadow: inset -7px -7px 0 rgba(0, 0, 0, 0.13);
       }
 
-      /* coins + confetti */
       .coin {
-        position: absolute;
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
+        position: absolute; width: 56px; height: 56px; border-radius: 12px;
         background: linear-gradient(135deg, #ffe14d, #f5a623);
-        border: 4px solid #fff5c2;
-        box-shadow: 0 6px 0 #c9881a;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: "Luckiest Guy", sans-serif;
-        font-size: 30px;
-        color: #a8631a;
+        border: 4px solid #fff5c2; box-shadow: 0 6px 0 #c9881a;
+        display: flex; align-items: center; justify-content: center;
+        font-family: "Luckiest Guy", sans-serif; font-size: 30px; color: #a8631a;
       }
       .confetti { position: absolute; width: 26px; height: 26px; border-radius: 4px; }
 
-      /* CSS glyph shapes (no font dependency) */
+      /* FX: sparkles + flash */
+      .fx { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+      .spark { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 14px 4px rgba(255, 255, 255, 0.9); }
+      .spark.gold { background: #ffe14d; box-shadow: 0 0 14px 4px rgba(255, 225, 77, 0.9); }
+      .flash { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 50; pointer-events: none; }
+
+      /* CSS glyph shapes */
       .cstar {
-        display: inline-block;
-        width: 0.95em;
-        height: 0.95em;
-        background: currentColor;
+        display: inline-block; width: 0.95em; height: 0.95em; background: currentColor;
         clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
         vertical-align: -0.1em;
       }
-      .dot {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: currentColor;
-        vertical-align: 0.15em;
-        margin: 0 14px;
-      }
+      .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: currentColor; vertical-align: 0.15em; margin: 0 14px; }
       .stars-row { display: inline-flex; gap: 8px; align-items: center; color: #ffb300; font-size: 44px; }
-      .tri {
-        width: 0;
-        height: 0;
-        border-top: 28px solid transparent;
-        border-bottom: 28px solid transparent;
-        border-left: 44px solid #fff;
-        margin-right: 4px;
-      }
+      .tri { width: 0; height: 0; border-top: 28px solid transparent; border-bottom: 28px solid transparent; border-left: 44px solid #fff; margin-right: 4px; }
       .heart {
-        display: inline-block;
-        width: 34px;
-        height: 34px;
-        background: #ff7eb6;
-        transform: rotate(-45deg);
-        position: relative;
-        vertical-align: -0.35em;
-        margin: 0 6px;
+        display: inline-block; width: 34px; height: 34px; background: #ff7eb6;
+        transform: rotate(-45deg); position: relative; vertical-align: -0.35em; margin: 0 6px;
       }
-      .heart::before,
-      .heart::after { content: ""; position: absolute; width: 34px; height: 34px; background: #ff7eb6; border-radius: 50%; }
+      .heart::before, .heart::after { content: ""; position: absolute; width: 34px; height: 34px; background: #ff7eb6; border-radius: 50%; }
       .heart::before { top: -17px; left: 0; }
       .heart::after { left: 17px; top: 0; }
     </style>
@@ -421,12 +391,12 @@
       data-width="1080"
       data-height="1920"
       data-start="0"
-      data-duration="15"
+      data-duration="16"
     >
       <!-- ===================== SCENE 1 ===================== -->
       <div id="scene1" class="scene" data-layout-allow-overflow>
         <div class="studs" data-layout-allow-overflow></div>
-        <div class="glow-ring"></div>
+        <div class="glow-ring" id="s1-glow"></div>
         <div class="anchor" id="s1-coin1" style="left: 120px; top: 360px"><div class="coin">R$</div></div>
         <div class="anchor" id="s1-coin2" style="left: 880px; top: 480px"><div class="coin">R$</div></div>
         <div class="anchor" id="s1-noobL" style="left: 90px; top: 1320px; transform: scale(1.25)">
@@ -448,18 +418,19 @@
           <h2 class="title-top" id="s1-top">MUNDO DA</h2>
           <h1 class="title-name" id="s1-name">MANUELLA</h1>
           <div class="subtitle" id="s1-sub">CARREGANDO JOGO...</div>
-          <div class="load-track" id="s1-track">
-            <div class="load-fill" id="s1-fill"></div>
-          </div>
+          <div class="load-track" id="s1-track"><div class="load-fill" id="s1-fill"></div></div>
         </div>
+        <div class="fx" id="s1-fx"></div>
       </div>
 
       <!-- ===================== SCENE 2 ===================== -->
       <div id="scene2" class="scene">
+        <div class="rays" id="s2-rays"></div>
         <div class="baseplate" data-layout-allow-overflow></div>
         <div class="s2-wrap">
           <div class="ribbon" id="s2-ribbon"><span class="cstar"></span> JOGADORA 1 <span class="cstar"></span></div>
           <div class="avatar-anchor" id="s2-avatar-pos">
+            <div class="avatar-glow" id="s2-aglow"></div>
             <div class="avatar-card" id="s2-card">
               <img src="assets/daughter.jpg" alt="jogadora" crossorigin="anonymous" />
               <div class="avatar-shine" id="s2-shine" data-layout-allow-overflow></div>
@@ -494,10 +465,11 @@
           </div>
         </div>
         <div class="confetti-box" id="s2-confetti"></div>
+        <div class="fx" id="s2-fx"></div>
       </div>
 
       <!-- ===================== SCENE 3 ===================== -->
-      <div id="scene3" class="scene">
+      <div id="scene3" class="scene" data-layout-allow-overflow>
         <div class="studs" data-layout-allow-overflow></div>
         <div class="s3-wrap">
           <div class="mini-avatar" id="s3-avatar">
@@ -522,19 +494,24 @@
           </div>
         </div>
         <div class="confetti-box" id="s3-confetti"></div>
+        <div class="fx" id="s3-fx"></div>
       </div>
+
+      <!-- transition flash overlay -->
+      <div class="flash" id="flash"></div>
+
+      <!-- ===================== AUDIO ===================== -->
+      <audio id="narration" src="assets/narration.wav" data-start="0.4" data-duration="10.7" data-track-index="8" data-volume="1"></audio>
+      <audio id="music" src="assets/music.wav" data-start="0" data-duration="16" data-track-index="9" data-volume="0.22"></audio>
     </div>
 
     <script>
-      // ---- resolve variables ----
       var vars = (window.__hyperframes && window.__hyperframes.getVariables)
-        ? window.__hyperframes.getVariables()
-        : { playerName: "MANUELLA" };
+        ? window.__hyperframes.getVariables() : { playerName: "MANUELLA" };
       var NAME = (vars.playerName || "MANUELLA").toString().toUpperCase();
       document.getElementById("s1-name").textContent = NAME;
       document.getElementById("s2-name").textContent = NAME;
 
-      // ---- deterministic PRNG (mulberry32) ----
       function mulberry32(a) {
         return function () {
           a |= 0; a = (a + 0x6d2b79f5) | 0;
@@ -545,11 +522,8 @@
       }
       var COLORS = ["#ff3b30", "#ffe14d", "#2ecc55", "#00a2ff", "#8b5cf6", "#ff7eb6"];
 
-      // ---- build confetti (synchronous) ----
       function buildConfetti(boxId, seed) {
-        var box = document.getElementById(boxId);
-        var rnd = mulberry32(seed);
-        var pieces = [];
+        var box = document.getElementById(boxId), rnd = mulberry32(seed), pieces = [];
         for (var i = 0; i < 16; i++) {
           var c = document.createElement("div");
           c.className = "confetti";
@@ -562,17 +536,44 @@
         }
         return pieces;
       }
+
+      function buildSparks(boxId, seed, count) {
+        var box = document.getElementById(boxId), rnd = mulberry32(seed), arr = [];
+        for (var i = 0; i < count; i++) {
+          var s = document.createElement("div");
+          s.className = "spark" + (rnd() > 0.5 ? " gold" : "");
+          var sz = 8 + rnd() * 16;
+          s.style.width = s.style.height = sz + "px";
+          s.style.left = Math.round(rnd() * 1040) + "px";
+          s.style.top = Math.round(120 + rnd() * 1600) + "px";
+          box.appendChild(s);
+          arr.push({ el: s, delay: rnd() * 1.5, dur: 0.7 + rnd() * 0.9, drift: 40 + rnd() * 80 });
+        }
+        return arr;
+      }
+
       var conf2 = buildConfetti("s2-confetti", 1337);
       var conf3 = buildConfetti("s3-confetti", 7331);
+      var spark1 = buildSparks("s1-fx", 11, 10);
+      var spark2 = buildSparks("s2-fx", 22, 14);
+      var spark3 = buildSparks("s3-fx", 33, 14);
 
-      // ---- timeline ----
       window.__timelines = window.__timelines || {};
       var tl = gsap.timeline({ paused: true });
 
-      var T1 = 4.3; // scene1 -> scene2
-      var T2 = 10.6; // scene2 -> scene3
+      var T1 = 4.2;
+      var T2 = 9.5;
 
-      /* ===== SCENE 1 (0 - 4.3) ===== */
+      function twinkle(arr, startT, endT) {
+        arr.forEach(function (p) {
+          var reps = Math.max(1, Math.ceil((endT - startT) / (p.dur * 2)));
+          tl.fromTo(p.el, { opacity: 0, scale: 0.3 },
+            { opacity: 1, scale: 1.1, duration: p.dur, ease: "sine.inOut", repeat: reps, yoyo: true }, startT + p.delay);
+          tl.to(p.el, { y: -p.drift, duration: (endT - startT), ease: "none" }, startT + p.delay);
+        });
+      }
+
+      /* ===== SCENE 1 ===== */
       tl.from("#s1-tag", { y: -40, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.2);
       tl.from("#s1-top", { y: -120, opacity: 0, duration: 0.6, ease: "back.out(2)" }, 0.35);
       tl.from("#s1-name", { y: -260, opacity: 0, scale: 0.6, duration: 0.7, ease: "back.out(1.7)", transformOrigin: "center center" }, 0.5);
@@ -582,66 +583,74 @@
       tl.from("#s1-noobR", { y: 420, opacity: 0, duration: 0.6, ease: "back.out(1.6)" }, 1.25);
       tl.from("#s1-coin1", { y: -300, opacity: 0, duration: 0.5, ease: "bounce.out" }, 1.4);
       tl.from("#s1-coin2", { y: -300, opacity: 0, duration: 0.5, ease: "bounce.out" }, 1.6);
-      tl.fromTo("#s1-fill", { scaleX: 0 }, { scaleX: 1, duration: 2.4, ease: "power1.inOut" }, 1.1);
-      // ambient (finite repeats)
+      tl.fromTo("#s1-fill", { scaleX: 0 }, { scaleX: 1, duration: 2.3, ease: "power1.inOut" }, 1.1);
+      tl.to("#s1-glow", { scale: 1.15, opacity: 0.7, duration: 1.2, ease: "sine.inOut", repeat: 2, yoyo: true, transformOrigin: "center center" }, 0.5);
       tl.to("#s1-noobL .noob", { y: -26, duration: 0.5, ease: "sine.inOut", repeat: 5, yoyo: true }, 1.7);
       tl.to("#s1-noobR .noob", { y: -26, duration: 0.55, ease: "sine.inOut", repeat: 5, yoyo: true }, 1.8);
       tl.to("#s1-coin1 .coin", { rotationY: 360, duration: 1.1, ease: "none", repeat: 2 }, 1.9);
       tl.to("#s1-coin2 .coin", { rotationY: 360, duration: 1.1, ease: "none", repeat: 2 }, 1.9);
       tl.to("#s1-coin1", { y: "-=18", duration: 0.7, ease: "sine.inOut", repeat: 3, yoyo: true }, 2.0);
       tl.to("#s1-coin2", { y: "-=18", duration: 0.8, ease: "sine.inOut", repeat: 3, yoyo: true }, 2.1);
+      twinkle(spark1, 0.6, T1);
 
-      /* ===== TRANSITION 1 : vertical push up ===== */
+      /* ===== TRANSITION 1 : push + flash ===== */
       tl.set("#scene2", { opacity: 1, y: 1920 }, T1);
       tl.to("#scene1", { y: -1920, duration: 0.6, ease: "power3.inOut" }, T1);
       tl.to("#scene2", { y: 0, duration: 0.6, ease: "power3.inOut" }, T1);
+      tl.to("#flash", { opacity: 0.8, duration: 0.1, ease: "power2.out" }, T1 + 0.18);
+      tl.to("#flash", { opacity: 0, duration: 0.4, ease: "power2.in" }, T1 + 0.28);
 
-      /* ===== SCENE 2 (4.95 - 10.6) ===== */
-      var s2 = 4.95;
+      /* ===== SCENE 2 ===== */
+      var s2 = 4.55;
       tl.from("#s2-ribbon", { y: -90, opacity: 0, duration: 0.5, ease: "back.out(2)" }, s2);
+      tl.fromTo("#s2-aglow", { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out", transformOrigin: "center center" }, s2 + 0.1);
       tl.from("#s2-card", { scale: 0.3, opacity: 0, rotation: -8, duration: 0.7, ease: "back.out(1.6)", transformOrigin: "center center" }, s2 + 0.1);
-      tl.from("#s2-name", { y: 80, opacity: 0, scale: 0.7, duration: 0.6, ease: "back.out(1.8)", transformOrigin: "center center" }, s2 + 0.45);
-      tl.from("#s2-c1", { y: 60, opacity: 0, duration: 0.4, ease: "power3.out" }, s2 + 0.7);
-      tl.from("#s2-c2", { y: 60, opacity: 0, duration: 0.4, ease: "back.out(2)" }, s2 + 0.8);
-      tl.from("#s2-c3", { y: 60, opacity: 0, duration: 0.4, ease: "power3.out" }, s2 + 0.9);
+      tl.from("#s2-name", { y: 80, opacity: 0, scale: 0.7, duration: 0.6, ease: "back.out(1.8)", transformOrigin: "center center" }, s2 + 0.5);
+      tl.from("#s2-c1", { y: 60, opacity: 0, duration: 0.4, ease: "power3.out" }, s2 + 0.75);
+      tl.from("#s2-c2", { y: 60, opacity: 0, duration: 0.4, ease: "back.out(2)" }, s2 + 0.85);
+      tl.from("#s2-c3", { y: 60, opacity: 0, duration: 0.4, ease: "power3.out" }, s2 + 0.95);
       tl.from("#s2-noob1", { y: 360, opacity: 0, duration: 0.55, ease: "back.out(1.6)" }, s2 + 0.3);
       tl.from("#s2-noob2", { y: 360, opacity: 0, duration: 0.55, ease: "back.out(1.6)" }, s2 + 0.45);
       tl.from("#s2-noob3", { y: 360, opacity: 0, duration: 0.55, ease: "back.out(1.6)" }, s2 + 0.6);
-      tl.fromTo("#s2-shine", { x: 0 }, { x: 1180, duration: 1.1, ease: "power2.inOut", repeat: 1, repeatDelay: 2.2 }, s2 + 1.2);
+      tl.fromTo("#s2-shine", { x: 0 }, { x: 1180, duration: 1.1, ease: "power2.inOut", repeat: 1, repeatDelay: 2.0 }, s2 + 1.2);
       // ambient
-      tl.to("#s2-card", { y: -16, duration: 0.9, ease: "sine.inOut", repeat: 4, yoyo: true }, s2 + 1.3);
-      tl.to("#s2-noob1 .noob", { y: -30, duration: 0.45, ease: "sine.inOut", repeat: 9, yoyo: true }, s2 + 1.0);
-      tl.to("#s2-noob2 .noob", { y: -34, duration: 0.5, ease: "sine.inOut", repeat: 8, yoyo: true }, s2 + 1.1);
-      tl.to("#s2-noob3 .noob", { y: -28, duration: 0.42, ease: "sine.inOut", repeat: 9, yoyo: true }, s2 + 1.2);
-      // confetti
+      tl.to("#s2-rays", { rotation: 360, duration: 18, ease: "none", transformOrigin: "center center" }, s2);
+      tl.to("#s2-aglow", { opacity: 0.7, duration: 1.0, ease: "sine.inOut", repeat: 3, yoyo: true, transformOrigin: "center center" }, s2 + 0.7);
+      tl.to("#s2-card", { y: -16, duration: 0.9, ease: "sine.inOut", repeat: 3, yoyo: true }, s2 + 1.3);
+      tl.to("#s2-noob1 .noob", { y: -30, duration: 0.45, ease: "sine.inOut", repeat: 7, yoyo: true }, s2 + 1.0);
+      tl.to("#s2-noob2 .noob", { y: -34, duration: 0.5, ease: "sine.inOut", repeat: 6, yoyo: true }, s2 + 1.1);
+      tl.to("#s2-noob3 .noob", { y: -28, duration: 0.42, ease: "sine.inOut", repeat: 7, yoyo: true }, s2 + 1.2);
       conf2.forEach(function (p) {
         tl.fromTo(p.el, { y: 0, rotation: 0, opacity: 1 },
           { y: 1500, x: p.drift, rotation: p.rot, duration: p.dur, ease: "none", repeat: 1 }, s2 + 0.4 + p.delay);
       });
+      twinkle(spark2, s2, T2);
 
-      /* ===== TRANSITION 2 : zoom through ===== */
+      /* ===== TRANSITION 2 : zoom + flash ===== */
       tl.set("#scene3", { opacity: 0, scale: 0.8, transformOrigin: "center center" }, T2 - 0.01);
       tl.to("#scene2", { scale: 1.25, opacity: 0, duration: 0.55, ease: "power2.in", transformOrigin: "center center" }, T2);
       tl.to("#scene3", { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.4)" }, T2 + 0.05);
+      tl.to("#flash", { opacity: 0.8, duration: 0.1, ease: "power2.out" }, T2);
+      tl.to("#flash", { opacity: 0, duration: 0.4, ease: "power2.in" }, T2 + 0.1);
       tl.set("#scene2", { visibility: "hidden" }, T2 + 0.6);
 
-      /* ===== SCENE 3 (11.0 - 15) ===== */
-      var s3 = 11.0;
+      /* ===== SCENE 3 ===== */
+      var s3 = 9.6;
       tl.from("#s3-avatar", { scale: 0.2, opacity: 0, duration: 0.6, ease: "back.out(1.7)", transformOrigin: "center center" }, s3);
       tl.from("#s3-title", { y: 90, opacity: 0, scale: 0.7, duration: 0.6, ease: "back.out(1.8)", transformOrigin: "center center" }, s3 + 0.25);
       tl.from("#s3-btn", { y: 70, opacity: 0, duration: 0.5, ease: "back.out(2.2)" }, s3 + 0.5);
-      tl.from("#s3-credit", { opacity: 0, y: 30, duration: 0.5, ease: "power2.out" }, s3 + 0.9);
+      tl.from("#s3-credit", { opacity: 0, y: 30, duration: 0.5, ease: "power2.out" }, s3 + 1.3);
       tl.from("#s3-noob1", { y: -300, opacity: 0, duration: 0.55, ease: "bounce.out" }, s3 + 0.3);
       tl.from("#s3-noob2", { y: -300, opacity: 0, duration: 0.55, ease: "bounce.out" }, s3 + 0.45);
-      // ambient
-      tl.to("#s3-avatar", { y: -14, duration: 0.9, ease: "sine.inOut", repeat: 3, yoyo: true }, s3 + 1.1);
-      tl.to("#s3-btn", { scale: 1.06, duration: 0.55, ease: "sine.inOut", repeat: 5, yoyo: true, transformOrigin: "center center" }, s3 + 1.0);
-      tl.to("#s3-noob1 .noob", { y: -26, duration: 0.45, ease: "sine.inOut", repeat: 7, yoyo: true }, s3 + 1.0);
-      tl.to("#s3-noob2 .noob", { y: -26, duration: 0.5, ease: "sine.inOut", repeat: 6, yoyo: true }, s3 + 1.1);
+      tl.to("#s3-avatar", { y: -14, duration: 0.9, ease: "sine.inOut", repeat: 4, yoyo: true }, s3 + 1.1);
+      tl.to("#s3-btn", { scale: 1.06, duration: 0.55, ease: "sine.inOut", repeat: 8, yoyo: true, transformOrigin: "center center" }, s3 + 1.0);
+      tl.to("#s3-noob1 .noob", { y: -26, duration: 0.45, ease: "sine.inOut", repeat: 11, yoyo: true }, s3 + 1.0);
+      tl.to("#s3-noob2 .noob", { y: -26, duration: 0.5, ease: "sine.inOut", repeat: 10, yoyo: true }, s3 + 1.1);
       conf3.forEach(function (p) {
         tl.fromTo(p.el, { y: 0, rotation: 0, opacity: 1 },
-          { y: 1500, x: p.drift, rotation: p.rot, duration: p.dur, ease: "none", repeat: 1 }, s3 + 0.4 + p.delay);
+          { y: 1500, x: p.drift, rotation: p.rot, duration: p.dur, ease: "none", repeat: 2 }, s3 + 0.4 + p.delay);
       });
+      twinkle(spark3, s3, 16);
 
       window.__timelines["main"] = tl;
     </script>
