@@ -10,6 +10,7 @@ por variáveis**, então você reusa o mesmo molde só trocando os textos.
 | ------------------ | -------------------------------- | ---------- |
 | Horizontal (16:9)  | `index.html`                     | 1920×1080  |
 | Vertical (9:16)    | `compositions/intro-vertical.html` | 1080×1920 |
+| Quadrado (1:1)     | `compositions/intro-square.html`   | 1080×1080 |
 
 ## Variáveis do molde
 
