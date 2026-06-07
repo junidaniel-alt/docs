@@ -32,4 +32,9 @@ Registro vivo de erros, fricções e lições do trabalho do Claude com Daniel. 
 - A26 — Histórico de versões é a rede de segurança do cofre (2026.06.06).
 - A27 — Idioma (pt-BR) e escopo de ambiente fixados (2026.06.06).
 
+## Atualização 2026.06.07 — método de edição in-place validado
+- `PUT /drives/{driveId}/items/{itemId}/content` (via conector OneDrive/Zapier, raw request) **funciona e preserva o itemId** — validado ao atualizar a nota `2026.05.26_Protocolo-Consulta-e-Indice-URIs` (HTTP 200, conteúdo íntegro, sem corrupção de escape).
+- Resolve o item "testar `replace_file` / edição in-place" das PENDENCIAS §6.
+- Regra de método: notas pequenas (< ~10 KB) → editar in-place via PUT (preserva itemId, 1 passo). Notas grandes → cópia-valida-promove (a oficial nunca fica meio-escrita). Sempre validar pós-escrita + backup/histórico.
+
 > Conteúdo completo das 27 entradas + lições técnicas + princípios permanentes vive na nota canônica do cofre. Esta cópia registra a estrutura e as adições da sessão; o corpo histórico (A1–A20) está preservado no cofre e no histórico de versões do OneDrive.
