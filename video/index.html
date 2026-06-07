@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html
+  lang="pt-BR"
+  data-composition-variables='[
+    {"id":"playerName","type":"string","label":"Nome da jogadora","default":"MANUELLA"}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Orbitron"; font-weight: 400 900; font-style: normal; font-display: block;
+        src: url("assets/fonts/orbitron.woff2") format("woff2");
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #02030a; font-family: "Orbitron", sans-serif; }
+      #root { position: absolute; inset: 0; }
+      .nebula {
+        position: absolute; inset: 0; z-index: 0;
+        background:
+          radial-gradient(60% 40% at 30% 22%, rgba(120, 40, 200, 0.55), transparent 70%),
+          radial-gradient(55% 40% at 75% 35%, rgba(20, 120, 220, 0.5), transparent 70%),
+          radial-gradient(70% 50% at 50% 80%, rgba(15, 80, 160, 0.45), transparent 75%),
+          radial-gradient(circle at 50% 45%, #0a1233 0%, #05071a 55%, #02030a 100%);
+      }
+      #scene3d { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; }
+      #overlay { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+
+      .o-pre { position: absolute; left: 0; right: 0; top: 360px; text-align: center; font-weight: 500; font-size: 32px; letter-spacing: 14px; color: #8fe9ff; text-shadow: 0 0 18px rgba(25,240,255,0.9); }
+      .o-title { position: absolute; left: 0; right: 0; top: 410px; text-align: center; font-weight: 900; font-size: 140px; letter-spacing: 6px; color: #eafdff; margin: 0; text-shadow: 0 0 10px #fff, 0 0 30px #19f0ff, 0 0 80px #19f0ff; }
+      .o-sub { position: absolute; left: 0; right: 0; top: 600px; text-align: center; font-weight: 500; font-size: 30px; letter-spacing: 8px; color: #bff3ff; text-shadow: 0 0 12px rgba(25,240,255,0.7); }
+
+      .o-tag { position: absolute; left: 0; right: 0; top: 300px; text-align: center; font-weight: 700; font-size: 30px; letter-spacing: 12px; color: #ff5bd0; text-shadow: 0 0 18px rgba(255,91,208,0.9); }
+      .o-name { position: absolute; left: 0; right: 0; top: 350px; text-align: center; font-weight: 900; font-size: 120px; letter-spacing: 5px; color: #eafdff; margin: 0; text-shadow: 0 0 10px #fff, 0 0 34px #19f0ff, 0 0 90px #19f0ff; }
+      .stats { position: absolute; left: 0; right: 0; bottom: 360px; display: flex; gap: 24px; justify-content: center; }
+      .stat { font-weight: 700; font-size: 32px; letter-spacing: 3px; color: #dffaff; border: 2px solid rgba(25,240,255,0.7); border-radius: 8px; padding: 12px 24px; background: rgba(8,28,48,0.45); box-shadow: 0 0 18px rgba(25,240,255,0.4), inset 0 0 14px rgba(25,240,255,0.15); }
+      .stat b { color: #19f0ff; }
+
+      .o-go { position: absolute; left: 0; right: 0; top: 470px; text-align: center; font-weight: 900; font-size: 150px; letter-spacing: 4px; color: #ffe24d; margin: 0; text-shadow: 0 0 12px #fff, 0 0 40px #ffb000, 0 0 100px #ff8a00; }
+      .o-player { position: absolute; left: 0; right: 0; top: 380px; text-align: center; font-weight: 700; font-size: 34px; letter-spacing: 14px; color: #8fe9ff; text-shadow: 0 0 16px rgba(25,240,255,0.9); }
+      .o-credit { position: absolute; left: 0; right: 0; bottom: 300px; text-align: center; font-weight: 500; font-size: 32px; letter-spacing: 3px; color: #cfe9ff; }
+      .heart { display: inline-block; width: 26px; height: 26px; background: #ff5bd0; transform: rotate(-45deg); position: relative; vertical-align: -0.25em; margin: 0 6px; }
+      .heart::before, .heart::after { content: ""; position: absolute; width: 26px; height: 26px; background: #ff5bd0; border-radius: 50%; }
+      .heart::before { top: -13px; left: 0; } .heart::after { left: 13px; top: 0; }
+
+      .corner { position: absolute; width: 84px; height: 84px; border: 3px solid rgba(25,240,255,0.6); }
+      .corner.tl { left: 44px; top: 44px; border-right: 0; border-bottom: 0; }
+      .corner.tr { right: 44px; top: 44px; border-left: 0; border-bottom: 0; }
+      .corner.bl { left: 44px; bottom: 44px; border-right: 0; border-top: 0; }
+      .corner.br { right: 44px; bottom: 44px; border-left: 0; border-top: 0; }
+      .vignette { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(ellipse at center, transparent 42%, rgba(0,0,0,0.6) 100%); }
+      .grain { position: absolute; inset: -50%; z-index: 4; pointer-events: none; opacity: 0.06; mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); }
+      .flash { position: absolute; inset: 0; z-index: 5; background: #dffbff; opacity: 0; pointer-events: none; }
+      .bar { position: absolute; left: 0; right: 0; z-index: 6; height: 150px; background: #000; }
+      .bar.top { top: 0; } .bar.bot { bottom: 0; }
+
+      /* hidden source image for the 3D texture */
+      #tex-src { position: absolute; width: 2px; height: 2px; opacity: 0.01; left: -10px; top: -10px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-width="1080" data-height="1920" data-start="0" data-duration="16">
+      <div class="nebula"></div>
+      <canvas id="scene3d"></canvas>
+
+      <div id="overlay">
+        <!-- intro -->
+        <div class="o-pre" id="o-pre">ENTRANDO NO UNIVERSO</div>
+        <h1 class="o-title" id="o-title">MANUELLA</h1>
+        <div class="o-sub" id="o-sub">// MUNDO  ONLINE</div>
+        <!-- hero -->
+        <div class="o-tag" id="o-tag">★ JOGADORA 1 ★</div>
+        <h1 class="o-name" id="o-name">MANUELLA</h1>
+        <div class="stats" id="o-stats">
+          <div class="stat">NÍVEL <b>99</b></div>
+          <div class="stat">PRO</div>
+          <div class="stat">★ ★ ★</div>
+        </div>
+        <!-- go -->
+        <div class="o-player" id="o-player">PLAYER ONE</div>
+        <h1 class="o-go" id="o-go">BORA JOGAR</h1>
+        <div class="o-credit" id="o-credit">feito com <span class="heart"></span> pelo papai</div>
+
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+      </div>
+
+      <div class="vignette"></div>
+      <div class="grain" id="grain"></div>
+      <div class="flash" id="flash"></div>
+      <div class="bar top" id="bar-top"></div>
+      <div class="bar bot" id="bar-bot"></div>
+
+      <img id="tex-src" src="assets/manu_cutout.png" alt="" crossorigin="anonymous" />
+
+      <audio id="narration" src="assets/narration.wav" data-start="0.6" data-duration="10.7" data-track-index="8" data-volume="1"></audio>
+      <audio id="music" src="assets/music.wav" data-start="0" data-duration="16" data-track-index="9" data-volume="0.55"></audio>
+    </div>
+
+    <!-- 3D world -->
+    <script src="assets/three/three.min.js"></script>
+    <script>
+      var rnd = (function(){ var a = 1337 >>> 0; return function(){ a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296; }; })();
+
+      var canvas = document.getElementById("scene3d");
+      var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio || 1);
+      renderer.setSize(1080, 1920, false);
+      renderer.setClearColor(0x000000, 0);
+
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(42, 1080 / 1920, 0.1, 400);
+
+      // ---- procedural textures ----
+      function glowTexture(r, g, b) {
+        var c = document.createElement("canvas"); c.width = c.height = 128;
+        var ctx = c.getContext("2d");
+        var grd = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+        grd.addColorStop(0, "rgba(" + r + "," + g + "," + b + ",1)");
+        grd.addColorStop(0.3, "rgba(" + r + "," + g + "," + b + ",0.5)");
+        grd.addColorStop(1, "rgba(" + r + "," + g + "," + b + ",0)");
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, 128, 128);
+        var t = new THREE.CanvasTexture(c); return t;
+      }
+      function gridTexture() {
+        var c = document.createElement("canvas"); c.width = c.height = 512;
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "rgba(0,0,0,0)"; ctx.clearRect(0,0,512,512);
+        ctx.strokeStyle = "rgba(40,230,255,0.9)"; ctx.lineWidth = 3;
+        for (var i = 0; i <= 8; i++) {
+          var p = i * 64;
+          ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, 512); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(512, p); ctx.stroke();
+        }
+        var t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(40, 40); return t;
+      }
+      var glowCyan = glowTexture(120, 240, 255);
+      var glowMag = glowTexture(255, 90, 210);
+      var glowWhite = glowTexture(255, 255, 255);
+
+      // ---- neon grid floor ----
+      var gridTex = gridTexture();
+      var floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(200, 200),
+        new THREE.MeshBasicMaterial({ map: gridTex, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      floor.rotation.x = -Math.PI / 2; floor.position.y = -0.02; scene.add(floor);
+      // ceiling grid (mirror) for tunnel feel
+      var ceil = floor.clone(); ceil.position.y = 9; ceil.rotation.x = Math.PI / 2;
+      ceil.material = floor.material.clone(); ceil.material.opacity = 0.25; scene.add(ceil);
+
+      // ---- starfield ----
+      function points(count, spread, depthMin, depthMax, size, colorArr) {
+        var geo = new THREE.BufferGeometry(); var pos = new Float32Array(count * 3);
+        for (var i = 0; i < count; i++) {
+          pos[i*3] = (rnd()*2-1) * spread;
+          pos[i*3+1] = rnd() * spread * 0.9;
+          pos[i*3+2] = depthMin + rnd() * (depthMax - depthMin);
+        }
+        geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        var mat = new THREE.PointsMaterial({ size: size, map: glowWhite, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, color: new THREE.Color(colorArr) });
+        return new THREE.Points(geo, mat);
+      }
+      var stars = points(2600, 90, -120, 40, 0.5, 0xbfe9ff); scene.add(stars);
+      var embers = points(420, 36, -30, 20, 0.9, 0x66e0ff); scene.add(embers);
+      var emberBase = embers.geometry.attributes.position.array.slice(0);
+
+      // ---- nebula sprites ----
+      function sprite(tex, scale, x, y, z, op) {
+        var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: op }));
+        s.scale.set(scale, scale, 1); s.position.set(x, y, z); scene.add(s); return s;
+      }
+      sprite(glowMag, 70, -22, 16, -55, 0.28);
+      sprite(glowCyan, 80, 26, 10, -65, 0.26);
+      sprite(glowMag, 50, 14, 22, -35, 0.2);
+
+      // ---- hero glow halo + plane ----
+      var halo = sprite(glowCyan, 5.5, 0, 1.7, -1.8, 0.0);
+      var haloMag = sprite(glowMag, 7.5, 0, 1.8, -2.6, 0.0);
+
+      var heroTex = new THREE.TextureLoader().load("assets/manu_cutout.png", function (t) {
+        t.colorSpace = THREE.SRGBColorSpace;
+        if (window.__renderThree) window.__renderThree(window.__hfThreeTime || 0);
+      });
+      heroTex.colorSpace = THREE.SRGBColorSpace;
+      function ensureTex(){}
+      var aspect = 820 / 1298;
+      var heroH = 3.4, heroW = heroH * aspect;
+      var hero = new THREE.Mesh(
+        new THREE.PlaneGeometry(heroW, heroH),
+        new THREE.MeshBasicMaterial({ map: heroTex, transparent: true, depthWrite: false })
+      );
+      hero.position.set(0, heroH / 2, 0); scene.add(hero);
+      // reflection
+      var heroR = hero.clone(); heroR.material = hero.material.clone(); heroR.material.opacity = 0.18;
+      heroR.scale.y = -1; heroR.position.set(0, -heroH / 2, 0); scene.add(heroR);
+
+      // ---- camera path ----
+      var keys = [
+        { t: 0.0,  p: [0, 2.2, 30], l: [0, 1.6, 0] },
+        { t: 4.5,  p: [0, 1.8, 14], l: [0, 1.6, 0] },
+        { t: 7.5,  p: [-3.4, 1.5, 7.6], l: [0, 1.5, 0] },
+        { t: 10.0, p: [3.4, 1.7, 7.8], l: [0, 1.5, 0] },
+        { t: 12.5, p: [0, 1.9, 9.2], l: [0, 1.5, 0] },
+        { t: 16.0, p: [0, 2.3, 12.5], l: [0, 1.7, 0] }
+      ];
+      function smooth(a){ return a*a*(3-2*a); }
+      function camAt(time) {
+        var i = 0; for (; i < keys.length - 1; i++) if (time < keys[i+1].t) break;
+        if (i >= keys.length - 1) i = keys.length - 2;
+        var k0 = keys[i], k1 = keys[i+1];
+        var a = (time - k0.t) / (k1.t - k0.t); a = Math.max(0, Math.min(1, a)); a = smooth(a);
+        camera.position.set(
+          k0.p[0] + (k1.p[0]-k0.p[0])*a,
+          k0.p[1] + (k1.p[1]-k0.p[1])*a,
+          k0.p[2] + (k1.p[2]-k0.p[2])*a
+        );
+        camera.lookAt(
+          k0.l[0] + (k1.l[0]-k0.l[0])*a,
+          k0.l[1] + (k1.l[1]-k0.l[1])*a,
+          k0.l[2] + (k1.l[2]-k0.l[2])*a
+        );
+      }
+
+      function renderAt(time) {
+        ensureTex();
+        // grid forward motion
+        gridTex.offset.y = (time * 0.18) % 1;
+        ceil.material.map.offset.y = (time * 0.18) % 1;
+        // embers drift up + twinkle
+        var arr = embers.geometry.attributes.position.array;
+        for (var i = 0; i < arr.length; i += 3) {
+          var base = emberBase[i+1];
+          arr[i+1] = ((base + time * 1.2) % 22);
+        }
+        embers.geometry.attributes.position.needsUpdate = true;
+        embers.material.opacity = 0.55 + 0.35 * Math.sin(time * 2.0);
+        // nebula slow life
+        stars.rotation.z = time * 0.01;
+        // hero billboard faces camera-ish (slight)
+        hero.rotation.y = Math.sin(time * 0.5) * 0.06;
+        heroR.rotation.y = hero.rotation.y;
+        // halo reveal after ~4.5s
+        var hv = Math.max(0, Math.min(1, (time - 4.3) / 1.2));
+        halo.material.opacity = 0.5 * hv * (0.85 + 0.15 * Math.sin(time * 3));
+        haloMag.material.opacity = 0.3 * hv;
+        // hero fade-in
+        hero.material.opacity = Math.max(0, Math.min(1, (time - 4.4) / 1.0));
+        heroR.material.opacity = 0.18 * Math.max(0, Math.min(1, (time - 4.7) / 1.0));
+        hero.position.y = heroH / 2 + Math.sin(time * 0.8) * 0.06;
+        camAt(time);
+        renderer.render(scene, camera);
+      }
+      window.__renderThree = renderAt;
+      window.addEventListener("hf-seek", function (e) { renderAt(e.detail.time); });
+      renderAt(0);
+    </script>
+
+    <!-- timeline (drives 3D + overlay text) -->
+    <script>
+      var vars = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : { playerName: "MANUELLA" };
+      var NAME = (vars.playerName || "MANUELLA").toString().toUpperCase();
+      document.getElementById("o-title").textContent = NAME;
+      document.getElementById("o-name").textContent = NAME;
+
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      var proxy = { t: 0 };
+
+      // drive the 3D world from timeline time (deterministic during capture)
+      tl.to(proxy, { t: 16, duration: 16, ease: "none", onUpdate: function () { if (window.__renderThree) window.__renderThree(proxy.t); } }, 0);
+
+      // cinematic letterbox bars in/out
+      gsap.set(["#bar-top", "#bar-bot"], { height: 150 });
+      tl.to("#bar-top", { height: 90, duration: 1.0, ease: "power2.out" }, 0.2);
+      tl.to("#bar-bot", { height: 90, duration: 1.0, ease: "power2.out" }, 0.2);
+
+      // grain flicker
+      tl.to("#grain", { backgroundPosition: "60px 30px", duration: 0.12, ease: "none", repeat: 130, yoyo: true }, 0);
+
+      // ---- INTRO text (0 - 4.3) ----
+      gsap.set(["#o-tag","#o-name","#o-stats","#o-player","#o-go","#o-credit"], { opacity: 0 });
+      tl.from("#o-pre", { opacity: 0, letterSpacing: "40px", duration: 0.8, ease: "power2.out" }, 0.4);
+      tl.from("#o-title", { opacity: 0, scale: 1.4, filter: "blur(24px)", duration: 0.9, ease: "power3.out", transformOrigin: "center center" }, 0.7);
+      tl.from("#o-sub", { opacity: 0, duration: 0.6 }, 1.4);
+      tl.to(["#o-pre","#o-title","#o-sub"], { opacity: 0, duration: 0.5, ease: "power2.in" }, 4.0);
+
+      // flash into hero
+      tl.to("#flash", { opacity: 0.85, duration: 0.1, ease: "power2.out" }, 4.45);
+      tl.to("#flash", { opacity: 0, duration: 0.5, ease: "power2.in" }, 4.55);
+
+      // ---- HERO text (4.7 - 9.7) ----
+      tl.to("#o-tag", { opacity: 1, duration: 0.5, ease: "power2.out" }, 4.9);
+      tl.fromTo("#o-name", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)", transformOrigin: "center center" }, 4.95);
+      tl.to("#o-stats", { opacity: 1, duration: 0.4 }, 5.4);
+      tl.from(".stat", { y: 50, opacity: 0, stagger: 0.12, duration: 0.45, ease: "power3.out" }, 5.4);
+      tl.to(["#o-tag","#o-name","#o-stats"], { opacity: 0, duration: 0.5, ease: "power2.in" }, 9.6);
+
+      // flash into finale
+      tl.to("#flash", { opacity: 0.95, duration: 0.1, ease: "power2.out" }, 10.0);
+      tl.to("#flash", { opacity: 0, duration: 0.55, ease: "power2.in" }, 10.1);
+
+      // ---- FINALE text (10.3 - 16) ----
+      tl.to("#o-player", { opacity: 1, letterSpacing: "20px", duration: 0.6, ease: "power2.out" }, 10.4);
+      tl.fromTo("#o-go", { opacity: 0, scale: 0.7, y: 40 }, { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: "back.out(1.8)", transformOrigin: "center center" }, 10.6);
+      tl.to("#o-go", { textShadow: "0 0 16px #fff, 0 0 60px #ffb000, 0 0 130px #ff8a00", duration: 1.0, ease: "sine.inOut", repeat: 4, yoyo: true }, 11.4);
+      tl.to("#o-credit", { opacity: 1, duration: 0.6 }, 12.0);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

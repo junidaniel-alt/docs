@@ -1,0 +1,11 @@
+# Render outputs
+*.mp4
+*.webm
+renders/
+out/
+
+# Dependencies / caches
+node_modules/
+.hyperframes/
+snapshots/
+.hyperframes/
