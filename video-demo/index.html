@@ -1,9 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html
+  lang="pt-BR"
+  data-composition-variables='[
+    {"id":"name","type":"string","label":"Nome","default":"Juni Daniel"},
+    {"id":"hello","type":"string","label":"Saudação","default":"OLÁ 👋"},
+    {"id":"subtitle","type":"string","label":"Subtítulo","default":"prazer em te mostrar"},
+    {"id":"tagline","type":"string","label":"Tagline","default":"Explorando IA & criação de vídeo"},
+    {"id":"kw1","type":"string","label":"Palavra 1","default":"IA"},
+    {"id":"kw2","type":"string","label":"Palavra 2","default":"Vídeo"},
+    {"id":"kw3","type":"string","label":"Palavra 3","default":"Inovação"},
+    {"id":"footer","type":"string","label":"Rodapé","default":"feito com HyperFrames"}
+  ]'
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=1920, height=1080" />
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="gsap.min.js"></script>
     <style>
       * {
         margin: 0;
@@ -12,11 +24,109 @@
       }
       html,
       body {
-        margin: 0;
         width: 1920px;
         height: 1080px;
         overflow: hidden;
-        background: #000;
+        background: #0d0a1a;
+        font-family: "Poppins", "Inter", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      /* Animated colorful gradient background (driven by GSAP background-position) */
+      .bg {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          120deg,
+          #ff6b6b 0%,
+          #ffd93d 22%,
+          #6bcb77 45%,
+          #4d96ff 68%,
+          #c264fe 88%,
+          #ff6b6b 100%
+        );
+        background-size: 300% 300%;
+        background-position: 0% 50%;
+      }
+      /* Vignette overlay for depth + to soften gradient banding */
+      .vignette {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at 50% 45%,
+          rgba(0, 0, 0, 0) 35%,
+          rgba(0, 0, 0, 0.38) 100%
+        );
+        pointer-events: none;
+      }
+
+      /* Each scene is a full-frame centered layer; crossfades overlap them */
+      .scene {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 120px 160px;
+        gap: 28px;
+      }
+
+      .kicker {
+        font-size: 40px;
+        font-weight: 600;
+        letter-spacing: 14px;
+        color: #ffffff;
+        text-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      }
+      .name {
+        font-size: 200px;
+        font-weight: 800;
+        line-height: 0.95;
+        color: #ffffff;
+        letter-spacing: -2px;
+        text-shadow: 0 12px 50px rgba(0, 0, 0, 0.45);
+      }
+      .sub {
+        font-size: 46px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.92);
+        text-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+      }
+
+      .tagline {
+        font-size: 110px;
+        font-weight: 700;
+        line-height: 1.08;
+        max-width: 1400px;
+        color: #ffffff;
+        text-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+      }
+
+      .chips {
+        display: flex;
+        gap: 36px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .chip {
+        font-size: 72px;
+        font-weight: 700;
+        color: #ffffff;
+        padding: 28px 56px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        border: 2px solid rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(6px);
+        text-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+      }
+      .footer {
+        margin-top: 30px;
+        font-size: 40px;
+        font-weight: 500;
+        letter-spacing: 4px;
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
       }
     </style>
   </head>
@@ -25,26 +135,79 @@
       id="root"
       data-composition-id="main"
       data-start="0"
-      data-duration="10"
+      data-duration="15"
       data-width="1920"
       data-height="1080"
     >
-      
-      
+      <div class="bg" id="bg"></div>
+      <div class="vignette"></div>
 
-      <!--
-        Add your clips here. Example:
-        <div id="title" class="clip" data-start="0" data-duration="5" data-track-index="1"
-             style="font-size: 64px; color: #fff; padding: 40px">
-          Hello World
+      <!-- Scene 1: greeting + name -->
+      <div class="scene" id="s1">
+        <div class="kicker" id="s1-hello"></div>
+        <div class="name" id="s1-name"></div>
+        <div class="sub" id="s1-sub"></div>
+      </div>
+
+      <!-- Scene 2: tagline -->
+      <div class="scene" id="s2">
+        <div class="tagline" id="s2-tag"></div>
+      </div>
+
+      <!-- Scene 3: keywords + footer -->
+      <div class="scene" id="s3">
+        <div class="chips">
+          <div class="chip" id="s3-k1"></div>
+          <div class="chip" id="s3-k2"></div>
+          <div class="chip" id="s3-k3"></div>
         </div>
-      -->
+        <div class="footer" id="s3-footer"></div>
+      </div>
     </div>
 
     <script>
+      const { name, hello, subtitle, tagline, kw1, kw2, kw3, footer } =
+        window.__hyperframes.getVariables();
+      document.getElementById("s1-hello").textContent = hello;
+      document.getElementById("s1-name").textContent = name;
+      document.getElementById("s1-sub").textContent = subtitle;
+      document.getElementById("s2-tag").textContent = tagline;
+      document.getElementById("s3-k1").textContent = kw1;
+      document.getElementById("s3-k2").textContent = kw2;
+      document.getElementById("s3-k3").textContent = kw3;
+      document.getElementById("s3-footer").textContent = footer;
+
       window.__timelines = window.__timelines || {};
       const tl = gsap.timeline({ paused: true });
-      // Example: tl.from("#title", { opacity: 0, y: -50, duration: 1 }, 0);
+
+      // Continuous colorful background drift across the whole video
+      tl.to("#bg", { backgroundPosition: "100% 50%", duration: 15, ease: "none" }, 0);
+
+      // Start with only scene 1 visible
+      tl.set("#s2", { opacity: 0 }, 0);
+      tl.set("#s3", { opacity: 0 }, 0);
+
+      // --- Scene 1 entrance (0.3s) ---
+      tl.from("#s1-hello", { y: -40, opacity: 0, duration: 0.7, ease: "power3.out" }, 0.3);
+      tl.from("#s1-name", { y: 90, opacity: 0, scale: 0.85, duration: 1.0, ease: "expo.out" }, 0.5);
+      tl.from("#s1-sub", { y: 40, opacity: 0, duration: 0.7, ease: "power2.out" }, 0.9);
+
+      // --- Crossfade scene 1 -> scene 2 (~4.6s) ---
+      tl.to("#s1", { opacity: 0, duration: 0.7, ease: "power2.inOut" }, 4.6);
+      tl.set("#s2", { opacity: 1 }, 4.9);
+      tl.from("#s2-tag", { y: 60, opacity: 0, scale: 0.92, duration: 0.9, ease: "power4.out" }, 4.9);
+
+      // --- Crossfade scene 2 -> scene 3 (~9.6s) ---
+      tl.to("#s2", { opacity: 0, duration: 0.7, ease: "power2.inOut" }, 9.6);
+      tl.set("#s3", { opacity: 1 }, 9.9);
+      tl.from("#s3-k1", { y: 50, opacity: 0, scale: 0.8, duration: 0.6, ease: "back.out(1.6)" }, 10.0);
+      tl.from("#s3-k2", { y: 50, opacity: 0, scale: 0.8, duration: 0.6, ease: "back.out(1.6)" }, 10.18);
+      tl.from("#s3-k3", { y: 50, opacity: 0, scale: 0.8, duration: 0.6, ease: "back.out(1.6)" }, 10.36);
+      tl.from("#s3-footer", { y: 30, opacity: 0, duration: 0.7, ease: "power2.out" }, 10.7);
+
+      // --- Final fade out (allowed on last scene only) ---
+      tl.to("#s3", { opacity: 0, duration: 0.8, ease: "power2.in" }, 14.1);
+
       window.__timelines["main"] = tl;
     </script>
   </body>
