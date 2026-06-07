@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="pt-BR" data-resolution="landscape-4k">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=3840, height=2160" />
+<script src="gsap.min.js"></script>
+<style>
+@font-face{font-family:'HSerif';src:url('fonts/serif.ttf');}
+@font-face{font-family:'HSerif';src:url('fonts/serif-bold.ttf');font-weight:700;}
+@font-face{font-family:'HSerifIt';src:url('fonts/serif-italic.ttf');font-style:italic;}
+@font-face{font-family:'HSans';src:url('fonts/sans.ttf');}
+@font-face{font-family:'HSans';src:url('fonts/sans-bold.ttf');font-weight:700;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:3840px;height:2160px;overflow:hidden;background:#000;}
+.scene{position:absolute;inset:0;width:3840px;height:2160px;overflow:hidden;}
+.bg{position:absolute;inset:0;}
+.grad-deep{background:radial-gradient(120% 90% at 50% 38%,#4a2670 0%,#3d2058 38%,#2d1545 78%,#1a0c2b 100%);}
+.grad-night{background:radial-gradient(120% 100% at 50% 80%,#3a2056 0%,#281340 60%,#150a23 100%);}
+.grad-fire{background:radial-gradient(100% 80% at 50% 100%,#7a2a10 0%,#4a1d3a 45%,#2d1545 80%,#160a26 100%);}
+.grad-ash{background:radial-gradient(120% 100% at 50% 30%,#4a4458 0%,#332c44 55%,#1d1730 100%);}
+.grad-book{background:radial-gradient(90% 80% at 50% 50%,#5a3a1e 0%,#3c2742 55%,#241634 100%);}
+.grad-cold{background:radial-gradient(110% 90% at 50% 35%,#3a4a6a 0%,#2a2f50 55%,#161a30 100%);}
+
+.glow{position:absolute;border-radius:50%;mix-blend-mode:screen;filter:blur(120px);}
+.glow.center{left:50%;top:42%;width:1800px;height:1400px;transform:translate(-50%,-50%);
+  background:radial-gradient(closest-side,rgba(240,142,35,.5),rgba(240,142,35,0));}
+.glow.center.small{width:1100px;height:1000px;background:radial-gradient(closest-side,rgba(245,200,120,.45),transparent);}
+.glow.center.faint{opacity:.5;}
+.glow.center.warm{background:radial-gradient(closest-side,rgba(245,200,120,.4),transparent);}
+.glow.fire{left:50%;bottom:-200px;width:3200px;height:1900px;transform:translateX(-50%);
+  background:radial-gradient(closest-side,rgba(240,120,30,.85),rgba(214,56,56,.25),transparent);}
+
+/* candles */
+.candle-row{position:absolute;left:0;right:0;bottom:430px;display:flex;justify-content:center;gap:120px;}
+.single-candle .candle-row{bottom:560px;}
+.candle{position:relative;width:60px;height:240px;}
+.wick{position:absolute;left:50%;bottom:0;width:46px;height:150px;transform:translateX(-50%);
+  background:linear-gradient(#efe7d8,#cdbfa6);border-radius:8px;box-shadow:0 0 30px rgba(220,212,229,.3);}
+.flame{position:absolute;left:50%;bottom:120px;width:120px;height:280px;transform:translateX(-50%);
+  transform-origin:50% 100%;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+  background:radial-gradient(50% 60% at 50% 70%,#fff6d8 0%,#ffd27a 22%,#f08e23 55%,rgba(214,56,56,.5) 78%,transparent 100%);
+  filter:blur(6px);mix-blend-mode:screen;box-shadow:0 0 120px 40px rgba(240,142,35,.55);}
+
+/* embers */
+.ember-field{position:absolute;inset:0;}
+.ember{position:absolute;bottom:300px;width:14px;height:14px;border-radius:50%;
+  background:radial-gradient(closest-side,#ffd27a,#f08e23,transparent);
+  filter:blur(2px);mix-blend-mode:screen;box-shadow:0 0 24px 6px rgba(240,142,35,.6);}
+
+/* ash */
+.ashfall{position:absolute;inset:0;background-image:radial-gradient(2px 2px at 20% 30%,rgba(220,212,229,.5),transparent),radial-gradient(2px 2px at 60% 60%,rgba(220,212,229,.4),transparent),radial-gradient(3px 3px at 80% 20%,rgba(220,212,229,.3),transparent),radial-gradient(2px 2px at 40% 80%,rgba(220,212,229,.4),transparent);}
+
+/* door of light + figures */
+.door{position:absolute;left:50%;top:50%;width:420px;height:1400px;transform:translate(-50%,-50%);
+  transform-origin:50% 50%;border-radius:200px 200px 40px 40px;
+  background:linear-gradient(#fff6d8,#ffd27a 40%,#f08e23);filter:blur(40px);mix-blend-mode:screen;
+  box-shadow:0 0 400px 120px rgba(245,200,120,.5);}
+.figure-row{position:absolute;left:0;right:0;bottom:560px;display:flex;justify-content:center;gap:90px;}
+.figure{width:120px;height:420px;border-radius:60px 60px 40px 40px;
+  background:linear-gradient(rgba(220,212,229,.9),rgba(220,212,229,.15));filter:blur(10px);mix-blend-mode:screen;}
+
+/* cemetery */
+.grave-row{position:absolute;left:0;right:0;bottom:360px;display:flex;justify-content:center;gap:70px;}
+.grave{position:relative;width:150px;height:230px;border-radius:75px 75px 12px 12px;
+  background:linear-gradient(#2a2038,#160d24);box-shadow:inset 0 8px 20px rgba(0,0,0,.5),0 0 0 2px rgba(220,212,229,.06);}
+.grave-flame{position:absolute;left:50%;top:-46px;width:34px;height:80px;transform:translateX(-50%);border-radius:50%;
+  background:radial-gradient(closest-side,#fff6d8,#f08e23,transparent);filter:blur(3px);mix-blend-mode:screen;box-shadow:0 0 50px 14px rgba(240,142,35,.6);}
+
+/* water */
+.ripple{position:absolute;left:50%;top:54%;width:600px;height:600px;transform:translate(-50%,-50%);
+  border-radius:50%;border:6px solid rgba(220,212,229,.7);mix-blend-mode:screen;filter:blur(2px);}
+.drop{position:absolute;left:50%;top:30%;width:34px;height:48px;transform:translateX(-50%);border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+  background:radial-gradient(closest-side,#fff,#dcd4e5,transparent);filter:blur(2px);mix-blend-mode:screen;box-shadow:0 0 40px 10px rgba(220,212,229,.5);}
+
+/* chapel plaques */
+.plaque-wall{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:2600px;
+  display:flex;flex-wrap:wrap;gap:46px;justify-content:center;}
+.plaque{width:230px;height:150px;border-radius:8px;background:linear-gradient(135deg,#5e3287,#2d1545);
+  box-shadow:inset 0 0 30px rgba(245,200,120,.25),0 0 30px rgba(0,0,0,.3);border:2px solid rgba(245,200,120,.25);}
+
+/* church */
+.window-cross{position:absolute;left:50%;top:42%;width:520px;height:1100px;transform:translate(-50%,-50%);
+  background:linear-gradient(rgba(184,212,232,.5),rgba(184,212,232,.05));border-radius:260px 260px 0 0;filter:blur(6px);mix-blend-mode:screen;}
+.window-cross:before{content:"";position:absolute;left:50%;top:0;width:10px;height:100%;background:rgba(20,16,40,.6);transform:translateX(-50%);}
+.window-cross:after{content:"";position:absolute;left:0;top:46%;width:100%;height:10px;background:rgba(20,16,40,.6);}
+
+/* city / book / stars */
+.cityline{position:absolute;left:0;right:0;bottom:520px;height:240px;
+  background:repeating-linear-gradient(90deg,rgba(20,12,32,.9) 0 60px,rgba(40,24,60,.9) 60px 130px);
+  -webkit-mask-image:linear-gradient(transparent,#000 60%);mask-image:linear-gradient(transparent,#000 60%);}
+.page-lines{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:1700px;height:900px;
+  background:repeating-linear-gradient(rgba(245,200,120,.12) 0 4px,transparent 4px 60px);border-radius:10px;filter:blur(1px);}
+.star-field{position:absolute;inset:0;}
+.star{position:absolute;border-radius:50%;background:#fff;box-shadow:0 0 10px 2px rgba(255,255,255,.5);}
+
+/* text */
+.textwrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:2900px;text-align:center;z-index:5;}
+.textwrap.withtitle{top:46%;}
+.title{font-family:'HSerif';font-weight:700;color:#f3ecf6;font-size:170px;letter-spacing:14px;
+  text-shadow:0 6px 40px rgba(0,0,0,.6);line-height:1.05;}
+#sc0 .title{font-size:230px;letter-spacing:26px;color:#f5ecdf;text-shadow:0 0 80px rgba(245,200,120,.4),0 8px 40px rgba(0,0,0,.6);}
+.body{font-family:'HSerif';color:#e7ddf0;font-size:78px;line-height:1.5;margin-top:30px;text-shadow:0 4px 30px rgba(0,0,0,.7);}
+#sc0 .body{font-family:'HSerifIt';font-style:italic;color:#dcd4e5;font-size:84px;letter-spacing:6px;margin-top:50px;}
+.body b{color:#f08e23;font-weight:700;}
+.body i{font-family:'HSerifIt';font-style:italic;color:#b9a9cf;font-size:64px;}
+.kicker{position:absolute;left:50%;bottom:360px;transform:translateX(-50%);font-family:'HSans';
+  text-transform:uppercase;letter-spacing:10px;font-size:34px;color:#c4b6d6;opacity:.9;z-index:5;
+  border-top:2px solid rgba(240,142,35,.6);padding-top:24px;}
+
+/* overlays */
+#overlay{position:absolute;inset:0;pointer-events:none;}
+.bar{position:absolute;left:0;right:0;height:276px;background:#000;z-index:70;}
+.bar.top{top:0;}.bar.bot{bottom:0;}
+.vignette{position:absolute;inset:0;z-index:65;
+  background:radial-gradient(120% 100% at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%);}
+.grain{position:absolute;inset:-5%;z-index:66;opacity:.10;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size:600px 600px;}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="246.0" data-width="3840" data-height="2160">
+<section id="sc0" class="scene clip" data-start="0.0" data-duration="16" data-track-index="1"><div class="bg grad-deep"></div><div class="glow center small"></div><div class="single-candle"><div class="candle-row"><div class="candle" data-i="0"><div class="flame"></div><div class="wick"></div></div></div></div><div class="textwrap withtitle"><div class="title">13 ALMAS BENDITAS</div><div class="body">Sabidas e&nbsp;Entendidas</div></div><div class="kicker">um curta documental-poético</div></section><section id="sc1" class="scene clip" data-start="16.0" data-duration="12" data-track-index="2"><div class="bg grad-deep"></div><div class="cityline"></div><div class="glow center faint"></div><div class="textwrap withtitle"><div class="title">São Paulo</div><div class="body">1º de fevereiro de 1974</div></div><div class="kicker">Fato documentado</div></section><section id="sc2" class="scene clip" data-start="28.0" data-duration="22" data-track-index="3"><div class="bg grad-fire"></div><div class="glow fire"></div><div class="ember-field"><div class="ember" data-i="0" style="left:8.0%"></div><div class="ember" data-i="1" style="left:14.3%"></div><div class="ember" data-i="2" style="left:20.6%"></div><div class="ember" data-i="3" style="left:26.9%"></div><div class="ember" data-i="4" style="left:33.2%"></div><div class="ember" data-i="5" style="left:39.5%"></div><div class="ember" data-i="6" style="left:45.8%"></div><div class="ember" data-i="7" style="left:52.1%"></div><div class="ember" data-i="8" style="left:58.4%"></div><div class="ember" data-i="9" style="left:64.7%"></div><div class="ember" data-i="10" style="left:71.0%"></div><div class="ember" data-i="11" style="left:77.3%"></div><div class="ember" data-i="12" style="left:83.6%"></div><div class="ember" data-i="13" style="left:89.9%"></div><div class="ember" data-i="14" style="left:12.2%"></div><div class="ember" data-i="15" style="left:18.5%"></div></div><div class="textwrap "><div class="body">No 12º andar do Edifício Joelma, um curto-circuito.<br>O fogo subiu mais rápido que qualquer socorro.<br><b>187 vidas.</b> Mais de 300 feridos.</div></div><div class="kicker">Fato documentado</div></section><section id="sc3" class="scene clip" data-start="50.0" data-duration="12" data-track-index="4"><div class="bg grad-ash"></div><div class="ashfall"></div><div class="textwrap "><div class="body">Quando o fogo se apagou,<br>restou o silêncio.</div></div></section><section id="sc4" class="scene clip" data-start="62.0" data-duration="28" data-track-index="5"><div class="bg grad-deep"></div><div class="candle-row"><div class="candle" data-i="0"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="1"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="2"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="3"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="4"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="5"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="6"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="7"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="8"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="9"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="10"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="11"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="12"><div class="flame"></div><div class="wick"></div></div></div><div class="textwrap "><div class="body">Treze corpos teriam sido encontrados juntos —<br>sem nome, sepultados lado a lado.<br><i>Nunca oficialmente confirmado.</i></div></div><div class="kicker">A partir daqui, história e lenda se cruzam</div></section><section id="sc5" class="scene clip" data-start="90.0" data-duration="14" data-track-index="6"><div class="bg grad-book"></div><div class="glow center warm"></div><div class="page-lines"></div><div class="textwrap "><div class="body">Mas a história das treze almas<br>é mais antiga que o incêndio.</div></div><div class="kicker">Tradição popular</div></section><section id="sc6" class="scene clip" data-start="104.0" data-duration="24" data-track-index="7"><div class="bg grad-deep"></div><div class="door"></div><div class="figure-row"><div class="figure" data-i="0"></div><div class="figure" data-i="1"></div><div class="figure" data-i="2"></div><div class="figure" data-i="3"></div><div class="figure" data-i="4"></div><div class="figure" data-i="5"></div><div class="figure" data-i="6"></div><div class="figure" data-i="7"></div><div class="figure" data-i="8"></div><div class="figure" data-i="9"></div><div class="figure" data-i="10"></div><div class="figure" data-i="11"></div><div class="figure" data-i="12"></div></div><div class="textwrap "><div class="body">Diz a lenda: a cada sete anos, treze almas voltam.<br>Mortas em catástrofes. Nem Céu, nem Inferno.<br>Restou-lhes vagar entre os vivos — para ajudar.</div></div><div class="kicker">Livro de São Cipriano · não é doutrina oficial</div></section><section id="sc7" class="scene clip" data-start="128.0" data-duration="12" data-track-index="8"><div class="bg grad-deep"></div><div class="figure-row"><div class="figure" data-i="0"></div><div class="figure" data-i="1"></div><div class="figure" data-i="2"></div><div class="figure" data-i="3"></div><div class="figure" data-i="4"></div><div class="figure" data-i="5"></div><div class="figure" data-i="6"></div><div class="figure" data-i="7"></div><div class="figure" data-i="8"></div><div class="figure" data-i="9"></div><div class="figure" data-i="10"></div><div class="figure" data-i="11"></div><div class="figure" data-i="12"></div></div><div class="textwrap "><div class="body">Almas santas e benditas.<br>Presas entre dois mundos.</div></div></section><section id="sc8" class="scene clip" data-start="140.0" data-duration="16" data-track-index="9"><div class="bg grad-night"></div><div class="grave-row"><div class="grave" data-i="0"><div class="grave-flame"></div></div><div class="grave" data-i="1"><div class="grave-flame"></div></div><div class="grave" data-i="2"><div class="grave-flame"></div></div><div class="grave" data-i="3"><div class="grave-flame"></div></div><div class="grave" data-i="4"><div class="grave-flame"></div></div><div class="grave" data-i="5"><div class="grave-flame"></div></div><div class="grave" data-i="6"><div class="grave-flame"></div></div><div class="grave" data-i="7"><div class="grave-flame"></div></div><div class="grave" data-i="8"><div class="grave-flame"></div></div><div class="grave" data-i="9"><div class="grave-flame"></div></div><div class="grave" data-i="10"><div class="grave-flame"></div></div><div class="grave" data-i="11"><div class="grave-flame"></div></div><div class="grave" data-i="12"><div class="grave-flame"></div></div></div><div class="textwrap "><div class="body">No Cemitério São Pedro,<br>treze sepulturas ficam juntas.<br>Todos os dias, alguém vem.</div></div><div class="kicker">Fato — devoção documentada</div></section><section id="sc9" class="scene clip" data-start="156.0" data-duration="20" data-track-index="10"><div class="bg grad-deep"></div><div class="ripple r1"></div><div class="ripple r2"></div><div class="ripple r3"></div><div class="drop"></div><div class="textwrap "><div class="body">A quem morreu no fogo,<br>os devotos trazem água.<br>Para aplacar uma sede que ninguém pôde matar.</div></div></section><section id="sc10" class="scene clip" data-start="176.0" data-duration="14" data-track-index="11"><div class="bg grad-deep"></div><div class="plaque-wall"><div class="plaque" data-i="0"></div><div class="plaque" data-i="1"></div><div class="plaque" data-i="2"></div><div class="plaque" data-i="3"></div><div class="plaque" data-i="4"></div><div class="plaque" data-i="5"></div><div class="plaque" data-i="6"></div><div class="plaque" data-i="7"></div><div class="plaque" data-i="8"></div><div class="plaque" data-i="9"></div><div class="plaque" data-i="10"></div><div class="plaque" data-i="11"></div><div class="plaque" data-i="12"></div><div class="plaque" data-i="13"></div><div class="plaque" data-i="14"></div><div class="plaque" data-i="15"></div><div class="plaque" data-i="16"></div><div class="plaque" data-i="17"></div><div class="plaque" data-i="18"></div><div class="plaque" data-i="19"></div><div class="plaque" data-i="20"></div><div class="plaque" data-i="21"></div><div class="plaque" data-i="22"></div><div class="plaque" data-i="23"></div><div class="plaque" data-i="24"></div><div class="plaque" data-i="25"></div><div class="plaque" data-i="26"></div><div class="plaque" data-i="27"></div><div class="plaque" data-i="28"></div><div class="plaque" data-i="29"></div><div class="plaque" data-i="30"></div><div class="plaque" data-i="31"></div><div class="plaque" data-i="32"></div><div class="plaque" data-i="33"></div><div class="plaque" data-i="34"></div><div class="plaque" data-i="35"></div></div><div class="glow center warm"></div><div class="textwrap "><div class="body">Ergueram uma capela.<br>As paredes se encheram de graças alcançadas.<br>A fé não pediu licença para existir.</div></div></section><section id="sc11" class="scene clip" data-start="190.0" data-duration="12" data-track-index="12"><div class="bg grad-cold"></div><div class="window-cross"></div><div class="textwrap "><div class="body">A Igreja reconhece as almas do purgatório —<br>mas nunca estas treze como milagreiras.</div></div><div class="kicker">Interpretação · devoção não validada</div></section><section id="sc12" class="scene clip" data-start="202.0" data-duration="24" data-track-index="13"><div class="bg grad-deep"></div><div class="candle-row"><div class="candle" data-i="0"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="1"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="2"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="3"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="4"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="5"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="6"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="7"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="8"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="9"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="10"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="11"><div class="flame"></div><div class="wick"></div></div><div class="candle" data-i="12"><div class="flame"></div><div class="wick"></div></div></div><div class="star-field"><div class="star" data-i="0" style="left:0%;top:0%;width:2px;height:2px"></div><div class="star" data-i="1" style="left:37%;top:19%;width:3px;height:3px"></div><div class="star" data-i="2" style="left:74%;top:38%;width:4px;height:4px"></div><div class="star" data-i="3" style="left:11%;top:57%;width:5px;height:5px"></div><div class="star" data-i="4" style="left:48%;top:6%;width:2px;height:2px"></div><div class="star" data-i="5" style="left:85%;top:25%;width:3px;height:3px"></div><div class="star" data-i="6" style="left:22%;top:44%;width:4px;height:4px"></div><div class="star" data-i="7" style="left:59%;top:63%;width:5px;height:5px"></div><div class="star" data-i="8" style="left:96%;top:12%;width:2px;height:2px"></div><div class="star" data-i="9" style="left:33%;top:31%;width:3px;height:3px"></div><div class="star" data-i="10" style="left:70%;top:50%;width:4px;height:4px"></div><div class="star" data-i="11" style="left:7%;top:69%;width:5px;height:5px"></div><div class="star" data-i="12" style="left:44%;top:18%;width:2px;height:2px"></div><div class="star" data-i="13" style="left:81%;top:37%;width:3px;height:3px"></div><div class="star" data-i="14" style="left:18%;top:56%;width:4px;height:4px"></div><div class="star" data-i="15" style="left:55%;top:5%;width:5px;height:5px"></div><div class="star" data-i="16" style="left:92%;top:24%;width:2px;height:2px"></div><div class="star" data-i="17" style="left:29%;top:43%;width:3px;height:3px"></div><div class="star" data-i="18" style="left:66%;top:62%;width:4px;height:4px"></div><div class="star" data-i="19" style="left:3%;top:11%;width:5px;height:5px"></div><div class="star" data-i="20" style="left:40%;top:30%;width:2px;height:2px"></div><div class="star" data-i="21" style="left:77%;top:49%;width:3px;height:3px"></div><div class="star" data-i="22" style="left:14%;top:68%;width:4px;height:4px"></div><div class="star" data-i="23" style="left:51%;top:17%;width:5px;height:5px"></div><div class="star" data-i="24" style="left:88%;top:36%;width:2px;height:2px"></div><div class="star" data-i="25" style="left:25%;top:55%;width:3px;height:3px"></div><div class="star" data-i="26" style="left:62%;top:4%;width:4px;height:4px"></div><div class="star" data-i="27" style="left:99%;top:23%;width:5px;height:5px"></div><div class="star" data-i="28" style="left:36%;top:42%;width:2px;height:2px"></div><div class="star" data-i="29" style="left:73%;top:61%;width:3px;height:3px"></div><div class="star" data-i="30" style="left:10%;top:10%;width:4px;height:4px"></div><div class="star" data-i="31" style="left:47%;top:29%;width:5px;height:5px"></div><div class="star" data-i="32" style="left:84%;top:48%;width:2px;height:2px"></div><div class="star" data-i="33" style="left:21%;top:67%;width:3px;height:3px"></div><div class="star" data-i="34" style="left:58%;top:16%;width:4px;height:4px"></div><div class="star" data-i="35" style="left:95%;top:35%;width:5px;height:5px"></div><div class="star" data-i="36" style="left:32%;top:54%;width:2px;height:2px"></div><div class="star" data-i="37" style="left:69%;top:3%;width:3px;height:3px"></div><div class="star" data-i="38" style="left:6%;top:22%;width:4px;height:4px"></div><div class="star" data-i="39" style="left:43%;top:41%;width:5px;height:5px"></div><div class="star" data-i="40" style="left:80%;top:60%;width:2px;height:2px"></div><div class="star" data-i="41" style="left:17%;top:9%;width:3px;height:3px"></div><div class="star" data-i="42" style="left:54%;top:28%;width:4px;height:4px"></div><div class="star" data-i="43" style="left:91%;top:47%;width:5px;height:5px"></div><div class="star" data-i="44" style="left:28%;top:66%;width:2px;height:2px"></div><div class="star" data-i="45" style="left:65%;top:15%;width:3px;height:3px"></div><div class="star" data-i="46" style="left:2%;top:34%;width:4px;height:4px"></div><div class="star" data-i="47" style="left:39%;top:53%;width:5px;height:5px"></div><div class="star" data-i="48" style="left:76%;top:2%;width:2px;height:2px"></div><div class="star" data-i="49" style="left:13%;top:21%;width:3px;height:3px"></div></div><div class="textwrap "><div class="body">Enfim. Não importa o que se possa provar.<br>O que estas almas guardam é uma necessidade muito antiga:<br>dar nome ao que não tem, e consolo ao que dói.</div></div></section><section id="sc13" class="scene clip" data-start="226.0" data-duration="20" data-track-index="14"><div class="bg grad-deep"></div><div class="star-field"><div class="star" data-i="0" style="left:0%;top:0%;width:2px;height:2px"></div><div class="star" data-i="1" style="left:37%;top:19%;width:3px;height:3px"></div><div class="star" data-i="2" style="left:74%;top:38%;width:4px;height:4px"></div><div class="star" data-i="3" style="left:11%;top:57%;width:5px;height:5px"></div><div class="star" data-i="4" style="left:48%;top:6%;width:2px;height:2px"></div><div class="star" data-i="5" style="left:85%;top:25%;width:3px;height:3px"></div><div class="star" data-i="6" style="left:22%;top:44%;width:4px;height:4px"></div><div class="star" data-i="7" style="left:59%;top:63%;width:5px;height:5px"></div><div class="star" data-i="8" style="left:96%;top:12%;width:2px;height:2px"></div><div class="star" data-i="9" style="left:33%;top:31%;width:3px;height:3px"></div><div class="star" data-i="10" style="left:70%;top:50%;width:4px;height:4px"></div><div class="star" data-i="11" style="left:7%;top:69%;width:5px;height:5px"></div><div class="star" data-i="12" style="left:44%;top:18%;width:2px;height:2px"></div><div class="star" data-i="13" style="left:81%;top:37%;width:3px;height:3px"></div><div class="star" data-i="14" style="left:18%;top:56%;width:4px;height:4px"></div><div class="star" data-i="15" style="left:55%;top:5%;width:5px;height:5px"></div><div class="star" data-i="16" style="left:92%;top:24%;width:2px;height:2px"></div><div class="star" data-i="17" style="left:29%;top:43%;width:3px;height:3px"></div><div class="star" data-i="18" style="left:66%;top:62%;width:4px;height:4px"></div><div class="star" data-i="19" style="left:3%;top:11%;width:5px;height:5px"></div><div class="star" data-i="20" style="left:40%;top:30%;width:2px;height:2px"></div><div class="star" data-i="21" style="left:77%;top:49%;width:3px;height:3px"></div><div class="star" data-i="22" style="left:14%;top:68%;width:4px;height:4px"></div><div class="star" data-i="23" style="left:51%;top:17%;width:5px;height:5px"></div><div class="star" data-i="24" style="left:88%;top:36%;width:2px;height:2px"></div><div class="star" data-i="25" style="left:25%;top:55%;width:3px;height:3px"></div><div class="star" data-i="26" style="left:62%;top:4%;width:4px;height:4px"></div><div class="star" data-i="27" style="left:99%;top:23%;width:5px;height:5px"></div><div class="star" data-i="28" style="left:36%;top:42%;width:2px;height:2px"></div><div class="star" data-i="29" style="left:73%;top:61%;width:3px;height:3px"></div><div class="star" data-i="30" style="left:10%;top:10%;width:4px;height:4px"></div><div class="star" data-i="31" style="left:47%;top:29%;width:5px;height:5px"></div><div class="star" data-i="32" style="left:84%;top:48%;width:2px;height:2px"></div><div class="star" data-i="33" style="left:21%;top:67%;width:3px;height:3px"></div><div class="star" data-i="34" style="left:58%;top:16%;width:4px;height:4px"></div><div class="star" data-i="35" style="left:95%;top:35%;width:5px;height:5px"></div><div class="star" data-i="36" style="left:32%;top:54%;width:2px;height:2px"></div><div class="star" data-i="37" style="left:69%;top:3%;width:3px;height:3px"></div><div class="star" data-i="38" style="left:6%;top:22%;width:4px;height:4px"></div><div class="star" data-i="39" style="left:43%;top:41%;width:5px;height:5px"></div><div class="star" data-i="40" style="left:80%;top:60%;width:2px;height:2px"></div><div class="star" data-i="41" style="left:17%;top:9%;width:3px;height:3px"></div><div class="star" data-i="42" style="left:54%;top:28%;width:4px;height:4px"></div><div class="star" data-i="43" style="left:91%;top:47%;width:5px;height:5px"></div><div class="star" data-i="44" style="left:28%;top:66%;width:2px;height:2px"></div><div class="star" data-i="45" style="left:65%;top:15%;width:3px;height:3px"></div><div class="star" data-i="46" style="left:2%;top:34%;width:4px;height:4px"></div><div class="star" data-i="47" style="left:39%;top:53%;width:5px;height:5px"></div><div class="star" data-i="48" style="left:76%;top:2%;width:2px;height:2px"></div><div class="star" data-i="49" style="left:13%;top:21%;width:3px;height:3px"></div><div class="star" data-i="50" style="left:50%;top:40%;width:4px;height:4px"></div><div class="star" data-i="51" style="left:87%;top:59%;width:5px;height:5px"></div><div class="star" data-i="52" style="left:24%;top:8%;width:2px;height:2px"></div><div class="star" data-i="53" style="left:61%;top:27%;width:3px;height:3px"></div><div class="star" data-i="54" style="left:98%;top:46%;width:4px;height:4px"></div><div class="star" data-i="55" style="left:35%;top:65%;width:5px;height:5px"></div><div class="star" data-i="56" style="left:72%;top:14%;width:2px;height:2px"></div><div class="star" data-i="57" style="left:9%;top:33%;width:3px;height:3px"></div><div class="star" data-i="58" style="left:46%;top:52%;width:4px;height:4px"></div><div class="star" data-i="59" style="left:83%;top:1%;width:5px;height:5px"></div><div class="star" data-i="60" style="left:20%;top:20%;width:2px;height:2px"></div><div class="star" data-i="61" style="left:57%;top:39%;width:3px;height:3px"></div><div class="star" data-i="62" style="left:94%;top:58%;width:4px;height:4px"></div><div class="star" data-i="63" style="left:31%;top:7%;width:5px;height:5px"></div><div class="star" data-i="64" style="left:68%;top:26%;width:2px;height:2px"></div><div class="star" data-i="65" style="left:5%;top:45%;width:3px;height:3px"></div><div class="star" data-i="66" style="left:42%;top:64%;width:4px;height:4px"></div><div class="star" data-i="67" style="left:79%;top:13%;width:5px;height:5px"></div><div class="star" data-i="68" style="left:16%;top:32%;width:2px;height:2px"></div><div class="star" data-i="69" style="left:53%;top:51%;width:3px;height:3px"></div><div class="star" data-i="70" style="left:90%;top:0%;width:4px;height:4px"></div><div class="star" data-i="71" style="left:27%;top:19%;width:5px;height:5px"></div><div class="star" data-i="72" style="left:64%;top:38%;width:2px;height:2px"></div><div class="star" data-i="73" style="left:1%;top:57%;width:3px;height:3px"></div><div class="star" data-i="74" style="left:38%;top:6%;width:4px;height:4px"></div><div class="star" data-i="75" style="left:75%;top:25%;width:5px;height:5px"></div><div class="star" data-i="76" style="left:12%;top:44%;width:2px;height:2px"></div><div class="star" data-i="77" style="left:49%;top:63%;width:3px;height:3px"></div><div class="star" data-i="78" style="left:86%;top:12%;width:4px;height:4px"></div><div class="star" data-i="79" style="left:23%;top:31%;width:5px;height:5px"></div></div><div class="textwrap "><div class="body">Em memória das 187 vítimas do<br>incêndio do Edifício Joelma — 1974.</div></div><div class="kicker">História e lenda se cruzam. Onde não é fato, está assinalado.</div></section>
+<div id="overlay" class="clip" data-start="0" data-duration="246.0" data-track-index="60"><div class="grain"></div><div class="vignette"></div><div class="bar top"></div><div class="bar bot"></div></div>
+</div>
+<script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      gsap.ticker.lagSmoothing(0);
+      gsap.set("#sc0",{opacity:0});
+      tl.to("#sc0",{opacity:1,duration:1.3,ease:"power2.out"},0.0);
+      tl.to("#sc0",{opacity:0,duration:1.3,ease:"power2.in"},14.7);
+      tl.set("#sc0",{opacity:0},16.0);
+      tl.from("#sc0 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},0.3);
+      tl.from("#sc0 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},0.7);
+      tl.from("#sc0 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},1.0);
+      tl.fromTo("#sc0 .single-candle",{scale:0.9,opacity:0},{scale:1,opacity:1,duration:2,ease:"power2.out"},0.0);
+      gsap.set("#sc1",{opacity:0});
+      tl.to("#sc1",{opacity:1,duration:1.3,ease:"power2.out"},16.0);
+      tl.to("#sc1",{opacity:0,duration:1.3,ease:"power2.in"},26.7);
+      tl.set("#sc1",{opacity:0},28.0);
+      tl.from("#sc1 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},16.3);
+      tl.from("#sc1 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},16.7);
+      tl.from("#sc1 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},17.0);
+      tl.fromTo("#sc1 .cityline",{opacity:0,y:20},{opacity:0.5,y:0,duration:2.4,ease:"power2.out"},16.0);
+      gsap.set("#sc2",{opacity:0});
+      tl.to("#sc2",{opacity:1,duration:1.3,ease:"power2.out"},28.0);
+      tl.to("#sc2",{opacity:0,duration:1.3,ease:"power2.in"},48.7);
+      tl.set("#sc2",{opacity:0},50.0);
+      tl.from("#sc2 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},28.3);
+      tl.from("#sc2 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},28.7);
+      tl.from("#sc2 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},29.0);
+      tl.fromTo("#sc2 .glow.fire",{opacity:0.15},{opacity:0.7,duration:1.6,ease:"sine.inOut",repeat:13,yoyo:true},28.0);
+      tl.fromTo("#sc2 .ember",{y:120,opacity:0},{y:-900,opacity:1,duration:4.5,ease:"sine.out",stagger:0.28,repeat:4},28.0);
+      gsap.set("#sc3",{opacity:0});
+      tl.to("#sc3",{opacity:1,duration:1.3,ease:"power2.out"},50.0);
+      tl.to("#sc3",{opacity:0,duration:1.3,ease:"power2.in"},60.7);
+      tl.set("#sc3",{opacity:0},62.0);
+      tl.from("#sc3 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},50.3);
+      tl.from("#sc3 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},50.7);
+      tl.from("#sc3 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},51.0);
+      tl.fromTo("#sc3 .ashfall",{opacity:0},{opacity:0.5,duration:2.0},50.0);
+      gsap.set("#sc4",{opacity:0});
+      tl.to("#sc4",{opacity:1,duration:1.3,ease:"power2.out"},62.0);
+      tl.to("#sc4",{opacity:0,duration:1.3,ease:"power2.in"},88.7);
+      tl.set("#sc4",{opacity:0},90.0);
+      tl.from("#sc4 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},62.3);
+      tl.from("#sc4 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},62.7);
+      tl.from("#sc4 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},63.0);
+      tl.fromTo("#sc4 .candle[data-i='0'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},64.0);
+      tl.fromTo("#sc4 .candle[data-i='1'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},65.0);
+      tl.fromTo("#sc4 .candle[data-i='2'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},66.0);
+      tl.fromTo("#sc4 .candle[data-i='3'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},67.0);
+      tl.fromTo("#sc4 .candle[data-i='4'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},68.0);
+      tl.fromTo("#sc4 .candle[data-i='5'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},69.0);
+      tl.fromTo("#sc4 .candle[data-i='6'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},70.0);
+      tl.fromTo("#sc4 .candle[data-i='7'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},71.0);
+      tl.fromTo("#sc4 .candle[data-i='8'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},72.0);
+      tl.fromTo("#sc4 .candle[data-i='9'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},73.0);
+      tl.fromTo("#sc4 .candle[data-i='10'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},74.0);
+      tl.fromTo("#sc4 .candle[data-i='11'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},75.0);
+      tl.fromTo("#sc4 .candle[data-i='12'] .flame",{opacity:0,scaleY:0.2},{opacity:1,scaleY:1,duration:0.9,ease:"power2.out"},76.0);
+      gsap.set("#sc5",{opacity:0});
+      tl.to("#sc5",{opacity:1,duration:1.3,ease:"power2.out"},90.0);
+      tl.to("#sc5",{opacity:0,duration:1.3,ease:"power2.in"},102.7);
+      tl.set("#sc5",{opacity:0},104.0);
+      tl.from("#sc5 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},90.3);
+      tl.from("#sc5 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},90.7);
+      tl.from("#sc5 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},91.0);
+      gsap.set("#sc6",{opacity:0});
+      tl.to("#sc6",{opacity:1,duration:1.3,ease:"power2.out"},104.0);
+      tl.to("#sc6",{opacity:0,duration:1.3,ease:"power2.in"},126.7);
+      tl.set("#sc6",{opacity:0},128.0);
+      tl.from("#sc6 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},104.3);
+      tl.from("#sc6 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},104.7);
+      tl.from("#sc6 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},105.0);
+      tl.fromTo("#sc6 .door",{opacity:0,scaleY:0.4},{opacity:1,scaleY:1,duration:2.4,ease:"power2.out"},104.0);
+      tl.fromTo("#sc6 .figure",{opacity:0,y:30},{opacity:0.55,y:0,duration:1.6,ease:"power2.out",stagger:0.12},105.2);
+      gsap.set("#sc7",{opacity:0});
+      tl.to("#sc7",{opacity:1,duration:1.3,ease:"power2.out"},128.0);
+      tl.to("#sc7",{opacity:0,duration:1.3,ease:"power2.in"},138.7);
+      tl.set("#sc7",{opacity:0},140.0);
+      tl.from("#sc7 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},128.3);
+      tl.from("#sc7 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},128.7);
+      tl.from("#sc7 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},129.0);
+      tl.fromTo("#sc7 .figure",{opacity:0,x:-60},{opacity:0.5,x:60,duration:12,ease:"none"},128.0);
+      gsap.set("#sc8",{opacity:0});
+      tl.to("#sc8",{opacity:1,duration:1.3,ease:"power2.out"},140.0);
+      tl.to("#sc8",{opacity:0,duration:1.3,ease:"power2.in"},154.7);
+      tl.set("#sc8",{opacity:0},156.0);
+      tl.from("#sc8 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},140.3);
+      tl.from("#sc8 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},140.7);
+      tl.from("#sc8 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},141.0);
+      tl.fromTo("#sc8 .flame",{opacity:0.0,scaleY:0.3},{opacity:1,scaleY:1,duration:1.4,ease:"power2.out",stagger:0.08},140.6);
+      tl.fromTo("#sc8 .grave-flame",{opacity:0},{opacity:1,duration:1.2,stagger:0.06},140.8);
+      gsap.set("#sc9",{opacity:0});
+      tl.to("#sc9",{opacity:1,duration:1.3,ease:"power2.out"},156.0);
+      tl.to("#sc9",{opacity:0,duration:1.3,ease:"power2.in"},174.7);
+      tl.set("#sc9",{opacity:0},176.0);
+      tl.from("#sc9 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},156.3);
+      tl.from("#sc9 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},156.7);
+      tl.from("#sc9 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},157.0);
+      tl.fromTo("#sc9 .ripple.r1",{scale:0.1,opacity:0.8},{scale:3.4,opacity:0,duration:5.0,ease:"power1.out",repeat:4,},156.0);
+      tl.fromTo("#sc9 .ripple.r2",{scale:0.1,opacity:0.8},{scale:3.4,opacity:0,duration:5.0,ease:"power1.out",repeat:4,},158.2);
+      tl.fromTo("#sc9 .ripple.r3",{scale:0.1,opacity:0.8},{scale:3.4,opacity:0,duration:5.0,ease:"power1.out",repeat:4,},160.4);
+      tl.fromTo("#sc9 .drop",{y:-200,opacity:0},{y:0,opacity:1,duration:1.2,ease:"power2.in",repeat:4,repeatDelay:3.8},156.0);
+      gsap.set("#sc10",{opacity:0});
+      tl.to("#sc10",{opacity:1,duration:1.3,ease:"power2.out"},176.0);
+      tl.to("#sc10",{opacity:0,duration:1.3,ease:"power2.in"},188.7);
+      tl.set("#sc10",{opacity:0},190.0);
+      tl.from("#sc10 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},176.3);
+      tl.from("#sc10 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},176.7);
+      tl.from("#sc10 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},177.0);
+      tl.fromTo("#sc10 .plaque",{opacity:0,scale:0.6},{opacity:0.8,scale:1,duration:1.0,ease:"power2.out",stagger:0.04},176.5);
+      gsap.set("#sc11",{opacity:0});
+      tl.to("#sc11",{opacity:1,duration:1.3,ease:"power2.out"},190.0);
+      tl.to("#sc11",{opacity:0,duration:1.3,ease:"power2.in"},200.7);
+      tl.set("#sc11",{opacity:0},202.0);
+      tl.from("#sc11 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},190.3);
+      tl.from("#sc11 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},190.7);
+      tl.from("#sc11 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},191.0);
+      gsap.set("#sc12",{opacity:0});
+      tl.to("#sc12",{opacity:1,duration:1.3,ease:"power2.out"},202.0);
+      tl.to("#sc12",{opacity:0,duration:1.3,ease:"power2.in"},224.7);
+      tl.set("#sc12",{opacity:0},226.0);
+      tl.from("#sc12 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},202.3);
+      tl.from("#sc12 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},202.7);
+      tl.from("#sc12 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},203.0);
+      tl.fromTo("#sc12 .flame",{opacity:0.0,scaleY:0.3},{opacity:1,scaleY:1,duration:1.4,ease:"power2.out",stagger:0.08},202.6);
+      tl.fromTo("#sc12 .star",{opacity:0},{opacity:0.9,duration:2.0,ease:"power1.out",stagger:0.02},203.0);
+      tl.to("#sc12 .candle-row",{y:-160,duration:24,ease:"power1.in"},202.0);
+      gsap.set("#sc13",{opacity:0});
+      tl.to("#sc13",{opacity:1,duration:1.3,ease:"power2.out"},226.0);
+      tl.to("#sc13",{opacity:0,duration:1.3,ease:"power2.in"},244.7);
+      tl.set("#sc13",{opacity:0},246.0);
+      tl.from("#sc13 .title",{opacity:0,y:40,duration:1.4,ease:"power3.out"},226.3);
+      tl.from("#sc13 .body",{opacity:0,y:30,duration:1.6,ease:"power2.out"},226.7);
+      tl.from("#sc13 .kicker",{opacity:0,duration:1.2,ease:"power1.out"},227.0);
+      tl.fromTo("#sc13 .star",{opacity:0},{opacity:0.9,duration:2.0,ease:"power1.out",stagger:0.02},227.0);
+      window.__timelines["main"] = tl;
+      tl.progress(0);
+</script>
+</body>
+</html>

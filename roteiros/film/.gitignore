@@ -1,0 +1,17 @@
+# dependencies & binaries
+node_modules/
+*/node_modules/
+gsap.min.js
+fonts/
+# chrome cache / render work
+**/renders/
+**/snapshots/
+**/work-*/
+# generated media (delivered separately, too large for git)
+*.mp4
+*.webm
+*.mov
+*.wav
+# scaffolding test project
+test4k/
+render.log
