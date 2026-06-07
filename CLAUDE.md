@@ -69,8 +69,11 @@ _ARQUIVO `01KCR6ZAO4JEPEASU7VVDYMW5UGVBWQ65Z` · _ASSETS `01KCR6ZAPXKJZOQ3VC7ZFI
 - Paleta institucional: roxo `#7B2D8B` · magenta `#C4357A` · laranja `#F08C1E` ·
   verde `#2D5A27` · terra `#5C3317` · azul `#B8D4E8`.
 - Fonte Calibri. Header: gradiente laranja → magenta → roxo. NUNCA preto puro.
-- Logo: `_ASSETS/LOGO.png` (PNG transparente 260×299px). Canto sup. direito em TODOS os slides;
-  slide 1 com logo grande ao lado do titulo. NUNCA SVG, nunca placeholder.
+- Logo: em `_ASSETS` (fonte unica). Arquivos REAIS hoje: `LOGO OFICIAL DAMHA AGRO.JPG` e
+  `LOGO NATAL OFICIAL DAMHA AGRO.JPG` (JPG, sem transparencia) + `132385-Fluxograma-de-processo_info.jpg`.
+  ATENCAO: nao existe `LOGO.png` transparente 260×299 ainda — para fundo escuro, Daniel deve subir o PNG
+  (pendencia registrada). Canto sup. direito em TODOS os slides; slide 1 com logo grande ao lado do titulo.
+  NUNCA SVG, nunca placeholder. Detalhe em PAD_Manual §A8.
 - HTML: dashboard/BI dinamico (nunca estatico). Sumario sticky horizontal no topo (logo a esq.,
   "SUMARIO" laranja, itens a dir.; tira 5px com gradiente acima). Animacao eixo→series→rotulos,
   KPIs count-up, hover, tooltips em picos/quedas/marcos. Narrativa: problema→dados→insights→acao.
