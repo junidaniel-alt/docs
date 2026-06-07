@@ -1,0 +1,5 @@
+# Generated video output
+renders/
+
+# Node
+node_modules/
