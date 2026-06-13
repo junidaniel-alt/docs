@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#3D2058" />
+  <title>Agente DAMHA</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- MSAL (login Microsoft 365 para leitura do cofre). Carregado via CDN. -->
+  <script src="https://alcdn.msauth.net/browser/3.10.0/js/msal-browser.min.js"></script>
+</head>
+<body>
+  <!-- ===== Cabecalho ===== -->
+  <header class="topbar">
+    <div class="topbar-title">
+      <span class="kicker">FAMILY OFFICE / HOLDING</span>
+      <h1>Agente <strong>DAMHA</strong></h1>
+    </div>
+    <img id="logo" class="logo" src="assets/LOGO.png" alt="DAMHA"
+         onerror="this.style.display='none'" />
+  </header>
+
+  <!-- ===== Sumario sticky ===== -->
+  <nav class="summary" id="summary">
+    <span class="summary-label">SUMARIO</span>
+    <a href="#conversa" class="active">Conversa</a>
+    <a href="#cerebro">Cerebro</a>
+    <a href="#projetos">Projetos</a>
+    <a href="#config">Config</a>
+  </nav>
+
+  <main>
+    <!-- ===== Conversa (voz + chat) ===== -->
+    <section id="conversa" class="panel">
+      <h2>Conversa</h2>
+      <div id="chat" class="chat" aria-live="polite"></div>
+
+      <div class="composer">
+        <button id="micBtn" class="mic" title="Falar" aria-label="Falar">&#127908;</button>
+        <textarea id="input" rows="1" placeholder="Fale ou escreva..."></textarea>
+        <button id="sendBtn" class="send" title="Enviar">Enviar</button>
+      </div>
+      <div class="composer-row">
+        <label class="chk"><input type="checkbox" id="ttsOn" checked /> Resposta em voz</label>
+        <span id="status" class="status"></span>
+      </div>
+    </section>
+
+    <!-- ===== Cerebro (cofre) ===== -->
+    <section id="cerebro" class="panel">
+      <h2>Cerebro <small>(cofre Obsidian)</small></h2>
+      <div id="cofreAuth">
+        <p class="muted">Conecte sua conta Microsoft 365 para ler o cofre.</p>
+        <button id="cofreLogin" class="secondary">Conectar M365</button>
+      </div>
+      <div id="cofreBrowser" class="hidden">
+        <div class="crumbs" id="crumbs"></div>
+        <ul id="cofreList" class="list"></ul>
+        <article id="noteView" class="note hidden">
+          <header class="note-head">
+            <strong id="noteTitle"></strong>
+            <button id="noteAnalyze" class="chip-warn">Analisar com Claude</button>
+          </header>
+          <pre id="noteBody"></pre>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Projetos ===== -->
+    <section id="projetos" class="panel">
+      <h2>Projetos</h2>
+      <p class="muted">Atalhos para os pain-eis e repositorios da operacao.</p>
+      <ul id="projetosList" class="cards"></ul>
+    </section>
+
+    <!-- ===== Configuracoes ===== -->
+    <section id="config" class="panel">
+      <h2>Configuracoes</h2>
+      <p class="muted">Tudo fica salvo apenas neste aparelho (localStorage). Nada e enviado a servidores nossos.</p>
+
+      <label class="field">Chave da API Anthropic
+        <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" />
+      </label>
+
+      <label class="field">Modelo
+        <select id="model">
+          <option value="claude-opus-4-8">Opus 4.8 (mais capaz)</option>
+          <option value="claude-sonnet-4-6" selected>Sonnet 4.6 (equilibrado)</option>
+          <option value="claude-haiku-4-5-20251001">Haiku 4.5 (rapido/barato)</option>
+        </select>
+      </label>
+
+      <label class="field">Modo de egress do cofre
+        <select id="egress">
+          <option value="hibrido" selected>Hibrido com confirmacao (recomendado)</option>
+          <option value="local">So leitura local (nada sai)</option>
+          <option value="aberto">Pode mandar (mais capaz)</option>
+        </select>
+      </label>
+
+      <fieldset class="field">
+        <legend>Cofre M365 (Graph)</legend>
+        <label>Azure Client ID
+          <input type="text" id="azureClient" placeholder="00000000-0000-0000-0000-000000000000" />
+        </label>
+        <label>Drive ID do cofre
+          <input type="text" id="driveId" />
+        </label>
+      </fieldset>
+
+      <button id="saveCfg" class="send">Salvar configuracoes</button>
+      <p id="cfgStatus" class="status"></p>
+    </section>
+  </main>
+
+  <!-- ===== Identificacao (§A9) ===== -->
+  <footer class="ident">
+    <div><span>Responsavel</span>Daniel Alves Feitoza Junior</div>
+    <div><span>Area</span>Financeiro-Holding / Family Office</div>
+    <div><span>Status</span>Revisado</div>
+    <div><span>Classificacao</span>Uso Interno e Confidencial</div>
+    <div><span>Versao</span>1.0</div>
+    <div><span>Emissao</span>13/06/2026</div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
