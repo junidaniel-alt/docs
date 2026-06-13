@@ -17,6 +17,17 @@ const DEFAULTS = {
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
+// Notas-nucleo: acesso direto por itemId (CLAUDE.md secao 3, Indice de URIs)
+const NUCLEO = [
+  { name: "!MAPA", id: "01KCR6ZAPIEOGYJSCJ4ZGIF5WY54FH6R7A" },
+  { name: "PAD_Manual", id: "01KCR6ZAOM25YZGXL5LNCZANX2MEYHNNGY" },
+  { name: "ARQUITETURA", id: "01KCR6ZAKGC25BLOMNBZF2N5AR2HLFY4PS" },
+  { name: "TEMPLATES", id: "01KCR6ZALAYY6H552IKJGYQQURAB5UOHXE" },
+  { name: "PAD_Aprendizados", id: "01KCR6ZAOMHFOMRCH65ZBISFOO4MWJA24M" },
+  { name: "PENDENCIAS", id: "01KCR6ZAMTVRHJBDI4JJBIGBGXUE455XPS" },
+  { name: "Protocolo-URIs", id: "01KCR6ZAO6J2273VOUJBFJB2EJ5JPGZQUS" },
+];
+
 // Papel da IA (CLAUDE.md secao 1 e 2) — embutido como system prompt do agente.
 const SYSTEM_PROMPT = `Voce e o Agente DAMHA, parceira de debate e pensamento critico de Daniel — NAO validadora.
 Questione premissas frageis (logica, emocional, estrategica), aponte vieses, racionalizacoes, riscos e a visao contraria mais forte.
@@ -194,14 +205,30 @@ async function graph(path, token, asText = false) {
   if (!res.ok) throw new Error("Graph " + res.status);
   return asText ? res.text() : res.json();
 }
-async function cofreLogin() {
+async function ensureCofre() {
+  if (window._cofreToken) return true;
   const token = await getToken();
-  if (!token) return;
+  if (!token) return false;
   window._cofreToken = token;
   el("cofreAuth").classList.add("hidden");
   el("cofreBrowser").classList.remove("hidden");
+  return true;
+}
+async function cofreLogin() {
+  if (!(await ensureCofre())) return;
   folderStack = [{ id: ROOT_FOLDER, name: "Cofre" }];
   await listFolder();
+}
+function renderNucleo() {
+  const box = el("nucleo");
+  box.innerHTML = "<span class='nucleo-label'>NUCLEO</span>";
+  NUCLEO.forEach((n) => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = n.name;
+    b.onclick = async () => { if (await ensureCofre()) openNote(n.id, n.name); };
+    box.appendChild(b);
+  });
 }
 async function listFolder() {
   const cur = folderStack[folderStack.length - 1];
@@ -296,6 +323,7 @@ function initScrollSpy() {
 window.addEventListener("DOMContentLoaded", () => {
   hydrateCfgForm();
   renderProjetos();
+  renderNucleo();
   initSpeech();
   initScrollSpy();
   el("sendBtn").onclick = sendMessage;
