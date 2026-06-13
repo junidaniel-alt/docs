@@ -225,13 +225,17 @@ async function ensureCofre() {
   return !!window._cofreToken;
 }
 async function cofreLogin() {
+  el("cofreStatus").textContent = "Conectando...";
   const app = buildMsal();
   if (!app) {
-    alert(typeof msal === "undefined"
+    const m = typeof msal === "undefined"
       ? "A biblioteca de login (MSAL) nao carregou. Verifique a conexao e recarregue o app."
-      : "Falta o Azure Client ID em Config.");
+      : "Falta o Azure Client ID em Config.";
+    el("cofreStatus").textContent = m;
+    alert(m);
     return;
   }
+  el("cofreStatus").textContent = "Redirecionando para o login da Microsoft...";
   await app.initialize();
   if (window._cofreToken) { await openCofreRoot(); return; }
   const acc = app.getAllAccounts()[0];
@@ -355,6 +359,10 @@ window.addEventListener("DOMContentLoaded", () => {
   el("input").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
+  // erros visiveis (em vez de falhar em silencio)
+  window.addEventListener("error", (ev) => { el("cofreStatus").textContent = "Erro: " + ev.message; });
+  window.addEventListener("unhandledrejection", (ev) => { el("cofreStatus").textContent = "Falha: " + ((ev.reason && ev.reason.message) || ev.reason); });
+  el("cofreStatus").textContent = "Build v1.1";
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   welcome();
   initAuthOnLoad();

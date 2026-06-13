@@ -1,7 +1,7 @@
 /* Service worker — shell offline minimo do Agente DAMHA.
    Cacheia apenas a casca do app. NUNCA cacheia respostas da API Anthropic
    nem conteudo do cofre (dado confidencial nao deve persistir aqui). */
-const CACHE = "agente-damha-v2";
+const CACHE = "agente-damha-v3";
 const SHELL = [
   "./index.html",
   "./styles.css",
@@ -24,7 +24,14 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   // Nunca intercepta chamadas externas (API Claude, Microsoft Graph, login).
   if (url.origin !== self.location.origin) return;
+  // Rede primeiro (sempre pega a versao nova quando online); cache so como fallback offline.
   e.respondWith(
-    caches.match(e.request).then((hit) => hit || fetch(e.request))
+    fetch(e.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
