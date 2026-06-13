@@ -362,7 +362,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // erros visiveis (em vez de falhar em silencio)
   window.addEventListener("error", (ev) => { el("cofreStatus").textContent = "Erro: " + ev.message; });
   window.addEventListener("unhandledrejection", (ev) => { el("cofreStatus").textContent = "Falha: " + ((ev.reason && ev.reason.message) || ev.reason); });
-  el("cofreStatus").textContent = "Build v1.1";
+  el("cofreStatus").textContent = "Build v1.2";
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   welcome();
   initAuthOnLoad();

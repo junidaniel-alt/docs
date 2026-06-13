@@ -8,8 +8,9 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
-  <!-- MSAL (login Microsoft 365 para leitura do cofre). Carregado via CDN. -->
-  <script src="https://alcdn.msauth.net/browser/3.10.0/js/msal-browser.min.js"></script>
+  <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
+  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
+          onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
 </head>
 <body>
   <!-- ===== Cabecalho ===== -->
