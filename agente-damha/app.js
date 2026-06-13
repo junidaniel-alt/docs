@@ -10,7 +10,8 @@ const DEFAULTS = {
   apiKey: "",
   model: "claude-sonnet-4-6",
   egress: "hibrido",
-  azureClient: "",
+  // Client ID do registro Azure "Agente DAMHA" (publico, nao e segredo)
+  azureClient: "934b3c6e-db97-434a-aff0-dd6d8b3b82d8",
   // driveId do cofre (CLAUDE.md secao 3)
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
