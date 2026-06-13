@@ -334,4 +334,16 @@ window.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  welcome();
 });
+
+function welcome() {
+  if (!cfg.apiKey) {
+    addMsg("Ola, Daniel. Sou o Agente DAMHA (nome provisorio).\n\n" +
+      "Para comecar, abra Config e preencha a chave da API Anthropic. Para ler o cofre, " +
+      "informe tambem o Azure Client ID. Tudo fica so neste aparelho.\n\n" +
+      "Quando estiver pronto, e so falar (botao do microfone) ou escrever.", "bot");
+  } else {
+    addMsg("Ola, Daniel. Pronto. Fale ou escreva — e lembre que sou parceira de debate, nao validadora.", "bot");
+  }
+}
