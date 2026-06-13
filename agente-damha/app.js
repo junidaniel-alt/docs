@@ -172,32 +172,45 @@ function toggleMic() {
   try { recog.start(); } catch { recording = false; el("micBtn").classList.remove("rec"); }
 }
 
-/* ---------- Cofre (M365 / Graph) ---------- */
-function initMsal() {
-  if (!cfg.azureClient) return null;
-  return new msal.PublicClientApplication({
+/* ---------- Cofre (M365 / Graph) — fluxo de REDIRECT (robusto no mobile) ---------- */
+const SCOPES = ["Files.Read.All", "Sites.Read.All", "User.Read"];
+function clientId() { return (cfg.azureClient || DEFAULTS.azureClient || "").trim(); }
+function buildMsal() {
+  if (msalApp) return msalApp;
+  if (typeof msal === "undefined" || !clientId()) return null;
+  msalApp = new msal.PublicClientApplication({
     auth: {
-      clientId: cfg.azureClient,
+      clientId: clientId(),
       authority: "https://login.microsoftonline.com/common",
       redirectUri: window.location.origin + window.location.pathname,
     },
     cache: { cacheLocation: "localStorage" },
   });
+  return msalApp;
 }
-async function getToken() {
-  if (!msalApp) msalApp = initMsal();
-  if (!msalApp) { alert("Informe o Azure Client ID em Config."); return null; }
-  await msalApp.initialize();
-  const scopes = ["Files.Read.All", "Sites.Read.All", "User.Read"];
-  const accounts = msalApp.getAllAccounts();
+function revealCofre() {
+  el("cofreAuth").classList.add("hidden");
+  el("cofreBrowser").classList.remove("hidden");
+}
+async function openCofreRoot() {
+  revealCofre();
+  folderStack = [{ id: ROOT_FOLDER, name: "Cofre" }];
+  await listFolder();
+}
+// No carregamento: processa o retorno do redirect e tenta token silencioso.
+async function initAuthOnLoad() {
+  const app = buildMsal();
+  if (!app) return;
+  await app.initialize();
   try {
-    if (accounts.length) {
-      const r = await msalApp.acquireTokenSilent({ scopes, account: accounts[0] });
-      return r.accessToken;
-    }
-  } catch { /* cai para popup */ }
-  const r = await msalApp.acquireTokenPopup({ scopes });
-  return r.accessToken;
+    const resp = await app.handleRedirectPromise();
+    if (resp && resp.accessToken) { window._cofreToken = resp.accessToken; await openCofreRoot(); return; }
+  } catch (e) { addMsg("Erro ao voltar do login: " + e.message, "err"); }
+  const acc = app.getAllAccounts()[0];
+  if (acc) {
+    try { const r = await app.acquireTokenSilent({ scopes: SCOPES, account: acc }); window._cofreToken = r.accessToken; }
+    catch { /* precisa de login interativo */ }
+  }
 }
 async function graph(path, token, asText = false) {
   const res = await fetch("https://graph.microsoft.com/v1.0" + path, {
@@ -208,17 +221,25 @@ async function graph(path, token, asText = false) {
 }
 async function ensureCofre() {
   if (window._cofreToken) return true;
-  const token = await getToken();
-  if (!token) return false;
-  window._cofreToken = token;
-  el("cofreAuth").classList.add("hidden");
-  el("cofreBrowser").classList.remove("hidden");
-  return true;
+  await cofreLogin();      // pode redirecionar (a pagina recarrega)
+  return !!window._cofreToken;
 }
 async function cofreLogin() {
-  if (!(await ensureCofre())) return;
-  folderStack = [{ id: ROOT_FOLDER, name: "Cofre" }];
-  await listFolder();
+  const app = buildMsal();
+  if (!app) {
+    alert(typeof msal === "undefined"
+      ? "A biblioteca de login (MSAL) nao carregou. Verifique a conexao e recarregue o app."
+      : "Falta o Azure Client ID em Config.");
+    return;
+  }
+  await app.initialize();
+  if (window._cofreToken) { await openCofreRoot(); return; }
+  const acc = app.getAllAccounts()[0];
+  if (acc) {
+    try { const r = await app.acquireTokenSilent({ scopes: SCOPES, account: acc }); window._cofreToken = r.accessToken; await openCofreRoot(); return; }
+    catch { /* cai para redirect */ }
+  }
+  await app.loginRedirect({ scopes: SCOPES }); // navega ao login da Microsoft; volta para o redirectUri
 }
 function renderNucleo() {
   const box = el("nucleo");
@@ -336,6 +357,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   welcome();
+  initAuthOnLoad();
 });
 
 function welcome() {

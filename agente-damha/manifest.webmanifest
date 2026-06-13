@@ -2,7 +2,7 @@
   "name": "Agente DAMHA",
   "short_name": "Agente DAMHA",
   "description": "Painel de controle e conversa por voz com o cerebro (cofre) e os projetos DAMHA.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
