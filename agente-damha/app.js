@@ -174,7 +174,9 @@ function toggleMic() {
 
 /* ---------- Cofre (M365 / Graph) — fluxo de REDIRECT (robusto no mobile) ---------- */
 const SCOPES = ["Files.Read.All", "Sites.Read.All", "User.Read"];
-function clientId() { return (cfg.azureClient || DEFAULTS.azureClient || "").trim(); }
+// Client ID fixo do registro "Agente DAMHA" (evita valor errado salvo no aparelho).
+const APP_CLIENT_ID = "934b3c6e-db97-434a-aff0-dd6d8b3b82d8";
+function clientId() { return APP_CLIENT_ID; }
 function buildMsal() {
   if (msalApp) return msalApp;
   if (typeof msal === "undefined" || !clientId()) return null;
@@ -362,7 +364,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // erros visiveis (em vez de falhar em silencio)
   window.addEventListener("error", (ev) => { el("cofreStatus").textContent = "Erro: " + ev.message; });
   window.addEventListener("unhandledrejection", (ev) => { el("cofreStatus").textContent = "Falha: " + ((ev.reason && ev.reason.message) || ev.reason); });
-  el("cofreStatus").textContent = "Build v1.2";
+  el("cofreStatus").textContent = "Build v1.3 · app " + APP_CLIENT_ID.slice(0, 8);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   welcome();
   initAuthOnLoad();
