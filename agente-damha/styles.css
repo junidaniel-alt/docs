@@ -268,3 +268,13 @@ body.light .tog.on { background: var(--roxo); color: #fff; }
 
 /* aba selecionada (planilha) */
 .chip-s.on { background: var(--roxo); color: #fff; border-color: var(--magenta); }
+
+/* ===== Cards de Projetos ===== */
+.pcards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.pcard { text-align: left; background: #241038; border: 1px solid var(--roxo); border-radius: 14px; padding: 14px 12px; color: var(--txt); font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 4px; transition: transform .12s ease, background .2s ease, box-shadow .2s ease; }
+.pcard:hover { transform: translateY(-2px); background: var(--roxo); box-shadow: 0 8px 18px rgba(0,0,0,.3); }
+.pcard:active { transform: scale(.98); }
+.pcard-ic { font-size: 1.4rem; }
+.pcard-t { font-weight: 700; font-size: .9rem; line-height: 1.2; }
+.pcard-d { color: var(--laranja); font-size: .68rem; letter-spacing: .5px; }
+body.light .pcard { background: #fff; }

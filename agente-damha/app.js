@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.44";
+const APP_VERSION = "1.45";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -865,6 +865,7 @@ async function listProj() {
   el("projViewer").classList.add("hidden");
   el("projBrowser").classList.remove("hidden");
   const ul = el("projList");
+  document.querySelectorAll("#projBrowser .pcards").forEach((n) => n.remove()); // limpa cards anteriores
   if (cur.id === "__ROOT__") {
     ul.innerHTML = "";
     [["\u{1F4C1} Projetos", PROJETOS_FOLDER, "Projetos"],
@@ -879,24 +880,38 @@ async function listProj() {
   ul.innerHTML = "<li class='muted'>Carregando...</li>";
   try {
     const data = await graph(`/drives/${cfg.driveId}/items/${cur.id}/children?$select=id,name,folder,file,webUrl&$top=200`, window._cofreToken);
+    const items = (data.value || []).sort((a, b) => (b.folder ? 1 : 0) - (a.folder ? 1 : 0) || b.name.localeCompare(a.name));
     ul.innerHTML = "";
-    (data.value || [])
-      .sort((a, b) => (b.folder ? 1 : 0) - (a.folder ? 1 : 0) || b.name.localeCompare(a.name))
-      .forEach((it) => {
-        const isHtml = it.file && /\.html?$/i.test(it.name);
+    const cards = document.createElement("div"); cards.className = "pcards";
+    items.forEach((it) => {
+      const isHtml = it.file && /\.html?$/i.test(it.name);
+      if (it.folder) {
+        const p = prettyProj(it.name);
+        const c = document.createElement("button");
+        c.className = "pcard";
+        c.innerHTML = `<span class="pcard-ic">\u{1F4C1}</span><span class="pcard-t">${escapeHtml(p.title)}</span>${p.date ? `<span class="pcard-d">${escapeHtml(p.date)}</span>` : ""}`;
+        c.onclick = () => { projStack.push({ id: it.id, name: it.name }); listProj(); };
+        cards.appendChild(c);
+      } else {
         const li = document.createElement("li");
-        li.textContent = (it.folder ? "\u{1F4C1} " : isHtml ? "\u{1F310} " : "\u{1F4C4} ") + it.name;
-        li.onclick = () => {
-          if (it.folder) { projStack.push({ id: it.id, name: it.name }); listProj(); }
-          else if (isHtml) openHtml(it.id, it.name);
-          else if (it.webUrl) window.open(it.webUrl, "_blank");
-        };
+        li.textContent = (isHtml ? "\u{1F310} " : "\u{1F4C4} ") + it.name;
+        li.onclick = () => { if (isHtml) openHtml(it.id, it.name); else if (it.webUrl) window.open(it.webUrl, "_blank"); };
         ul.appendChild(li);
-      });
-    if (!ul.children.length) ul.innerHTML = "<li class='muted'>Pasta vazia.</li>";
+      }
+    });
+    if (cards.children.length) ul.before(cards);
+    if (!cards.children.length && !ul.children.length) ul.innerHTML = "<li class='muted'>Pasta vazia.</li>";
   } catch (e) {
     ul.innerHTML = `<li class='muted'>Erro: ${e.message}</li>`;
   }
+}
+// Titulo/data legiveis a partir do nome da pasta do projeto (ex.: 2026.06.08_ANALISE_RISCO_SOJA)
+function prettyProj(name) {
+  const m = name.match(/^(\d{4}[.\-]\d{2}(?:[.\-]\d{2})?)[_\s.\-]*(.*)$/);
+  const date = m ? m[1].replace(/-/g, ".") : "";
+  let title = (m && m[2] ? m[2] : name).replace(/[_]+/g, " ").replace(/\s+/g, " ").trim();
+  title = title.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase());
+  return { date, title: title || name };
 }
 async function openHtml(id, name) {
   el("projBrowser").classList.add("hidden");
