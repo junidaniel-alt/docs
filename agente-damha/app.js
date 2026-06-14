@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.19";
+const APP_VERSION = "1.20";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -110,7 +110,7 @@ function populateModels(provider, selected) {
 }
 // Mensagem de erro amigavel por status HTTP
 function apiError(provider, status, text) {
-  if (status === 429) return `Limite/cota do ${provider} atingido. Troque o modelo em Config (ex.: Gemini 1.5 Flash) ou aguarde ~1 min.`;
+  if (status === 429) return `Limite/cota do ${provider} atingido. Troque o modelo em Config (ex.: Gemini 2.0 Flash-Lite) ou aguarde ~1 min.`;
   if (status === 401 || status === 403) return `Chave do ${provider} invalida ou sem permissao. Revise a chave em Config.`;
   if (status === 400 || status === 404) return `Modelo do ${provider} indisponivel para essa chave. Escolha outro modelo em Config.`;
   return `Erro ${provider} (${status}): ${String(text).slice(0, 160)}`;
