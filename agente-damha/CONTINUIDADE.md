@@ -81,7 +81,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 
 ---
 
-## 5. Estado atual (v1.21)
+## 5. Estado atual (v1.29)
 
 **Funciona:**
 - Conversa por voz (entrada Web Speech + saida SpeechSynthesis) e texto.
@@ -145,10 +145,20 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 - **v1.19/1.20** — corrige modelos Gemini (1.5 descontinuado -> 404); lista so 2.0/2.5; migracao auto.
 - **v1.21** — **COPILOTO DAMHA (Fase 1)**: aba renomeada, **chips de sugestao** (`SUGGEST`/`renderSuggest`)
   e a IA **gera graficos inline** — devolve bloco ```chart {json}``` que o app renderiza em SVG
-  (`extractChart`/`chartSVG`/`renderChart`; toque troca line/bar). Fase 2 = dados reais do cofre
-  (nao embutir dado confidencial no app publico; puxar via M365 em runtime).
+  (`extractChart`/`chartSVG`/`renderChart`; toque troca line/bar).
+- **v1.22/1.23/1.24/1.25** — Gemini: header `x-goog-api-key`, auto-retry + fallback de modelo no 429,
+  e **alinhado ao STUDIO** (mesmo endpoint; padrao **gemini-2.0-flash-lite**, que tem cota gratis pro
+  Daniel; 2.5-flash = o do STUDIO). Busca web (google_search) tolerante: se 400/403, responde sem internet.
+  (Aprendizado-chave: a cota gratis do Gemini e POR MODELO; 1.5 foi descontinuado.)
+- **v1.26/1.27** — voz feminina configuravel: botao **Parar**, e em Config seletor de voz +
+  tom (pitch) + velocidade + **Testar voz** (`speakWith`).
+- **v1.28** — abertura "fantastica" (halo + brilho no nome), transicoes de view e microinteracoes;
+  **som de abertura** (chime WebAudio no 1o toque; autoplay e bloqueado) com chavinha em Config.
+- **v1.29** — **mascote Maria Sarah** (persona/saudacao); botao **Limpar conversa**; seletor lista
+  TODAS as vozes do aparelho + **presets** (Maria Sarah/Jovem/Seria/Animada).
 
-> Detalhe granular: `git log -- agente-damha/`.
+> Detalhe granular: `git log -- agente-damha/`. Persona da IA = **Maria Sarah** (mascote do Copiloto Damha).
+> Leitura do cofre p/ Fase 2 ja viavel via `read_resource` (M365 connector): file:///{driveId}/{itemId}.
 
 ---
 
