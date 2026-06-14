@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.28";
+const APP_VERSION = "1.29";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -36,7 +36,7 @@ const NUCLEO = [
 ];
 
 // Papel da IA (CLAUDE.md secao 1 e 2) — embutido como system prompt do agente.
-const SYSTEM_PROMPT = `Voce e o Agente Damha Agro, parceira de debate e pensamento critico de Daniel — NAO validadora.
+const SYSTEM_PROMPT = `Voce e a Maria Sarah, copiloto e mascote da Damha Agro (family office de Daniel) — parceira de debate e pensamento critico, NAO validadora.
 Questione premissas frageis (logica, emocional, estrategica), aponte vieses, racionalizacoes, riscos e a visao contraria mais forte.
 Diferencie fato, interpretacao e opiniao; sinalize incerteza; nunca invente dados, fontes ou cenarios.
 Regra primordial: nada comeca do zero — o cofre Obsidian e a fonte mestra; em conflito, o cofre vence.
@@ -163,7 +163,8 @@ function populateVoices() {
   const sel = el("voiceSel"); if (!sel) return;
   const vs = ("speechSynthesis" in window) ? window.speechSynthesis.getVoices() : [];
   const pt = vs.filter((v) => /^pt/i.test(v.lang));
-  const list = pt.length ? pt : vs;
+  const others = vs.filter((v) => !/^pt/i.test(v.lang));
+  const list = [...pt, ...others]; // todas as vozes do aparelho, pt-BR primeiro
   const cur = sel.value || cfg.voiceName || "";
   sel.innerHTML = "";
   const auto = document.createElement("option");
@@ -817,6 +818,14 @@ window.addEventListener("DOMContentLoaded", () => {
   el("voiceTest").onclick = () => speakWith("Ola, Daniel! Sou o Copiloto Damha Agro.", parseFloat(el("voicePitch").value), parseFloat(el("voiceRate").value), el("voiceSel").value);
   el("openSoundChk").checked = localStorage.getItem("openSound") !== "0";
   el("openSoundChk").onchange = () => localStorage.setItem("openSound", el("openSoundChk").checked ? "1" : "0");
+  el("clearChat").onclick = clearChat;
+  document.querySelectorAll("[data-pp]").forEach((b) => {
+    b.onclick = () => {
+      const [p, r] = b.dataset.pp.split(",").map(Number);
+      el("voicePitch").value = p; el("voiceRate").value = r;
+      speakWith("Oi! Eu sou a Maria Sarah, sua copiloto da Damha Agro.", p, r, el("voiceSel").value);
+    };
+  });
   armOpenSound();
   el("saveCfg").onclick = saveCfg;
   el("provider").onchange = () => populateModels(el("provider").value);
@@ -846,8 +855,14 @@ function userFirstName() {
 function greetText() {
   const nome = userFirstName() || "Daniel";
   return cfg.apiKey
-    ? `Ola, ${nome}! Sou o App Agente Damha Agro. Fale ou escreva — e lembre que sou parceira de debate, nao validadora.`
-    : `Ola, ${nome}! Sou o App Agente Damha Agro. Para conversar, abra Config e cole a chave da API (Gemini tem plano gratis). Tudo fica so neste aparelho.`;
+    ? `Ola, ${nome}! Sou a Maria Sarah, sua copiloto da Damha Agro. Fale ou escreva — e lembre que sou parceira de debate, nao validadora.`
+    : `Ola, ${nome}! Sou a Maria Sarah, copiloto da Damha Agro. Para conversar, abra Config e cole a chave da API (Gemini tem plano gratis). Tudo fica so neste aparelho.`;
 }
 function updateGreeting() { if (greetMsg) greetMsg.textContent = greetText(); }
 function welcome() { greetMsg = addMsg(greetText(), "bot"); }
+function clearChat() {
+  stopSpeak();
+  history = []; pendingNoteContext = null;
+  el("chat").innerHTML = "";
+  welcome();
+}
