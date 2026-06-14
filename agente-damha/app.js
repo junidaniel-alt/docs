@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.31";
+const APP_VERSION = "1.32";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -285,16 +285,26 @@ function chartSVG(spec, type) {
 function renderChart(spec) {
   const box = document.createElement("div");
   box.className = "panelchart";
-  let type = spec.type === "bar" ? "bar" : "line";
-  const draw = () => {
-    box.innerHTML = `<div class="pc-title">&#128202; ${escapeHtml(spec.title || "Painel")}</div>`
-      + chartSVG(spec, type)
-      + `<div class="pc-cap">&#9889; painel${spec.source ? " &middot; " + escapeHtml(spec.source) : ""} &middot; toque para trocar tipo</div>`;
-  };
-  draw();
-  box.onclick = () => { type = type === "line" ? "bar" : "line"; draw(); };
+  const type = spec.type === "bar" ? "bar" : "line";
+  box.innerHTML = `<div class="pc-title">&#128202; ${escapeHtml(spec.title || "Painel")}</div>`
+    + chartSVG(spec, type)
+    + `<div class="pc-cap">&#9889; painel${spec.source ? " &middot; " + escapeHtml(spec.source) : ""} &middot; toque para ampliar</div>`;
+  box.onclick = () => openChartModal(spec);
   return box;
 }
+// Modal de grafico em tela cheia (clica e "sai da tela")
+let _modalSpec = null, _modalType = "line";
+function openChartModal(spec) {
+  _modalSpec = spec; _modalType = spec.type === "bar" ? "bar" : "line";
+  el("cmTitle").textContent = spec.title || "Painel";
+  drawModal();
+  el("chartModal").classList.remove("hidden");
+}
+function drawModal() {
+  el("cmBody").innerHTML = chartSVG(_modalSpec, _modalType);
+  document.querySelectorAll("#chartModal [data-ct]").forEach((b) => b.classList.toggle("on", b.dataset.ct === _modalType));
+}
+function closeChartModal() { el("chartModal").classList.add("hidden"); }
 // Chips de sugestao
 const SUGGEST = [
   "Me surpreenda", "Por que o dolar mexeu hoje?", "Compare USD, soja, milho e boi",
@@ -847,6 +857,9 @@ window.addEventListener("DOMContentLoaded", () => {
   el("openSoundChk").checked = localStorage.getItem("openSound") !== "0";
   el("openSoundChk").onchange = () => localStorage.setItem("openSound", el("openSoundChk").checked ? "1" : "0");
   el("clearChat").onclick = clearChat;
+  el("cmClose").onclick = closeChartModal;
+  document.querySelectorAll("#chartModal [data-ct]").forEach((b) => { b.onclick = () => { _modalType = b.dataset.ct; drawModal(); }; });
+  el("chartModal").addEventListener("click", (e) => { if (e.target === el("chartModal")) closeChartModal(); });
   // Voz aplica na hora (corrige "nao troca") + toca amostra
   el("voiceSel").onchange = () => { applyVoiceLive(); speakWith("Pronto, voz trocada. Eu sou a Maria Sarah.", cfg.pitch, cfg.rate, cfg.voiceName); };
   el("voicePitch").oninput = applyVoiceLive;
