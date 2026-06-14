@@ -149,3 +149,8 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 /* Etiqueta de versao no canto da abertura */
 #home { position: relative; }
 .appver { position: absolute; right: 6px; bottom: 2px; font-size: 11px; color: var(--lilas); opacity: .45; letter-spacing: .5px; }
+
+/* Campo com botao (olho da chave de API) */
+.inwrap { display: flex; gap: 6px; align-items: center; margin-top: 5px; }
+.inwrap input { flex: 1; margin-top: 0; }
+.eye { background: var(--roxo); border: 0; border-radius: 10px; padding: 0 13px; color: #fff; cursor: pointer; font-size: 1rem; line-height: 38px; }

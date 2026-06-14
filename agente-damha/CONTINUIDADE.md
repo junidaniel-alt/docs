@@ -119,6 +119,9 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
   abre HTML renderizado. Subtitulos das abas removidos.
 - **v1.11** — etiqueta de versao no canto da abertura (constante `APP_VERSION`, fonte unica).
 - **v1.12** — nome oficial "App Agente Damha Agro" + convencao de frase-gatilho (secao 1).
+- **v1.13** — Config separado em Geral (so chave de API, com botao mostrar) e **ADM** (cofre)
+  atras de **PIN**; aba Cerebro escondida quando trancado. PIN = dissuasor; o dado do cofre e
+  protegido de verdade pelo login M365 (so abre para conta com permissao no OneDrive).
 
 > Detalhe granular: `git log -- agente-damha/`.
 

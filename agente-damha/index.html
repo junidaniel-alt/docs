@@ -7,7 +7,7 @@
   <title>App Agente Damha Agro</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=23" />
+  <link rel="stylesheet" href="styles.css?v=24" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -106,7 +106,10 @@
       <p class="muted">Tudo fica salvo apenas neste aparelho (localStorage). Nada e enviado a servidores nossos.</p>
 
       <label class="field">Chave da API (Gemini ou Claude)
-        <input type="password" id="apiKey" placeholder="cole sua chave aqui" autocomplete="off" />
+        <span class="inwrap">
+          <input type="password" id="apiKey" placeholder="cole sua chave aqui" autocomplete="off" />
+          <button type="button" id="keyToggle" class="eye" title="Mostrar/ocultar">&#128065;</button>
+        </span>
       </label>
 
       <label class="field">Provedor de IA
@@ -121,26 +124,52 @@
         <select id="model"></select>
       </label>
 
-      <label class="field">Modo de egress do cofre
-        <select id="egress">
-          <option value="hibrido" selected>Hibrido com confirmacao (recomendado)</option>
-          <option value="local">So leitura local (nada sai)</option>
-          <option value="aberto">Pode mandar (mais capaz)</option>
-        </select>
-      </label>
-
-      <fieldset class="field">
-        <legend>Cofre M365 (Graph)</legend>
-        <label>Azure Client ID
-          <input type="text" id="azureClient" placeholder="00000000-0000-0000-0000-000000000000" />
-        </label>
-        <label>Drive ID do cofre
-          <input type="text" id="driveId" />
-        </label>
-      </fieldset>
-
       <button id="saveCfg" class="send">Salvar configuracoes</button>
       <p id="cfgStatus" class="status"></p>
+
+      <!-- Area ADM trancada (aparece quando bloqueada) -->
+      <fieldset class="field hidden" id="admLock">
+        <legend>&#128274; Area ADM</legend>
+        <p class="muted" id="admLockHint"></p>
+        <label id="admPinSetWrap" class="hidden">Defina um PIN (min. 4 digitos)
+          <input type="password" id="admPinSet" inputmode="numeric" autocomplete="off" />
+        </label>
+        <label id="admPinInputWrap">PIN ADM
+          <input type="password" id="admPinInput" inputmode="numeric" autocomplete="off" />
+        </label>
+        <button id="admUnlockBtn" class="secondary">Desbloquear ADM</button>
+        <p id="admMsg" class="status"></p>
+      </fieldset>
+
+      <!-- Config ADM (aparece quando desbloqueada) -->
+      <div id="admPanel" class="hidden">
+        <fieldset class="field">
+          <legend>Config ADM — Cofre (Cerebro)</legend>
+          <label>Modo de egress do cofre
+            <select id="egress">
+              <option value="hibrido" selected>Hibrido com confirmacao (recomendado)</option>
+              <option value="local">So leitura local (nada sai)</option>
+              <option value="aberto">Pode mandar (mais capaz)</option>
+            </select>
+          </label>
+          <label>Azure Client ID
+            <input type="text" id="azureClient" placeholder="00000000-0000-0000-0000-000000000000" />
+          </label>
+          <label>Drive ID do cofre
+            <input type="text" id="driveId" />
+          </label>
+          <button id="saveAdm" class="send">Salvar ADM</button>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Seguranca (PIN ADM)</legend>
+          <label>Definir / alterar PIN
+            <input type="password" id="admPinChange" inputmode="numeric" autocomplete="off" />
+          </label>
+          <button id="admPinSave" class="secondary">Salvar PIN</button>
+          <button id="admLockBtn" class="secondary">Trancar ADM agora</button>
+          <p id="admSecMsg" class="status"></p>
+        </fieldset>
+      </div>
     </section>
   </main>
 
@@ -154,6 +183,6 @@
     <div><span>Emissao</span>13/06/2026</div>
   </footer>
 
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=24"></script>
 </body>
 </html>

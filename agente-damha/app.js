@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.12";
+const APP_VERSION = "1.13";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -473,9 +473,75 @@ function initNav() {
 }
 
 /* ---------- Init ---------- */
+/* ---------- Admin / PIN (separa o Cerebro/cofre do uso geral) ---------- */
+async function sha(t) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+const admPinHash = () => localStorage.getItem("admPinHash") || "";
+const admUnlocked = () => localStorage.getItem("admUnlocked") === "1";
+const admVisible = () => admUnlocked();
+
+function applyAdm() {
+  const vis = admVisible();
+  document.querySelectorAll('[data-go="cerebro"]').forEach((e) => { e.style.display = vis ? "" : "none"; });
+  el("admPanel").classList.toggle("hidden", !vis);
+  el("admLock").classList.toggle("hidden", vis);
+  if (!vis) {
+    const hasPin = !!admPinHash();
+    el("admPinSetWrap").classList.toggle("hidden", hasPin);
+    el("admPinInputWrap").classList.toggle("hidden", !hasPin);
+    el("admUnlockBtn").textContent = hasPin ? "Desbloquear ADM" : "Definir PIN e entrar";
+    el("admLockHint").textContent = hasPin
+      ? "Area restrita. Digite o PIN para acessar o Cerebro e o cofre."
+      : "Primeiro acesso: defina um PIN para proteger o Cerebro e o cofre.";
+    if (el("cerebro").classList.contains("active")) showView("home");
+  }
+}
+
+function initAdm() {
+  el("keyToggle").onclick = () => {
+    const i = el("apiKey");
+    const show = i.type === "password";
+    i.type = show ? "text" : "password";
+    el("keyToggle").style.opacity = show ? "1" : ".55";
+  };
+  el("admUnlockBtn").onclick = async () => {
+    if (!admPinHash()) {
+      const p = el("admPinSet").value.trim();
+      if (p.length < 4) { el("admMsg").textContent = "Use ao menos 4 digitos."; return; }
+      localStorage.setItem("admPinHash", await sha(p));
+      localStorage.setItem("admUnlocked", "1");
+      el("admPinSet").value = ""; el("admMsg").textContent = ""; applyAdm();
+    } else {
+      const p = el("admPinInput").value.trim();
+      if (await sha(p) === admPinHash()) {
+        localStorage.setItem("admUnlocked", "1");
+        el("admPinInput").value = ""; el("admMsg").textContent = ""; applyAdm();
+      } else {
+        el("admMsg").textContent = "PIN incorreto.";
+      }
+    }
+  };
+  el("admPinSave").onclick = async () => {
+    const p = el("admPinChange").value.trim();
+    if (p.length < 4) { el("admSecMsg").textContent = "Use ao menos 4 digitos."; return; }
+    localStorage.setItem("admPinHash", await sha(p));
+    localStorage.setItem("admUnlocked", "1");
+    el("admPinChange").value = ""; el("admSecMsg").textContent = "PIN atualizado.";
+  };
+  el("admLockBtn").onclick = () => {
+    if (!admPinHash()) { el("admSecMsg").textContent = "Defina um PIN primeiro."; return; }
+    localStorage.removeItem("admUnlocked"); applyAdm(); showView("home");
+  };
+  el("saveAdm").onclick = saveCfg;
+  applyAdm();
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   hydrateCfgForm();
   renderProjetos();
+  initAdm();
   renderNucleo();
   initSpeech();
   initNav();
