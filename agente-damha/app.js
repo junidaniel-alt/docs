@@ -20,9 +20,11 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.37";
+const APP_VERSION = "1.38";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
+// Planilhas legiveis na Base DAMHA (lidas com SheetJS)
+const SHEET_RE = /\.(xlsx|xlsm|xlsb|xls|csv)$/i;
 
 // Notas-nucleo: acesso direto por itemId (CLAUDE.md secao 3, Indice de URIs)
 const NUCLEO = [
@@ -675,13 +677,15 @@ async function listFolder() {
     const data = await graph(`/drives/${cfg.driveId}/items/${cur.id}/children?$top=200`, window._cofreToken);
     ul.innerHTML = "";
     (data.value || [])
-      .filter((it) => it.folder || (it.name || "").endsWith(".md"))
+      .filter((it) => it.folder || /\.md$/i.test(it.name) || SHEET_RE.test(it.name))
       .sort((a, b) => (b.folder ? 1 : 0) - (a.folder ? 1 : 0) || a.name.localeCompare(b.name))
       .forEach((it) => {
         const li = document.createElement("li");
-        li.textContent = (it.folder ? "\u{1F4C1} " : "\u{1F4C4} ") + it.name;
+        const isSheet = SHEET_RE.test(it.name);
+        li.textContent = (it.folder ? "\u{1F4C1} " : isSheet ? "\u{1F4CA} " : "\u{1F4C4} ") + it.name;
         li.onclick = () => it.folder ? (folderStack.push({ id: it.id, name: it.name }), listFolder())
-                                     : openNote(it.id, it.name);
+                          : isSheet ? openSheet(it.id, it.name)
+                          : openNote(it.id, it.name);
         ul.appendChild(li);
       });
     if (!ul.children.length) ul.innerHTML = "<li class='muted'>Pasta vazia.</li>";
@@ -712,6 +716,33 @@ async function openNote(id, name) {
     btn.onclick = () => analyzeNote(name, txt);
   } catch (e) {
     el("noteBody").textContent = "Erro ao abrir: " + e.message;
+  }
+}
+// Le uma planilha (.xlsx/.xlsb/.csv) da Base DAMHA e mostra como tabela (para a IA plotar dado real).
+async function openSheet(id, name) {
+  el("noteTitle").textContent = name;
+  el("noteBody").textContent = "Lendo planilha...";
+  el("noteView").classList.remove("hidden");
+  try {
+    const res = await fetch(`https://graph.microsoft.com/v1.0/drives/${cfg.driveId}/items/${id}/content`, { headers: { Authorization: "Bearer " + window._cofreToken } });
+    if (!res.ok) throw new Error("Graph " + res.status);
+    const buf = await res.arrayBuffer();
+    if (typeof XLSX === "undefined") { el("noteBody").textContent = "O leitor de planilha ainda nao carregou. Verifique a conexao e reabra."; return; }
+    const wb = XLSX.read(buf, { type: "array" });
+    const sheets = wb.SheetNames || [];
+    const ws = wb.Sheets[sheets[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: "" });
+    const compact = rows.slice(0, 40).map((r) => r.slice(0, 12).map((c) => String(c)).join(" | ")).join("\n");
+    const txt = `Planilha: ${name}\nAba: ${sheets[0]}` + (sheets.length > 1 ? ` (abas: ${sheets.join(", ")})` : "")
+      + `\n\n${compact}` + (rows.length > 40 ? `\n... (+${rows.length - 40} linhas)` : "");
+    el("noteBody").textContent = txt;
+    lastOpenedNote = { title: name, body: txt };
+    const btn = el("noteAnalyze");
+    btn.textContent = "Plotar/analisar com IA";
+    btn.classList.toggle("hidden", cfg.egress === "local");
+    btn.onclick = () => analyzeNote(name, txt);
+  } catch (e) {
+    el("noteBody").textContent = "Erro ao ler planilha: " + e.message;
   }
 }
 function analyzeNote(title, body) {
