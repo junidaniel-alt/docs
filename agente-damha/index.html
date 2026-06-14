@@ -7,7 +7,7 @@
   <title>App Agente Damha Agro</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=47" />
+  <link rel="stylesheet" href="styles.css?v=48" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -119,6 +119,11 @@
       <h2>Configuracoes</h2>
       <p class="muted">Tudo fica salvo apenas neste aparelho (localStorage). Nada e enviado a servidores nossos.</p>
 
+      <div class="toggles" id="themeRow" style="margin-bottom:14px">
+        <button type="button" class="tog" data-theme="dark">&#127769; Escuro</button>
+        <button type="button" class="tog" data-theme="light">&#9728; Claro</button>
+      </div>
+
       <label class="field">Chave da API (Gemini ou Claude)
         <span class="inwrap">
           <input type="password" id="apiKey" placeholder="cole sua chave aqui" autocomplete="off" />
@@ -225,6 +230,6 @@
     <div id="cmBody" class="cmodal-body"></div>
   </div>
 
-  <script src="app.js?v=47"></script>
+  <script src="app.js?v=48"></script>
 </body>
 </html>

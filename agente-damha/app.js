@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.36";
+const APP_VERSION = "1.37";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -69,6 +69,20 @@ function openChime() {
     });
     _openSoundDone = true;
   } catch (e) { /* sem audio: ignora */ }
+}
+/* ---------- Tema claro/escuro ---------- */
+function applyTheme() {
+  const light = localStorage.getItem("theme") === "light";
+  document.body.classList.toggle("light", light);
+  document.querySelectorAll("#themeRow [data-theme]").forEach((b) => b.classList.toggle("on", b.dataset.theme === (light ? "light" : "dark")));
+  const tc = document.querySelector('meta[name="theme-color"]');
+  if (tc) tc.setAttribute("content", light ? "#F4F1F8" : "#3D2058");
+}
+function initTheme() {
+  document.querySelectorAll("#themeRow [data-theme]").forEach((b) => {
+    b.onclick = () => { localStorage.setItem("theme", b.dataset.theme); applyTheme(); };
+  });
+  applyTheme();
 }
 function armOpenSound() {
   const h = () => { openChime(); window.removeEventListener("pointerdown", h); window.removeEventListener("keydown", h); };
@@ -905,6 +919,7 @@ window.addEventListener("DOMContentLoaded", () => {
   renderProjetos();
   initAdm();
   initToggles();
+  initTheme();
   renderSuggest();
   renderNucleo();
   initSpeech();

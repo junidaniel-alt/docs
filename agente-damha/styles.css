@@ -246,3 +246,22 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 .kpi-l { display: block; color: var(--muted); font-size: .64rem; letter-spacing: .5px; text-transform: uppercase; }
 .kpi-v { display: block; color: #fff; font-size: 1.1rem; margin-top: 3px; }
 .kpi-s { display: block; color: var(--laranja); font-size: .7rem; margin-top: 2px; }
+
+/* ===== Tema claro (chavinha) ===== */
+body.light {
+  --bg: #F4F1F8; --card: #FFFFFF; --txt: #2A1840; --muted: #6B5B86; --lilas: #5E3287;
+}
+body.light .panel { border: 1px solid #E6DEF0; }
+body.light .summary { background: rgba(255,255,255,.95); }
+body.light .summary a { color: var(--roxo); }
+body.light .composer textarea,
+body.light .field input,
+body.light .field select,
+body.light .tog,
+body.light .chip-s,
+body.light .msg.bot { background: #fff; color: var(--txt); border-color: #E0D6EE; }
+body.light .msg.user { background: var(--roxo); color: #fff; }
+body.light .list li:hover { background: #F0EAF6; }
+body.light .panelchart, body.light .kpi, body.light .msg.bot pre, body.light .msg.bot code { background: #F2ECF8; }
+body.light .launch-btn { background: #fff; }
+body.light .tog.on { background: var(--roxo); color: #fff; }
