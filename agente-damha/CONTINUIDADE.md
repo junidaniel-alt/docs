@@ -146,7 +146,14 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 ---
 
 ## 8. Proximos passos / ideias em aberto
-- Caixinhas (cards) mais bonitas para cada projeto, com descricao curta (hoje sao linhas de lista).
+- **GRANDE: portar o "COPILOTO DAMHA" do STUDIO** (referencia do Daniel — "surreal"):
+  chat que devolve **graficos de dados reais** inline, com chips de sugestao, chavinha de
+  **Busca Web**, modelo+chave no topo. Fonte: `PROJETOS/2026.06.12_MISSION_CONTROL_MERCADO_FUTURO/
+  Mission_Control_Web/` (STUDIO.html 65KB, HUB.html, SIMULADOR.html). Para fazer 1:1 e preciso
+  trazer esses arquivos para o repo (rede do ambiente bloqueia o download direto do SharePoint;
+  so o conector M365 le, e e grande). Engenharia a replicar: IA -> spec de grafico (JSON) -> render
+  (lib de chart) + motor de dados (datasets tipo fx_curva, soja) + grounding de busca.
+- Caixinhas (cards) mais bonitas para cada projeto, com descricao curta.
 - Streaming da resposta de IA (UX de voz mais fluida).
 - Modo de modelo local p/ notas mais sensiveis (zero egress).
 - Handoff de fim de projeto no cofre `02_PROJETOS` (PAD_Aprendizados / 11_PADROES).
