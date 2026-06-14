@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.25";
+const APP_VERSION = "1.26";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -356,12 +356,23 @@ async function callOpenAI(sys = SYSTEM_PROMPT) {
 function setStatus(s) { el("status").textContent = s; }
 
 /* ---------- Voz: saida (TTS) ---------- */
+let chosenVoice = null;
+function pickVoice() {
+  if (!("speechSynthesis" in window)) return;
+  const vs = window.speechSynthesis.getVoices().filter((v) => /^pt/i.test(v.lang));
+  const fem = vs.find((v) => /(Maria|Luciana|Francisca|Fernanda|Vit[oó]ria|Heloisa|Joana|Catarina|female|mulher|feminin)/i.test(v.name));
+  chosenVoice = fem || vs[0] || null;
+}
+if ("speechSynthesis" in window) { window.speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); }
+function stopSpeak() { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }
 function speak(text) {
   if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "pt-BR";
-  u.rate = 1.02;
+  if (chosenVoice) u.voice = chosenVoice;
+  u.pitch = 1.5;  // mais agudo: voz feminina jovem
+  u.rate = 1.06;
   window.speechSynthesis.speak(u);
 }
 
@@ -744,6 +755,7 @@ window.addEventListener("DOMContentLoaded", () => {
   initNav();
   el("sendBtn").onclick = sendMessage;
   el("micBtn").onclick = toggleMic;
+  el("stopVoz").onclick = stopSpeak;
   el("saveCfg").onclick = saveCfg;
   el("provider").onchange = () => populateModels(el("provider").value);
   el("cofreLogin").onclick = cofreLogin;
