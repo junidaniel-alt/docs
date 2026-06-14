@@ -8,7 +8,8 @@
 
 const DEFAULTS = {
   apiKey: "",
-  model: "claude-sonnet-4-6",
+  provider: "gemini",
+  model: "gemini-2.0-flash",
   egress: "hibrido",
   // Client ID do registro Azure "Agente DAMHA" (publico, nao e segredo)
   azureClient: "934b3c6e-db97-434a-aff0-dd6d8b3b82d8",
@@ -51,7 +52,8 @@ function loadCfg() {
 function saveCfg() {
   cfg = {
     apiKey: el("apiKey").value.trim(),
-    model: el("model").value,
+    provider: el("provider").value,
+    model: el("model").value.trim(),
     egress: el("egress").value,
     azureClient: el("azureClient").value.trim(),
     driveId: el("driveId").value.trim() || DEFAULTS.driveId,
@@ -61,6 +63,7 @@ function saveCfg() {
 }
 function hydrateCfgForm() {
   el("apiKey").value = cfg.apiKey;
+  el("provider").value = cfg.provider || "gemini";
   el("model").value = cfg.model;
   el("egress").value = cfg.egress;
   el("azureClient").value = cfg.azureClient;
@@ -82,7 +85,7 @@ function addMsg(text, cls) {
 async function sendMessage() {
   const text = el("input").value.trim();
   if (!text) return;
-  if (!cfg.apiKey) { addMsg("Configure a chave da API Anthropic em Config.", "err"); return; }
+  if (!cfg.apiKey) { addMsg("Configure a chave da API em Config (Gemini ou Claude).", "err"); return; }
 
   el("input").value = "";
   addMsg(text, "user");
@@ -98,37 +101,60 @@ async function sendMessage() {
 
   setStatus("Pensando...");
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": cfg.apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true",
-      },
-      body: JSON.stringify({
-        model: cfg.model,
-        max_tokens: 1500,
-        system: SYSTEM_PROMPT,
-        messages: history,
-      }),
-    });
-    if (!res.ok) {
-      const errTxt = await res.text();
-      addMsg(`Erro da API (${res.status}): ${errTxt.slice(0, 300)}`, "err");
-      setStatus("");
-      return;
-    }
-    const data = await res.json();
-    const reply = (data.content || []).map((b) => b.text || "").join("").trim();
+    const reply = cfg.provider === "claude" ? await callClaude()
+                : cfg.provider === "openai" ? await callOpenAI()
+                : await callGemini();
     history.push({ role: "assistant", content: reply });
     addMsg(reply, "bot");
     setStatus("");
     if (el("ttsOn").checked) speak(reply);
   } catch (e) {
-    addMsg("Falha de rede: " + e.message, "err");
+    addMsg(e.message || ("Falha: " + e), "err");
     setStatus("");
   }
+}
+
+async function callClaude() {
+  const model = (cfg.model || "").startsWith("claude") ? cfg.model : "claude-sonnet-4-6";
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": cfg.apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({ model, max_tokens: 1500, system: SYSTEM_PROMPT, messages: history }),
+  });
+  if (!res.ok) throw new Error(`Erro Claude (${res.status}): ${(await res.text()).slice(0, 300)}`);
+  const data = await res.json();
+  return (data.content || []).map((b) => b.text || "").join("").trim();
+}
+
+async function callGemini() {
+  const model = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.0-flash";
+  const contents = history.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+  const body = { contents, systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }, generationConfig: { maxOutputTokens: 1500 } };
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
+  const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`Erro Gemini (${res.status}): ${(await res.text()).slice(0, 300)}`);
+  const data = await res.json();
+  const cand = data.candidates && data.candidates[0];
+  return ((cand && cand.content && cand.content.parts) || []).map((p) => p.text || "").join("").trim()
+    || "(resposta vazia — veja se o modelo em Config existe)";
+}
+
+async function callOpenAI() {
+  const model = (cfg.model || "").startsWith("gpt") ? cfg.model : "gpt-4o-mini";
+  const msgs = [{ role: "system", content: SYSTEM_PROMPT }, ...history];
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json", "authorization": "Bearer " + cfg.apiKey },
+    body: JSON.stringify({ model, max_tokens: 1500, messages: msgs }),
+  });
+  if (!res.ok) throw new Error(`Erro OpenAI (${res.status}): ${(await res.text()).slice(0, 300)}`);
+  const data = await res.json();
+  return ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "").trim();
 }
 
 function setStatus(s) { el("status").textContent = s; }
@@ -307,7 +333,7 @@ async function openNote(id, name) {
 }
 function analyzeNote(title, body) {
   if (cfg.egress === "hibrido") {
-    const ok = confirm(`Enviar a nota "${title}" para o Claude (Anthropic)?\n\nEla e Uso Interno e Confidencial. So confirme se quiser que o conteudo seja analisado.`);
+    const ok = confirm(`Enviar a nota "${title}" para a IA (sai do aparelho)?\n\nEla e Uso Interno e Confidencial. So confirme se quiser que o conteudo seja analisado.`);
     if (!ok) return;
   }
   pendingNoteContext = { title, body };
@@ -357,6 +383,12 @@ window.addEventListener("DOMContentLoaded", () => {
   el("sendBtn").onclick = sendMessage;
   el("micBtn").onclick = toggleMic;
   el("saveCfg").onclick = saveCfg;
+  const MODEL_DEFAULT = { gemini: "gemini-2.0-flash", claude: "claude-sonnet-4-6", openai: "gpt-4o-mini" };
+  const MODEL_PREFIX = { gemini: "gemini", claude: "claude", openai: "gpt" };
+  el("provider").onchange = () => {
+    const p = el("provider").value, m = el("model").value.trim();
+    if (!m || !m.startsWith(MODEL_PREFIX[p])) el("model").value = MODEL_DEFAULT[p];
+  };
   el("cofreLogin").onclick = cofreLogin;
   el("input").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -364,7 +396,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // erros visiveis (em vez de falhar em silencio)
   window.addEventListener("error", (ev) => { el("cofreStatus").textContent = "Erro: " + ev.message; });
   window.addEventListener("unhandledrejection", (ev) => { el("cofreStatus").textContent = "Falha: " + ((ev.reason && ev.reason.message) || ev.reason); });
-  el("cofreStatus").textContent = "Build v1.4 · app " + APP_CLIENT_ID.slice(0, 8);
+  el("cofreStatus").textContent = "Build v1.5 · app " + APP_CLIENT_ID.slice(0, 8);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   welcome();
   initAuthOnLoad();
@@ -373,8 +405,8 @@ window.addEventListener("DOMContentLoaded", () => {
 function welcome() {
   if (!cfg.apiKey) {
     addMsg("Ola, Daniel. Sou o Agente DAMHA (nome provisorio).\n\n" +
-      "Para comecar, abra Config e preencha a chave da API Anthropic. Para ler o cofre, " +
-      "informe tambem o Azure Client ID. Tudo fica so neste aparelho.\n\n" +
+      "Para conversar, abra Config, escolha o Provedor (Gemini tem plano gratis) e cole a chave da API. " +
+      "Tudo fica so neste aparelho.\n\n" +
       "Quando estiver pronto, e so falar (botao do microfone) ou escrever.", "bot");
   } else {
     addMsg("Ola, Daniel. Pronto. Fale ou escreva — e lembre que sou parceira de debate, nao validadora.", "bot");

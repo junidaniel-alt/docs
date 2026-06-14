@@ -7,7 +7,7 @@
   <title>Agente DAMHA</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=14" />
+  <link rel="stylesheet" href="styles.css?v=15" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -64,7 +64,7 @@
         <article id="noteView" class="note hidden">
           <header class="note-head">
             <strong id="noteTitle"></strong>
-            <button id="noteAnalyze" class="chip-warn">Analisar com Claude</button>
+            <button id="noteAnalyze" class="chip-warn">Analisar com IA</button>
           </header>
           <pre id="noteBody"></pre>
         </article>
@@ -83,16 +83,20 @@
       <h2>Configuracoes</h2>
       <p class="muted">Tudo fica salvo apenas neste aparelho (localStorage). Nada e enviado a servidores nossos.</p>
 
-      <label class="field">Chave da API Anthropic
-        <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" />
+      <label class="field">Chave da API (Gemini ou Claude)
+        <input type="password" id="apiKey" placeholder="cole sua chave aqui" autocomplete="off" />
+      </label>
+
+      <label class="field">Provedor de IA
+        <select id="provider">
+          <option value="gemini" selected>Gemini (Google) — plano gratis</option>
+          <option value="claude">Claude (Anthropic)</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+        </select>
       </label>
 
       <label class="field">Modelo
-        <select id="model">
-          <option value="claude-opus-4-8">Opus 4.8 (mais capaz)</option>
-          <option value="claude-sonnet-4-6" selected>Sonnet 4.6 (equilibrado)</option>
-          <option value="claude-haiku-4-5-20251001">Haiku 4.5 (rapido/barato)</option>
-        </select>
+        <input type="text" id="model" placeholder="gemini-2.0-flash" />
       </label>
 
       <label class="field">Modo de egress do cofre
@@ -128,6 +132,6 @@
     <div><span>Emissao</span>13/06/2026</div>
   </footer>
 
-  <script src="app.js?v=14"></script>
+  <script src="app.js?v=15"></script>
 </body>
 </html>
