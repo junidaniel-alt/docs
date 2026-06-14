@@ -360,26 +360,86 @@ function analyzeNote(title, body) {
 }
 
 /* ---------- Projetos (atalhos) ---------- */
-/* ---------- Projetos ---------- */
-const PROJ_FOLDER = "01KCR6ZAJ5V6PDFRWZKZA3MIALRW5E6F64"; // 02_PROJETOS (CLAUDE.md)
+/* ---------- Projetos (HTML do OneDrive: @PASTA CLAUDE/PROJETOS) ---------- */
+const PROJETOS_FOLDER = "01KCR6ZAM72SON7SWCM5AKWEM6K3AOZLWD"; // @PASTA CLAUDE/PROJETOS
+const ATAS_FOLDER = "01KCR6ZANXHH44ZF6OHVDJLZBY4K4WPQSY";     // cofre/12_REUNIOES_ATAS
+let projStack = [];
+
 function renderProjetos() {
-  const ul = el("projetosList");
-  ul.innerHTML = "";
-  const li = document.createElement("li");
-  li.style.gridColumn = "1 / -1";
-  const btn = document.createElement("button");
-  btn.className = "secondary";
-  btn.style.width = "100%";
-  btn.textContent = "Abrir 02_PROJETOS no cofre";
-  btn.onclick = async () => {
-    if (await ensureCofre()) {
-      folderStack = [{ id: ROOT_FOLDER, name: "Cofre" }, { id: PROJ_FOLDER, name: "02_PROJETOS" }];
-      showView("cerebro");
-      await listFolder();
-    }
+  el("projLogin").onclick = openProjetos;
+  el("projBack").onclick = () => {
+    el("projViewer").classList.add("hidden");
+    el("projBrowser").classList.remove("hidden");
   };
-  li.appendChild(btn);
-  ul.appendChild(li);
+}
+async function openProjetos() {
+  el("projStatus").textContent = "Conectando...";
+  if (!(await ensureCofre())) { el("projStatus").textContent = ""; return; }
+  el("projAuth").classList.add("hidden");
+  el("projBrowser").classList.remove("hidden");
+  projStack = [{ id: "__ROOT__", name: "Inicio" }];
+  await listProj();
+}
+function renderProjCrumbs() {
+  const c = el("projCrumbs"); c.innerHTML = "";
+  projStack.forEach((f, i) => {
+    const a = document.createElement("a");
+    a.textContent = f.name;
+    a.onclick = () => { projStack = projStack.slice(0, i + 1); listProj(); };
+    c.appendChild(a);
+    if (i < projStack.length - 1) c.appendChild(document.createTextNode("  /  "));
+  });
+}
+async function listProj() {
+  const cur = projStack[projStack.length - 1];
+  renderProjCrumbs();
+  el("projViewer").classList.add("hidden");
+  el("projBrowser").classList.remove("hidden");
+  const ul = el("projList");
+  if (cur.id === "__ROOT__") {
+    ul.innerHTML = "";
+    [["\u{1F4C1} Projetos", PROJETOS_FOLDER, "Projetos"],
+     ["\u{1F4CB} Atas / Reunioes", ATAS_FOLDER, "Atas"]].forEach(([label, id, name]) => {
+      const li = document.createElement("li");
+      li.textContent = label;
+      li.onclick = () => { projStack.push({ id, name }); listProj(); };
+      ul.appendChild(li);
+    });
+    return;
+  }
+  ul.innerHTML = "<li class='muted'>Carregando...</li>";
+  try {
+    const data = await graph(`/drives/${cfg.driveId}/items/${cur.id}/children?$select=id,name,folder,file,webUrl&$top=200`, window._cofreToken);
+    ul.innerHTML = "";
+    (data.value || [])
+      .sort((a, b) => (b.folder ? 1 : 0) - (a.folder ? 1 : 0) || b.name.localeCompare(a.name))
+      .forEach((it) => {
+        const isHtml = it.file && /\.html?$/i.test(it.name);
+        const li = document.createElement("li");
+        li.textContent = (it.folder ? "\u{1F4C1} " : isHtml ? "\u{1F310} " : "\u{1F4C4} ") + it.name;
+        li.onclick = () => {
+          if (it.folder) { projStack.push({ id: it.id, name: it.name }); listProj(); }
+          else if (isHtml) openHtml(it.id, it.name);
+          else if (it.webUrl) window.open(it.webUrl, "_blank");
+        };
+        ul.appendChild(li);
+      });
+    if (!ul.children.length) ul.innerHTML = "<li class='muted'>Pasta vazia.</li>";
+  } catch (e) {
+    ul.innerHTML = `<li class='muted'>Erro: ${e.message}</li>`;
+  }
+}
+async function openHtml(id, name) {
+  el("projBrowser").classList.add("hidden");
+  el("projViewer").classList.remove("hidden");
+  const frame = el("projFrame");
+  frame.srcdoc = "<p style='font-family:sans-serif;padding:20px'>Carregando " + name + "...</p>";
+  try {
+    const html = await graph(`/drives/${cfg.driveId}/items/${id}/content`, window._cofreToken, true);
+    frame.srcdoc = html;
+  } catch (e) {
+    frame.srcdoc = "<p style='color:#c00;font-family:sans-serif;padding:20px'>Erro ao abrir: " + e.message + "</p>";
+  }
 }
 
 /* ---------- Sumario ativo ao rolar ---------- */
@@ -428,7 +488,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // erros visiveis (em vez de falhar em silencio)
   window.addEventListener("error", (ev) => { el("cofreStatus").textContent = "Erro: " + ev.message; });
   window.addEventListener("unhandledrejection", (ev) => { el("cofreStatus").textContent = "Falha: " + ((ev.reason && ev.reason.message) || ev.reason); });
-  el("cofreStatus").textContent = "Build v1.8 · app " + APP_CLIENT_ID.slice(0, 8);
+  el("cofreStatus").textContent = "Build v1.9 · app " + APP_CLIENT_ID.slice(0, 8);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   welcome();
   initAuthOnLoad();
