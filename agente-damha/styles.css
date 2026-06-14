@@ -239,3 +239,10 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 .ztbtn:active { transform: scale(.94); }
 .cmodal-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; }
 .cmodal-body svg { width: 100%; height: auto; max-height: 82vh; }
+
+/* ===== Cartoes de indicadores (KPIs) ===== */
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.kpi { background: #1c0d2c; border: 1px solid var(--roxo); border-radius: 12px; padding: 10px; animation: viewIn .35s ease both; }
+.kpi-l { display: block; color: var(--muted); font-size: .64rem; letter-spacing: .5px; text-transform: uppercase; }
+.kpi-v { display: block; color: #fff; font-size: 1.1rem; margin-top: 3px; }
+.kpi-s { display: block; color: var(--laranja); font-size: .7rem; margin-top: 2px; }

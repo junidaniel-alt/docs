@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.32";
+const APP_VERSION = "1.33";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -205,14 +205,30 @@ function mdToHtml(t) {
 function addBotMsg(text) {
   const d = document.createElement("div");
   d.className = "msg bot";
-  const ch = extractBlock(text, "chart");
+  const kp = extractBlock(text, "kpis");
+  const ch = extractBlock(kp.rest, "chart");
   const op = extractBlock(ch.rest, "options");
-  d.innerHTML = mdToHtml(op.rest || ((ch.data || op.data) ? "" : text));
+  d.innerHTML = mdToHtml(op.rest || ((kp.data || ch.data || op.data) ? "" : text));
+  if (kp.data) d.appendChild(renderKPIs(kp.data));
   if (ch.data) d.appendChild(renderChart(ch.data));
   if (op.data) d.appendChild(renderOptions(op.data));
   el("chat").appendChild(d);
   el("chat").scrollTop = el("chat").scrollHeight;
   return d;
+}
+// Cartoes de indicadores-chave (KPIs), estilo STUDIO.
+function renderKPIs(spec) {
+  const box = document.createElement("div");
+  box.className = "kpis";
+  (spec.cards || []).forEach((c) => {
+    const k = document.createElement("div");
+    k.className = "kpi";
+    k.innerHTML = `<span class="kpi-l">${escapeHtml(c.label || "")}</span>`
+      + `<b class="kpi-v">${escapeHtml(String(c.value != null ? c.value : ""))}</b>`
+      + (c.sub ? `<span class="kpi-s">${escapeHtml(c.sub)}</span>` : "");
+    box.appendChild(k);
+  });
+  return box;
 }
 // Extrai um bloco cercado ```tag {json}``` da resposta (o resto vira texto).
 function extractBlock(t, tag) {
@@ -226,7 +242,10 @@ function extractBlock(t, tag) {
 function extractChart(t) { const r = extractBlock(t, "chart"); return { rest: r.rest, spec: r.data }; }
 // Texto limpo (sem blocos chart/options) para a leitura em voz.
 function plainForSpeech(t) {
-  return extractBlock(extractBlock(t, "chart").rest, "options").rest.replace(/[*#`>_]/g, "");
+  let r = extractBlock(t, "kpis").rest;
+  r = extractBlock(r, "chart").rest;
+  r = extractBlock(r, "options").rest;
+  return r.replace(/[*#`>_]/g, "");
 }
 // Botoes de escolha: a Maria Sarah pergunta primeiro e o toque envia a resposta.
 function renderOptions(spec) {
@@ -269,6 +288,12 @@ function chartSVG(spec, type) {
     s.data.forEach((v, i) => {
       const cx = P + (i + 0.5) * step, yy = Y(v);
       g += `<rect x="${cx - step * 0.3}" y="${yy}" width="${step * 0.6}" height="${H - P - yy}" fill="${colors[0]}" rx="2"/>`;
+    });
+  } else if (type === "area") {
+    series.forEach((s, si) => {
+      const pts = s.data.map((v, i) => `${X(i)},${Y(v)}`).join(" ");
+      g += `<polygon points="${P},${H - P} ${pts} ${X(s.data.length - 1)},${H - P}" fill="${colors[si % colors.length]}" opacity="0.18"/>`;
+      g += `<polyline points="${pts}" fill="none" stroke="${colors[si % colors.length]}" stroke-width="2"/>`;
     });
   } else {
     series.forEach((s, si) => {
@@ -352,7 +377,7 @@ async function sendMessage() {
   // Sistema dinamico conforme as chavinhas.
   let sys = SYSTEM_PROMPT;
   if (togState("togCerebro")) sys += "\n\nA Base DAMHA e a fonte mestra: priorize-a e sinalize claramente quando faltar dado (peca para o Daniel abrir o arquivo na Base DAMHA).";
-  sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\".";
+  sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\" ou \"area\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". Para indicadores-chave, PODE incluir um bloco kpis com JSON {\"cards\":[{\"label\":\"...\",\"value\":\"...\",\"sub\":\"...\"}]} (ate 4 cartoes).";
   sys += "\n\nPERGUNTE PRIMEIRO, nao adivinhe: quando o pedido for ambiguo ou exigir uma escolha (ex.: de qual fonte de dados puxar, qual fazenda, qual periodo, se busca na Base DAMHA ou se o Daniel mostra o arquivo), escreva a pergunta curta e inclua UM bloco cercado por tres crases iniciado pela palavra options com JSON {\"options\":[\"opcao 1\",\"opcao 2\"]} (2 a 4 opcoes curtas). O Daniel toca numa opcao e voce segue. O restante da resposta vai em texto normal (markdown leve).";
   const wantWeb = togState("togInternet");
 
