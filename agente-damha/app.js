@@ -12,12 +12,12 @@ const DEFAULTS = {
   model: "gemini-2.0-flash",
   egress: "hibrido",
   // Client ID do registro Azure "Agente DAMHA" (publico, nao e segredo)
-  azureClient: "934b3c6e-db97-434a-aff0-dd6d8b3b82d8",
+  azureClient: "68d78834-f9ec-4f71-b64b-172e9281e832",
   // driveId do cofre (CLAUDE.md secao 3)
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.13";
+const APP_VERSION = "1.14";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -250,13 +250,14 @@ async function initAuthOnLoad() {
   await app.initialize();
   try {
     const resp = await app.handleRedirectPromise();
-    if (resp && resp.accessToken) { window._cofreToken = resp.accessToken; await openCofreRoot(); return; }
+    if (resp && resp.accessToken) { window._cofreToken = resp.accessToken; applyAdm(); if (isAdmin()) await openCofreRoot(); return; }
   } catch (e) { addMsg("Erro ao voltar do login: " + e.message, "err"); }
   const acc = app.getAllAccounts()[0];
   if (acc) {
     try { const r = await app.acquireTokenSilent({ scopes: SCOPES, account: acc }); window._cofreToken = r.accessToken; }
     catch { /* precisa de login interativo */ }
   }
+  applyAdm();
 }
 async function graph(path, token, asText = false) {
   const res = await fetch("https://graph.microsoft.com/v1.0" + path, {
@@ -286,7 +287,7 @@ async function cofreLogin() {
   if (window._cofreToken) { await openCofreRoot(); return; }
   const acc = app.getAllAccounts()[0];
   if (acc) {
-    try { const r = await app.acquireTokenSilent({ scopes: SCOPES, account: acc }); window._cofreToken = r.accessToken; await openCofreRoot(); return; }
+    try { const r = await app.acquireTokenSilent({ scopes: SCOPES, account: acc }); window._cofreToken = r.accessToken; applyAdm(); if (isAdmin()) await openCofreRoot(); return; }
     catch { /* cai para redirect */ }
   }
   await app.loginRedirect({ scopes: SCOPES }); // navega ao login da Microsoft; volta para o redirectUri
@@ -377,6 +378,7 @@ function renderProjetos() {
 async function openProjetos() {
   el("projStatus").textContent = "Conectando...";
   if (!(await ensureCofre())) { el("projStatus").textContent = ""; return; }
+  applyAdm();
   el("projAuth").classList.add("hidden");
   el("projBrowser").classList.remove("hidden");
   projStack = [{ id: "__ROOT__", name: "Inicio" }];
@@ -473,28 +475,39 @@ function initNav() {
 }
 
 /* ---------- Init ---------- */
-/* ---------- Admin / PIN (separa o Cerebro/cofre do uso geral) ---------- */
+/* ---------- Admin (Cerebro/cofre restrito ao administrador) ---------- */
+// Trava principal: identidade Microsoft. Atalho secundario: PIN.
+const ADMIN_EMAILS = ["daniel.feitoza@damhaagro.com.br"];
+const ADM_PIN_SHA = "35d46b5eb946b2d6780a18fdc8ff61bd6c23018ba393e7ec723bd62f9c197b7e";
+
 async function sha(t) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
-const admPinHash = () => localStorage.getItem("admPinHash") || "";
-const admUnlocked = () => localStorage.getItem("admUnlocked") === "1";
-const admVisible = () => admUnlocked();
+function currentUserEmail() {
+  try {
+    const a = msalApp && msalApp.getAllAccounts ? msalApp.getAllAccounts()[0] : null;
+    return a ? (a.username || "").toLowerCase() : "";
+  } catch { return ""; }
+}
+const emailIsAdmin = () => { const e = currentUserEmail(); return !!e && ADMIN_EMAILS.includes(e); };
+const pinUnlocked = () => localStorage.getItem("admUnlocked") === "1";
+const isAdmin = () => emailIsAdmin() || pinUnlocked();
 
 function applyAdm() {
-  const vis = admVisible();
+  const vis = isAdmin();
   document.querySelectorAll('[data-go="cerebro"]').forEach((e) => { e.style.display = vis ? "" : "none"; });
   el("admPanel").classList.toggle("hidden", !vis);
   el("admLock").classList.toggle("hidden", vis);
-  if (!vis) {
-    const hasPin = !!admPinHash();
-    el("admPinSetWrap").classList.toggle("hidden", hasPin);
-    el("admPinInputWrap").classList.toggle("hidden", !hasPin);
-    el("admUnlockBtn").textContent = hasPin ? "Desbloquear ADM" : "Definir PIN e entrar";
-    el("admLockHint").textContent = hasPin
-      ? "Area restrita. Digite o PIN para acessar o Cerebro e o cofre."
-      : "Primeiro acesso: defina um PIN para proteger o Cerebro e o cofre.";
+  if (vis) {
+    el("admWho").textContent = emailIsAdmin()
+      ? "Acesso de administrador: " + currentUserEmail()
+      : "Acesso de administrador: via PIN.";
+  } else {
+    const email = currentUserEmail();
+    el("admLockHint").textContent = email
+      ? `A conta ${email} nao e administradora. Use Conversa e Projetos normalmente — ou entre com o PIN / a conta do admin.`
+      : "Area restrita ao administrador. Entre com a conta Microsoft do admin ou com o PIN.";
     if (el("cerebro").classList.contains("active")) showView("home");
   }
 }
@@ -506,34 +519,16 @@ function initAdm() {
     i.type = show ? "text" : "password";
     el("keyToggle").style.opacity = show ? "1" : ".55";
   };
-  el("admUnlockBtn").onclick = async () => {
-    if (!admPinHash()) {
-      const p = el("admPinSet").value.trim();
-      if (p.length < 4) { el("admMsg").textContent = "Use ao menos 4 digitos."; return; }
-      localStorage.setItem("admPinHash", await sha(p));
+  el("admPinBtn").onclick = async () => {
+    if (await sha(el("admPinInput").value.trim()) === ADM_PIN_SHA) {
       localStorage.setItem("admUnlocked", "1");
-      el("admPinSet").value = ""; el("admMsg").textContent = ""; applyAdm();
+      el("admPinInput").value = ""; el("admMsg").textContent = ""; applyAdm();
     } else {
-      const p = el("admPinInput").value.trim();
-      if (await sha(p) === admPinHash()) {
-        localStorage.setItem("admUnlocked", "1");
-        el("admPinInput").value = ""; el("admMsg").textContent = ""; applyAdm();
-      } else {
-        el("admMsg").textContent = "PIN incorreto.";
-      }
+      el("admMsg").textContent = "PIN incorreto.";
     }
   };
-  el("admPinSave").onclick = async () => {
-    const p = el("admPinChange").value.trim();
-    if (p.length < 4) { el("admSecMsg").textContent = "Use ao menos 4 digitos."; return; }
-    localStorage.setItem("admPinHash", await sha(p));
-    localStorage.setItem("admUnlocked", "1");
-    el("admPinChange").value = ""; el("admSecMsg").textContent = "PIN atualizado.";
-  };
-  el("admLockBtn").onclick = () => {
-    if (!admPinHash()) { el("admSecMsg").textContent = "Defina um PIN primeiro."; return; }
-    localStorage.removeItem("admUnlocked"); applyAdm(); showView("home");
-  };
+  el("admConnectBtn").onclick = () => cofreLogin();
+  el("admLockBtn").onclick = () => { localStorage.removeItem("admUnlocked"); applyAdm(); showView("home"); };
   el("saveAdm").onclick = saveCfg;
   applyAdm();
 }

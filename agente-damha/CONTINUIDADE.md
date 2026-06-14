@@ -47,7 +47,7 @@ Roda **100% no aparelho do Daniel** — nao ha servidor nosso no meio.
 | Raiz do cofre | itemId `01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E` (CEREBRO DO CLOUDE) |
 | Pasta PROJETOS (HTML) | `@PASTA CLAUDE/PROJETOS` → itemId `01KCR6ZAM72SON7SWCM5AKWEM6K3AOZLWD` |
 | Pasta ATAS / Reunioes | cofre `12_REUNIOES_ATAS` → itemId `01KCR6ZANXHH44ZF6OHVDJLZBY4K4WPQSY` |
-| Azure Client ID | `934b3c6e-db97-434a-aff0-dd6d8b3b82d8` (publico, nao e segredo) |
+| Azure Client ID | `68d78834-f9ec-4f71-b64b-172e9281e832` (publico, nao e segredo) |
 
 > O driveId e os itemIds das notas-nucleo do cofre estao em `/CLAUDE.md` secao 3.
 
@@ -81,7 +81,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 
 ---
 
-## 5. Estado atual (v1.12)
+## 5. Estado atual (v1.14)
 
 **Funciona:**
 - Conversa por voz (entrada Web Speech + saida SpeechSynthesis) e texto.
@@ -107,6 +107,9 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 - Sem servidor nosso. Tudo client-side; segredos so no aparelho do Daniel.
 - Service worker nao persiste cofre nem respostas de IA.
 - Egress hibrido com confirmacao e o padrao.
+- **Acesso ADM/Cerebro:** trava por identidade Microsoft (`ADMIN_EMAILS`) + PIN secundario.
+  A trava de UI e dissuasor; a protecao REAL do dado e o login M365 — o Graph so devolve o que a
+  conta logada tem permissao de ler. Um terceiro nunca le o cofre do Daniel, mesmo vendo a UI.
 
 ---
 
@@ -120,8 +123,11 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 - **v1.11** — etiqueta de versao no canto da abertura (constante `APP_VERSION`, fonte unica).
 - **v1.12** — nome oficial "App Agente Damha Agro" + convencao de frase-gatilho (secao 1).
 - **v1.13** — Config separado em Geral (so chave de API, com botao mostrar) e **ADM** (cofre)
-  atras de **PIN**; aba Cerebro escondida quando trancado. PIN = dissuasor; o dado do cofre e
-  protegido de verdade pelo login M365 (so abre para conta com permissao no OneDrive).
+  atras de **PIN**; aba Cerebro escondida quando trancado.
+- **v1.14** — ADM amarrado a **identidade Microsoft**: so abre para `daniel.feitoza@damhaagro.com.br`
+  (lista `ADMIN_EMAILS` em app.js); PIN `252553` (hash em `ADM_PIN_SHA`) como atalho secundario.
+  Terceiro que loga com a propria conta ve so Conversa/Projetos e apenas as pastas do OneDrive
+  liberadas para a conta dele. Corrigido o Client ID real (`68d78834-...`).
 
 > Detalhe granular: `git log -- agente-damha/`.
 
@@ -149,7 +155,7 @@ e pelo **navegador**.
 
 - **Onde:** `entra.microsoft.com` (ou `portal.azure.com`) → entrar com a conta M365 do Daniel
   (daniel_feitoza@damhaagro...) → **Microsoft Entra ID → Registros de aplicativo (App registrations)**
-  → "Todos os aplicativos" → buscar pelo nome ou colar o **client ID** `934b3c6e-db97-434a-aff0-dd6d8b3b82d8`.
+  → "Todos os aplicativos" → buscar pelo nome ou colar o **client ID** `68d78834-f9ec-4f71-b64b-172e9281e832`.
 - **Overview:** mostra o *Application (client) ID* — e o valor de **Config → Azure Client ID** no app.
 - **Authentication:** plataforma deve ser **Single-page application (SPA)**; o **Redirect URI** precisa
   conter EXATAMENTE a URL de hospedagem do app (GitHub Pages, ex.: `https://<usuario>.github.io/docs/agente-damha/`).

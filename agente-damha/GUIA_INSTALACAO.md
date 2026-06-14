@@ -35,7 +35,7 @@ O app e uma **PWA estatica** (HTML/CSS/JS) que roda no aparelho. Para funcionar 
 1. Entre em **entra.microsoft.com** (ou portal.azure.com) com a conta M365 do Daniel
    (daniel_feitoza@damhaagro...).
 2. **Microsoft Entra ID → Registros de aplicativo (App registrations)**.
-3. O registro ja existe — **client ID `934b3c6e-db97-434a-aff0-dd6d8b3b82d8`**
+3. O registro ja existe — **client ID `68d78834-f9ec-4f71-b64b-172e9281e832`**
    (busque por esse ID ou pelo nome). *Se precisar criar do zero: New registration, conta "Single tenant".*
 4. **Authentication → Add a platform → Single-page application (SPA)**.
    - **Redirect URI** = a URL do passo 1 (`https://junidaniel-alt.github.io/docs/agente-damha/`).
@@ -45,7 +45,7 @@ O app e uma **PWA estatica** (HTML/CSS/JS) que roda no aparelho. Para funcionar 
    - `Files.Read.All`
    - `Sites.Read.All`
    - Depois clique em **"Grant admin consent"** (consentimento de administrador).
-6. **Overview** → copie o **Application (client) ID** (e o `934b3c6e...`). Vai no Config do app.
+6. **Overview** → copie o **Application (client) ID** (e o `68d78834...`). Vai no Config do app.
 
 > Sintoma classico de erro: login abre e falha / volta sem entrar = **Redirect URI nao bate** com a URL real. Tem que ser identica (com a barra no fim).
 
@@ -66,7 +66,7 @@ Abra o app → aba **Config** e preencha:
 - **Chave da API**: a do passo 3.
 - **Provedor de IA**: Gemini / Claude / OpenAI (combinar com a chave).
 - **Versao / Modelo**: escolha no dropdown.
-- **Azure Client ID**: `934b3c6e-db97-434a-aff0-dd6d8b3b82d8` (ja vem preenchido por padrao).
+- **Azure Client ID**: `68d78834-f9ec-4f71-b64b-172e9281e832` (ja vem preenchido por padrao).
 - **Drive ID do cofre**: `b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4` (ja vem por padrao).
 - Salvar. Depois, na aba **Cerebro** ou **Projetos**, toque em **Conectar M365** e faca login.
 
@@ -83,7 +83,7 @@ Vira um icone como app nativo.
 |---|---|
 | Repo | `junidaniel-alt/docs` (pasta `agente-damha/`) |
 | URL de producao / Redirect URI | `https://junidaniel-alt.github.io/docs/agente-damha/` |
-| Azure Client ID | `934b3c6e-db97-434a-aff0-dd6d8b3b82d8` |
+| Azure Client ID | `68d78834-f9ec-4f71-b64b-172e9281e832` |
 | Drive ID do cofre | `b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4` |
 | Raiz do cofre (CEREBRO DO CLOUDE) | `01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E` |
 | Pasta PROJETOS (HTML) | `01KCR6ZAM72SON7SWCM5AKWEM6K3AOZLWD` |
