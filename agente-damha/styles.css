@@ -51,9 +51,22 @@ body {
 .summary a { color: var(--lilas); text-decoration: none; font-size: .9rem; padding: 4px 2px; }
 .summary a.active { color: #fff; border-bottom: 2px solid var(--laranja); }
 
-/* ===== Paineis ===== */
+/* ===== Paineis / views ===== */
 main { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
-.panel { background: var(--card); border-radius: var(--radius); padding: 16px; scroll-margin-top: 64px; }
+.view { display: none; }
+.view.active { display: block; }
+.panel { background: var(--card); border-radius: var(--radius); padding: 16px; }
+
+/* ===== Menu inicial (botoes) ===== */
+.launch { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
+.launch-btn {
+  background: var(--card); border: 1px solid var(--roxo); border-radius: 18px;
+  padding: 30px 12px; color: var(--txt); font: inherit; font-size: 1.05rem; font-weight: 700;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.launch-btn:hover { background: var(--roxo); }
+.launch-btn .ic { font-size: 2rem; line-height: 1; }
+.topbar-title { cursor: pointer; }
 .panel h2 { margin: 0 0 12px; font-size: 1.15rem; }
 .panel h2 small { color: var(--muted); font-weight: 400; }
 .muted { color: var(--muted); font-size: .88rem; }

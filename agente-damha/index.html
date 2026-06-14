@@ -7,7 +7,7 @@
   <title>Agente DAMHA</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=15" />
+  <link rel="stylesheet" href="styles.css?v=16" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -23,18 +23,28 @@
          onerror="this.style.display='none'" />
   </header>
 
-  <!-- ===== Sumario sticky ===== -->
+  <!-- ===== Navegacao (troca rapida de secao) ===== -->
   <nav class="summary" id="summary">
-    <span class="summary-label">SUMARIO</span>
-    <a href="#conversa" class="active">Conversa</a>
-    <a href="#cerebro">Cerebro</a>
-    <a href="#projetos">Projetos</a>
-    <a href="#config">Config</a>
+    <a data-go="home" class="navlink">Inicio</a>
+    <a data-go="conversa" class="navlink">Conversa</a>
+    <a data-go="cerebro" class="navlink">Cerebro</a>
+    <a data-go="projetos" class="navlink">Projetos</a>
+    <a data-go="config" class="navlink">Config</a>
   </nav>
 
   <main>
+    <!-- ===== Menu inicial (botoes) ===== -->
+    <section id="home" class="view active">
+      <div class="launch">
+        <button class="launch-btn" data-go="conversa"><span class="ic">&#128172;</span>Conversa</button>
+        <button class="launch-btn" data-go="cerebro"><span class="ic">&#129504;</span>Cerebro</button>
+        <button class="launch-btn" data-go="projetos"><span class="ic">&#128193;</span>Projetos</button>
+        <button class="launch-btn" data-go="config"><span class="ic">&#9881;</span>Config</button>
+      </div>
+    </section>
+
     <!-- ===== Conversa (voz + chat) ===== -->
-    <section id="conversa" class="panel">
+    <section id="conversa" class="view panel">
       <h2>Conversa</h2>
       <div id="chat" class="chat" aria-live="polite"></div>
 
@@ -50,7 +60,7 @@
     </section>
 
     <!-- ===== Cerebro (cofre) ===== -->
-    <section id="cerebro" class="panel">
+    <section id="cerebro" class="view panel">
       <h2>Cerebro <small>(cofre Obsidian)</small></h2>
       <div class="nucleo" id="nucleo"></div>
       <div id="cofreAuth">
@@ -72,14 +82,14 @@
     </section>
 
     <!-- ===== Projetos ===== -->
-    <section id="projetos" class="panel">
+    <section id="projetos" class="view panel">
       <h2>Projetos</h2>
       <p class="muted">Atalhos para os pain-eis e repositorios da operacao.</p>
       <ul id="projetosList" class="cards"></ul>
     </section>
 
     <!-- ===== Configuracoes ===== -->
-    <section id="config" class="panel">
+    <section id="config" class="view panel">
       <h2>Configuracoes</h2>
       <p class="muted">Tudo fica salvo apenas neste aparelho (localStorage). Nada e enviado a servidores nossos.</p>
 
@@ -132,6 +142,6 @@
     <div><span>Emissao</span>13/06/2026</div>
   </footer>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

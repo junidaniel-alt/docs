@@ -337,7 +337,7 @@ function analyzeNote(title, body) {
     if (!ok) return;
   }
   pendingNoteContext = { title, body };
-  location.hash = "#conversa";
+  showView("conversa");
   el("input").value = `Analise a nota "${title}": `;
   el("input").focus();
   setStatus(`Nota "${title}" pronta para enviar na proxima mensagem.`);
@@ -373,13 +373,28 @@ function initScrollSpy() {
   document.querySelectorAll("main section").forEach((s) => obs.observe(s));
 }
 
+/* ---------- Navegacao por views (menu inicial + atalhos) ---------- */
+function showView(id) {
+  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === id));
+  document.querySelectorAll(".navlink").forEach((a) => a.classList.toggle("active", a.dataset.go === id));
+  window.scrollTo(0, 0);
+}
+function initNav() {
+  document.querySelectorAll("[data-go]").forEach((elm) => {
+    elm.addEventListener("click", (e) => { e.preventDefault(); showView(elm.dataset.go); });
+  });
+  const title = document.querySelector(".topbar-title");
+  if (title) title.addEventListener("click", () => showView("home"));
+  showView("home");
+}
+
 /* ---------- Init ---------- */
 window.addEventListener("DOMContentLoaded", () => {
   hydrateCfgForm();
   renderProjetos();
   renderNucleo();
   initSpeech();
-  initScrollSpy();
+  initNav();
   el("sendBtn").onclick = sendMessage;
   el("micBtn").onclick = toggleMic;
   el("saveCfg").onclick = saveCfg;
@@ -396,7 +411,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // erros visiveis (em vez de falhar em silencio)
   window.addEventListener("error", (ev) => { el("cofreStatus").textContent = "Erro: " + ev.message; });
   window.addEventListener("unhandledrejection", (ev) => { el("cofreStatus").textContent = "Falha: " + ((ev.reason && ev.reason.message) || ev.reason); });
-  el("cofreStatus").textContent = "Build v1.5 · app " + APP_CLIENT_ID.slice(0, 8);
+  el("cofreStatus").textContent = "Build v1.6 · app " + APP_CLIENT_ID.slice(0, 8);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   welcome();
   initAuthOnLoad();
