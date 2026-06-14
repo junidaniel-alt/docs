@@ -145,3 +145,7 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 @media (min-width: 620px) {
   .ident { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* Etiqueta de versao no canto da abertura */
+#home { position: relative; }
+.appver { position: absolute; right: 6px; bottom: 2px; font-size: 11px; color: var(--lilas); opacity: .45; letter-spacing: .5px; }
