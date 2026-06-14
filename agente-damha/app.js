@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.48";
+const APP_VERSION = "1.49";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -468,7 +468,7 @@ function renderRel() {
 async function geminiOnce(sys, userMsg, web) {
   const chosen = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.5-flash";
   const alt = chosen === "gemini-2.5-flash" ? "gemini-2.0-flash-lite" : "gemini-2.5-flash";
-  const body = { contents: [{ role: "user", parts: [{ text: userMsg }] }], systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } };
+  const body = { contents: [{ role: "user", parts: [{ text: userMsg }] }], systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048 } };
   if (web) body.tools = [{ google_search: {} }]; else body.generationConfig.responseMimeType = "application/json";
   const run = async (model) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`, { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": cfg.apiKey }, body: JSON.stringify(body) });
   let res = await run(chosen);
@@ -569,7 +569,7 @@ async function streamGemini(sys, web, onText) {
   try {
     const model = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.5-flash";
     const contents = recentHistory().map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-    const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } };
+    const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048 } };
     if (web) body.tools = [{ google_search: {} }];
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(cfg.apiKey)}`;
     const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": cfg.apiKey }, body: JSON.stringify(body) });
@@ -620,7 +620,7 @@ async function callGemini(sys = SYSTEM_PROMPT, web = false) {
   const chosen = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.5-flash";
   const alt = chosen === "gemini-2.5-flash" ? "gemini-2.0-flash-lite" : "gemini-2.5-flash";
   const contents = recentHistory().map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-  const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } };
+  const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048 } };
   if (web) body.tools = [{ google_search: {} }];
   async function tryModel(model) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
