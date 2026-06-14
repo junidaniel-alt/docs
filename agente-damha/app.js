@@ -61,10 +61,26 @@ function saveCfg() {
   localStorage.setItem("agenteDamhaCfg", JSON.stringify(cfg));
   el("cfgStatus").textContent = "Salvo neste aparelho. " + new Date().toLocaleTimeString("pt-BR");
 }
+// Versoes selecionaveis por provedor
+const MODELS = {
+  gemini: ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"],
+  claude: ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5-20251001"],
+  openai: ["gpt-4o-mini", "gpt-4o"],
+};
+function populateModels(provider, selected) {
+  const sel = el("model");
+  sel.innerHTML = "";
+  (MODELS[provider] || []).forEach((m) => {
+    const o = document.createElement("option");
+    o.value = m; o.textContent = m;
+    if (m === selected) o.selected = true;
+    sel.appendChild(o);
+  });
+}
 function hydrateCfgForm() {
   el("apiKey").value = cfg.apiKey;
   el("provider").value = cfg.provider || "gemini";
-  el("model").value = cfg.model;
+  populateModels(cfg.provider || "gemini", cfg.model);
   el("egress").value = cfg.egress;
   el("azureClient").value = cfg.azureClient;
   el("driveId").value = cfg.driveId;
@@ -398,12 +414,7 @@ window.addEventListener("DOMContentLoaded", () => {
   el("sendBtn").onclick = sendMessage;
   el("micBtn").onclick = toggleMic;
   el("saveCfg").onclick = saveCfg;
-  const MODEL_DEFAULT = { gemini: "gemini-2.0-flash", claude: "claude-sonnet-4-6", openai: "gpt-4o-mini" };
-  const MODEL_PREFIX = { gemini: "gemini", claude: "claude", openai: "gpt" };
-  el("provider").onchange = () => {
-    const p = el("provider").value, m = el("model").value.trim();
-    if (!m || !m.startsWith(MODEL_PREFIX[p])) el("model").value = MODEL_DEFAULT[p];
-  };
+  el("provider").onchange = () => populateModels(el("provider").value);
   el("cofreLogin").onclick = cofreLogin;
   el("input").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -411,7 +422,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // erros visiveis (em vez de falhar em silencio)
   window.addEventListener("error", (ev) => { el("cofreStatus").textContent = "Erro: " + ev.message; });
   window.addEventListener("unhandledrejection", (ev) => { el("cofreStatus").textContent = "Falha: " + ((ev.reason && ev.reason.message) || ev.reason); });
-  el("cofreStatus").textContent = "Build v1.6 · app " + APP_CLIENT_ID.slice(0, 8);
+  el("cofreStatus").textContent = "Build v1.7 · app " + APP_CLIENT_ID.slice(0, 8);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   welcome();
   initAuthOnLoad();
