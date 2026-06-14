@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.15";
+const APP_VERSION = "1.16";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -206,7 +206,11 @@ function initSpeech() {
     for (let i = ev.resultIndex; i < ev.results.length; i++) t += ev.results[i][0].transcript;
     el("input").value = t;
   };
-  recog.onend = () => { recording = false; el("micBtn").classList.remove("rec"); };
+  recog.onend = () => {
+    recording = false; el("micBtn").classList.remove("rec");
+    // Maos-livres: terminou de falar -> envia sozinho (a resposta sai em voz se marcado).
+    if (el("input").value.trim()) sendMessage();
+  };
   recog.onerror = () => { recording = false; el("micBtn").classList.remove("rec"); };
 }
 function toggleMic() {
