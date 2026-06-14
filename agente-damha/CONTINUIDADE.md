@@ -81,7 +81,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 
 ---
 
-## 5. Estado atual (v1.29)
+## 5. Estado atual (v1.44)
 
 **Funciona:**
 - Conversa por voz (entrada Web Speech + saida SpeechSynthesis) e texto.
@@ -157,23 +157,37 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 - **v1.29** — **mascote Maria Sarah** (persona/saudacao); botao **Limpar conversa**; seletor lista
   TODAS as vozes do aparelho + **presets** (Maria Sarah/Jovem/Seria/Animada).
 
+- **v1.30** — Maria Sarah **pergunta primeiro** (bloco ```options``` -> botoes clicaveis).
+- **v1.31** — voz aplica na hora; renomeia "Cerebro/cofre" para **"Base DAMHA"** na UI.
+- **v1.32/1.33** — grafico **abre em tela cheia** (modal Linha/Barra); **KPIs** (cards) + tipo **Area**.
+- **v1.34** — Gemini **1 chamada por mensagem** (corrige 429 que multiplicava).
+- **v1.35** — **relatorio completo**: varios KPIs+graficos numa resposta (`renderBotInto`).
+- **v1.36** — exportar/copiar grafico em **PNG** (modal).
+- **v1.37** — **tema claro/escuro** (Config).
+- **v1.38/1.39/1.40** — **Fase 2 leitor de planilha (SheetJS)** na Base DAMHA: abre .xlsx/.xlsb/.csv,
+  **menu de abas** + **Resumo/levantamento** (todas as abas, colunas, nº linhas); "Plotar/analisar com IA".
+- **v1.40/1.41** — 429: padrao **gemini-2.5-flash** (= STUDIO) + 1 modelo alternativo; **corta historico**
+  p/ ultimas 10 msgs (pacote menor). Causa real do 429 no app vs STUDIO: modelo + historico cheio.
+- **v1.42/1.43** — vozes por **genero**: presets **Maria Sarah (feminina)** e **Copilot Damha (masculino)**.
+- **v1.44** — **ITERACAO VIVA**: aba **Relatorio** (canvas vivo) — direcione por texto/chips e a Maria Sarah
+  monta/atualiza KPIs+graficos; pedidos de adicionar/remover reescrevem o relatorio completo (`renderReport`).
+
 > Detalhe granular: `git log -- agente-damha/`. Persona da IA = **Maria Sarah** (mascote do Copiloto Damha).
 > Leitura do cofre p/ Fase 2 ja viavel via `read_resource` (M365 connector): file:///{driveId}/{itemId}.
+> Gemini: o app fala igual ao STUDIO (mesmo endpoint, modelo 2.5-flash, 1 call, historico curto).
+> Fim definitivo do 429 = ativar billing (passo a passo no GUIA_INSTALACAO).
 
 ---
 
 ## 8. Proximos passos / ideias em aberto
-- **GRANDE: portar o "COPILOTO DAMHA" do STUDIO** (referencia do Daniel — "surreal"):
-  chat que devolve **graficos de dados reais** inline, com chips de sugestao, chavinha de
-  **Busca Web**, modelo+chave no topo. Fonte: `PROJETOS/2026.06.12_MISSION_CONTROL_MERCADO_FUTURO/
-  Mission_Control_Web/` (STUDIO.html 65KB, HUB.html, SIMULADOR.html). Para fazer 1:1 e preciso
-  trazer esses arquivos para o repo (rede do ambiente bloqueia o download direto do SharePoint;
-  so o conector M365 le, e e grande). Engenharia a replicar: IA -> spec de grafico (JSON) -> render
-  (lib de chart) + motor de dados (datasets tipo fx_curva, soja) + grounding de busca.
-- Caixinhas (cards) mais bonitas para cada projeto, com descricao curta.
-- Streaming da resposta de IA (UX de voz mais fluida).
-- Modo de modelo local p/ notas mais sensiveis (zero egress).
-- Handoff de fim de projeto no cofre `02_PROJETOS` (PAD_Aprendizados / 11_PADROES).
+- **Comparar series (2o eixo)** e **Candle** (vela) no grafico (precisa dados OHLC).
+- **Cards de Projetos** com descricao curta (aba Projetos hoje e lista).
+- **Isolar o Copiloto como base reutilizavel** (quando os testes forem validados).
+- **Voz exclusiva da Maria Sarah** (TTS premium tipo ElevenLabs — pago).
+- **Billing do Gemini** (acao do Daniel) — fim definitivo do 429.
+- Streaming da resposta; modo de modelo local (zero egress); handoff no cofre `02_PROJETOS`.
+- Ja entregue do STUDIO: pop-out de grafico, KPIs, Area, relatorio completo, PNG, Iteracao Viva,
+  busca web (Gemini), leitor de planilha (Fase 2). Fonte STUDIO: `PROJETOS/2026.06.12_MISSION_CONTROL_MERCADO_FUTURO/Mission_Control_Web/STUDIO.html`.
 
 ---
 
