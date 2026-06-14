@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.40";
+const APP_VERSION = "1.41";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -52,6 +52,8 @@ let lastOpenedNote = null; // ultima nota aberta no Cerebro {title, body}
 let msalApp = null;
 let folderStack = [];      // navegacao do cofre
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Envia so as ultimas trocas (igual ao STUDIO) — pacote menor, menos 429 por tokens/min.
+const recentHistory = () => history.slice(-10);
 
 /* ---------- Som de abertura (chime leve, no 1o toque — autoplay e bloqueado) ---------- */
 let _openSoundDone = false;
@@ -472,7 +474,7 @@ async function callClaude(sys = SYSTEM_PROMPT) {
       "anthropic-version": "2023-06-01",
       "anthropic-dangerous-direct-browser-access": "true",
     },
-    body: JSON.stringify({ model, max_tokens: 1500, system: sys, messages: history }),
+    body: JSON.stringify({ model, max_tokens: 1500, system: sys, messages: recentHistory() }),
   });
   if (!res.ok) throw new Error(apiError("Claude", res.status, await res.text()));
   const data = await res.json();
@@ -483,7 +485,7 @@ async function callGemini(sys = SYSTEM_PROMPT, web = false) {
   // 1 chamada por mensagem; se o modelo escolhido der 429 (cota), tenta 1 modelo alternativo (outra cota).
   const chosen = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.5-flash";
   const alt = chosen === "gemini-2.5-flash" ? "gemini-2.0-flash-lite" : "gemini-2.5-flash";
-  const contents = history.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+  const contents = recentHistory().map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
   const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } };
   if (web) body.tools = [{ google_search: {} }];
   async function tryModel(model) {
@@ -504,7 +506,7 @@ async function callGemini(sys = SYSTEM_PROMPT, web = false) {
 
 async function callOpenAI(sys = SYSTEM_PROMPT) {
   const model = (cfg.model || "").startsWith("gpt") ? cfg.model : "gpt-4o-mini";
-  const msgs = [{ role: "system", content: sys }, ...history];
+  const msgs = [{ role: "system", content: sys }, ...recentHistory()];
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "content-type": "application/json", "authorization": "Bearer " + cfg.apiKey },

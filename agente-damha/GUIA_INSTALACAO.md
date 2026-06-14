@@ -59,6 +59,17 @@ Escolha UM provedor e crie a chave:
 
 > A chave fica **so no aparelho** (localStorage). Trate como segredo.
 
+### Gemini: 429 (cota) e como resolver
+- A cota gratis do Gemini e **por modelo** e por **minuto/dia**. Testar muito esgota.
+- O app usa **gemini-2.5-flash** por padrao (igual ao STUDIO) e, em 429, tenta 1 modelo
+  alternativo automaticamente. Tambem envia so as ultimas ~10 mensagens (pacote menor).
+- **Fim definitivo do 429 = ativar billing** (pay-as-you-go), barato:
+  1. `aistudio.google.com` → API keys → veja o **projeto** da chave → "Set up billing"
+     (ou `console.cloud.google.com/billing`).
+  2. **Vincular conta de faturamento** (cartao) ao projeto da chave.
+  3. A "Generative Language API" passa ao nivel pago — limites altos, sem 429.
+  - Com billing, **gere uma chave nova** se a antiga tiver sido exposta.
+
 ---
 
 ## 4. Config dentro do app
