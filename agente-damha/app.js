@@ -9,7 +9,7 @@
 const DEFAULTS = {
   apiKey: "",
   provider: "gemini",
-  model: "gemini-2.5-flash",
+  model: "gemini-2.0-flash-lite",
   egress: "hibrido",
   // Client ID do registro Azure "Agente DAMHA" (publico, nao e segredo)
   azureClient: "68d78834-f9ec-4f71-b64b-172e9281e832",
@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.24";
+const APP_VERSION = "1.25";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -83,8 +83,8 @@ function saveCfg() {
 // Versoes selecionaveis por provedor (id = nome real da API; label = texto claro)
 const MODELS = {
   gemini: [
-    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash — igual ao STUDIO (recomendado)" },
-    { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash-Lite — leve, cota maior" },
+    { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash-Lite — funcionando aqui (recomendado)" },
+    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash — igual ao STUDIO" },
     { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
     { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro — topo (pode exigir billing)" },
   ],
@@ -305,9 +305,9 @@ async function callClaude(sys = SYSTEM_PROMPT) {
 }
 
 async function callGemini(sys = SYSTEM_PROMPT, web = false) {
-  const chosen = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.5-flash";
+  const chosen = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.0-flash-lite";
   const candidates = [chosen];
-  ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash"].forEach((m) => { if (!candidates.includes(m)) candidates.push(m); });
+  ["gemini-2.0-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"].forEach((m) => { if (!candidates.includes(m)) candidates.push(m); });
   const contents = history.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
   const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } };
   if (web) body.tools = [{ google_search: {} }]; // grounding de busca do Google (internet)
