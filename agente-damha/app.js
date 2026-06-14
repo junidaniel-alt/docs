@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.29";
+const APP_VERSION = "1.30";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -205,20 +205,40 @@ function mdToHtml(t) {
 function addBotMsg(text) {
   const d = document.createElement("div");
   d.className = "msg bot";
-  const { rest, spec } = extractChart(text);
-  d.innerHTML = mdToHtml(rest || (spec ? "" : text));
-  if (spec) d.appendChild(renderChart(spec));
+  const ch = extractBlock(text, "chart");
+  const op = extractBlock(ch.rest, "options");
+  d.innerHTML = mdToHtml(op.rest || ((ch.data || op.data) ? "" : text));
+  if (ch.data) d.appendChild(renderChart(ch.data));
+  if (op.data) d.appendChild(renderOptions(op.data));
   el("chat").appendChild(d);
   el("chat").scrollTop = el("chat").scrollHeight;
   return d;
 }
-// Extrai um bloco ```chart {json}``` da resposta (o resto vira texto).
-function extractChart(t) {
-  const m = t.match(/```chart\s*([\s\S]*?)```/i);
-  if (!m) return { rest: t, spec: null };
-  let spec = null;
-  try { spec = JSON.parse(m[1].trim()); } catch { spec = null; }
-  return { rest: t.replace(m[0], "").trim(), spec };
+// Extrai um bloco cercado ```tag {json}``` da resposta (o resto vira texto).
+function extractBlock(t, tag) {
+  const re = new RegExp("```" + tag + "\\s*([\\s\\S]*?)```", "i");
+  const m = t.match(re);
+  if (!m) return { rest: t, data: null };
+  let data = null;
+  try { data = JSON.parse(m[1].trim()); } catch { data = null; }
+  return { rest: t.replace(m[0], "").trim(), data };
+}
+function extractChart(t) { const r = extractBlock(t, "chart"); return { rest: r.rest, spec: r.data }; }
+// Texto limpo (sem blocos chart/options) para a leitura em voz.
+function plainForSpeech(t) {
+  return extractBlock(extractBlock(t, "chart").rest, "options").rest.replace(/[*#`>_]/g, "");
+}
+// Botoes de escolha: a Maria Sarah pergunta primeiro e o toque envia a resposta.
+function renderOptions(spec) {
+  const box = document.createElement("div");
+  box.className = "chips"; box.style.marginTop = "8px";
+  (spec.options || []).forEach((o) => {
+    const b = document.createElement("button");
+    b.className = "chip-s"; b.textContent = o;
+    b.onclick = () => { el("input").value = o; sendMessage(); };
+    box.appendChild(b);
+  });
+  return box;
 }
 function fmtNum(v) {
   return Math.abs(v) >= 1000
@@ -322,7 +342,8 @@ async function sendMessage() {
   // Sistema dinamico conforme as chavinhas.
   let sys = SYSTEM_PROMPT;
   if (togState("togCerebro")) sys += "\n\nO cofre Obsidian e a fonte mestra: priorize-o e sinalize claramente quando faltar dado do cofre (peca para abrir a nota no Cerebro).";
-  sys += "\n\nVoce e o Copiloto Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". O restante da resposta vai em texto normal (markdown leve).";
+  sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\".";
+  sys += "\n\nPERGUNTE PRIMEIRO, nao adivinhe: quando o pedido for ambiguo ou exigir uma escolha (ex.: de qual fonte de dados puxar, qual fazenda, qual periodo, se busca no cofre ou se o Daniel mostra a nota), escreva a pergunta curta e inclua UM bloco cercado por tres crases iniciado pela palavra options com JSON {\"options\":[\"opcao 1\",\"opcao 2\"]} (2 a 4 opcoes curtas). O Daniel toca numa opcao e voce segue. O restante da resposta vai em texto normal (markdown leve).";
   const wantWeb = togState("togInternet");
 
   setStatus(wantWeb && cfg.provider === "gemini" ? "Pensando (com internet)..." : "Pensando...");
@@ -333,7 +354,7 @@ async function sendMessage() {
     history.push({ role: "assistant", content: reply });
     addBotMsg(reply);
     setStatus("");
-    if (togState("togVoz")) speak(extractChart(reply).rest.replace(/[*#`>_]/g, ""));
+    if (togState("togVoz")) speak(plainForSpeech(reply));
   } catch (e) {
     addMsg(e.message || ("Falha: " + e), "err");
     setStatus("");
