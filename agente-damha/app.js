@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.43";
+const APP_VERSION = "1.44";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -414,6 +414,30 @@ function renderSuggest() {
     box.appendChild(b);
   });
 }
+// Relatorio vivo (iteracao viva): renderiza os blocos da ultima resposta no canvas do Relatorio.
+function renderReport(text) {
+  if (!/```(kpis|chart)/i.test(text)) return; // so atualiza quando a resposta traz indicadores/graficos
+  const c = el("reportCanvas");
+  if (!c) return;
+  c.innerHTML = "";
+  renderBotInto(c, text);
+}
+const REP_SUGGEST = ["Relatorio completo de cambio", "Adicione um grafico do CDS", "Compare soja, milho e boi", "Resumo do dolar com indicadores"];
+function renderRepSuggest() {
+  const box = el("repSuggest"); if (!box) return;
+  box.innerHTML = "";
+  REP_SUGGEST.forEach((s) => {
+    const b = document.createElement("button");
+    b.className = "chip-s"; b.textContent = s;
+    b.onclick = () => { el("input").value = s; sendMessage(); };
+    box.appendChild(b);
+  });
+}
+function initReport() {
+  renderRepSuggest();
+  el("repSend").onclick = () => { const v = el("repInput").value.trim(); if (!v) return; el("input").value = v; el("repInput").value = ""; sendMessage(); };
+  el("repInput").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); el("repSend").onclick(); } });
+}
 
 async function sendMessage() {
   const text = el("input").value.trim();
@@ -446,6 +470,7 @@ async function sendMessage() {
   let sys = SYSTEM_PROMPT;
   if (togState("togCerebro")) sys += "\n\nA Base DAMHA e a fonte mestra: priorize-a e sinalize claramente quando faltar dado (peca para o Daniel abrir o arquivo na Base DAMHA).";
   sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\" ou \"area\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". Para indicadores-chave, PODE incluir um bloco kpis com JSON {\"cards\":[{\"label\":\"...\",\"value\":\"...\",\"sub\":\"...\"}]} (ate 4 cartoes). Para um RELATORIO COMPLETO, pode incluir VARIOS blocos kpis e chart na mesma resposta, intercalados com texto curto (titulos e analise). Sem dados reais, marque source ilustrativo e avise.";
+  sys += "\n\nRELATORIO VIVO: se o Daniel pedir para adicionar/remover/trocar/atualizar algo no relatorio, responda com o RELATORIO ATUALIZADO COMPLETO (reescreva TODOS os blocos kpis e chart de novo, com a mudanca aplicada), nao so o trecho alterado.";
   sys += "\n\nPERGUNTE PRIMEIRO, nao adivinhe: quando o pedido for ambiguo ou exigir uma escolha (ex.: de qual fonte de dados puxar, qual fazenda, qual periodo, se busca na Base DAMHA ou se o Daniel mostra o arquivo), escreva a pergunta curta e inclua UM bloco cercado por tres crases iniciado pela palavra options com JSON {\"options\":[\"opcao 1\",\"opcao 2\"]} (2 a 4 opcoes curtas). O Daniel toca numa opcao e voce segue. O restante da resposta vai em texto normal (markdown leve).";
   const wantWeb = togState("togInternet");
 
@@ -456,6 +481,7 @@ async function sendMessage() {
                 : await callGemini(sys, wantWeb);
     history.push({ role: "assistant", content: reply });
     addBotMsg(reply);
+    renderReport(reply);
     setStatus("");
     if (togState("togVoz")) speak(plainForSpeech(reply));
   } catch (e) {
@@ -996,6 +1022,7 @@ window.addEventListener("DOMContentLoaded", () => {
   initToggles();
   initTheme();
   renderSuggest();
+  initReport();
   renderNucleo();
   initSpeech();
   initNav();
