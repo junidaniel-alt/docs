@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.41";
+const APP_VERSION = "1.42";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -523,9 +523,14 @@ function setStatus(s) { el("status").textContent = s; }
 let chosenVoice = null;
 function pickVoice() {
   if (!("speechSynthesis" in window)) return;
-  const vs = window.speechSynthesis.getVoices().filter((v) => /^pt/i.test(v.lang));
-  const fem = vs.find((v) => /(Maria|Luciana|Francisca|Fernanda|Vit[oó]ria|Heloisa|Joana|Catarina|female|mulher|feminin)/i.test(v.name));
-  chosenVoice = fem || vs[0] || null;
+  const all = window.speechSynthesis.getVoices();
+  const pt = all.filter((v) => /^pt/i.test(v.lang));
+  const femRe = /(Maria|Luciana|Francisca|Fernanda|Vit[oó]ria|Heloisa|Joana|Catarina|Ines|In[eê]s|Raquel|Camila|Female|fem|mulher|woman|girl|-f-|_f_|afs)/i;
+  const malRe = /(Daniel|Felipe|Ricardo|Antonio|Joao|Jo[aã]o|Male|masc|man|-m-|_m_|ams)/i;
+  chosenVoice = pt.find((v) => femRe.test(v.name))            // pt-BR feminina por nome
+    || pt.find((v) => !malRe.test(v.name))                    // pt-BR que nao parece masculina
+    || pt[0]                                                  // qualquer pt
+    || all.find((v) => femRe.test(v.name)) || all[0] || null;
   populateVoices();
 }
 if ("speechSynthesis" in window) { window.speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); }
@@ -1011,9 +1016,10 @@ window.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-pp]").forEach((b) => {
     b.onclick = () => {
       const [p, r] = b.dataset.pp.split(",").map(Number);
+      el("voiceSel").value = "";  // forca voz feminina automatica (mascote = mulher); preset so muda o tom
       el("voicePitch").value = p; el("voiceRate").value = r;
       applyVoiceLive();
-      speakWith((b.dataset.say || "Oi! Eu sou a Maria Sarah, sua copiloto da Damha Agro."), p, r, el("voiceSel").value);
+      speakWith((b.dataset.say || "Oi! Eu sou a Maria Sarah, sua copiloto da Damha Agro."), p, r, "");
     };
   });
   armOpenSound();
