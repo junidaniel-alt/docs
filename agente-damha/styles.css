@@ -169,3 +169,8 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 .msg.bot pre { background: #1c0d2c; border: 1px solid var(--roxo); border-radius: 8px; padding: 8px 10px; overflow-x: auto; margin: 6px 0; font-size: .85rem; white-space: pre-wrap; }
 .msg.bot code { background: #1c0d2c; padding: 1px 5px; border-radius: 5px; font-size: .9em; }
 .msg.bot strong { color: #fff; }
+
+/* Chavinhas do copiloto (aba Conversa) */
+.toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+.tog { background: #241038; border: 1px solid var(--roxo); color: var(--muted); border-radius: 999px; padding: 5px 10px; font: inherit; font-size: .75rem; cursor: pointer; }
+.tog.on { background: var(--roxo); color: #fff; border-color: var(--magenta); }

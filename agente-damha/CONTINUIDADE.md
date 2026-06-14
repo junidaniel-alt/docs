@@ -133,6 +133,14 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
   logou (`userFirstName`). Abertura virou **splash** com logo DAMHA animado + nome + versao; bloco
   de identificacao (§A9) movido para **dentro da Config** (nao aparece mais em todas as telas).
 
+- **v1.17** — lista de modelos com rotulos claros (padrao Gemini 1.5 Flash); erros amigaveis
+  (429/401/404); respostas da IA renderizadas em markdown leve (`mdToHtml`).
+- **v1.18** — copiloto na aba Conversa com **chavinhas**: 🌐 Internet (grounding `google_search`
+  do Gemini), 🧠 Cerebro (cofre como fonte), 📄 Contexto (anexa ultima nota aberta, respeitando
+  egress hibrido), 🔊 Voz (TTS). Estados em localStorage (`tog_*`). Calls de IA parametrizadas
+  por `sys`/`web`. STUDIO (`PROJETOS/2026.06.12_MISSION_CONTROL_MERCADO_FUTURO/Mission_Control_Web/`)
+  e a referencia de engenharia de chat — fonte ainda nao lida (download via Graph trava em redirect).
+
 > Detalhe granular: `git log -- agente-damha/`.
 
 ---

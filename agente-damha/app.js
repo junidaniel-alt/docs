@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.17";
+const APP_VERSION = "1.18";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -43,8 +43,21 @@ Quando receber o conteudo de uma nota do cofre como contexto, trate-a como fonte
 let cfg = loadCfg();
 let history = [];          // historico da conversa [{role, content}]
 let pendingNoteContext = null; // nota aprovada para envio (egress hibrido)
+let lastOpenedNote = null; // ultima nota aberta no Cerebro {title, body}
 let msalApp = null;
 let folderStack = [];      // navegacao do cofre
+
+/* ---------- Chavinhas do copiloto (Conversa) ---------- */
+const TOGGLES = ["togInternet", "togCerebro", "togContexto", "togVoz"];
+const togState = (id) => localStorage.getItem("tog_" + id) === "1";
+function setTog(id, on) { localStorage.setItem("tog_" + id, on ? "1" : "0"); el(id).classList.toggle("on", on); }
+function initToggles() {
+  if (localStorage.getItem("tog_togVoz") === null) localStorage.setItem("tog_togVoz", "1"); // voz on por padrao
+  TOGGLES.forEach((id) => {
+    el(id).classList.toggle("on", togState(id));
+    el(id).onclick = () => setTog(id, !togState(id));
+  });
+}
 
 /* ---------- Config ---------- */
 function loadCfg() {
@@ -150,31 +163,46 @@ async function sendMessage() {
   el("input").value = "";
   addMsg(text, "user");
 
-  // Egress hibrido: anexa a nota aprovada (uma vez) ao conteudo do usuario.
+  // Contexto do cofre: nota aprovada (Analisar) ou, com as chavinhas Cerebro/Contexto,
+  // a ultima nota aberta (respeitando o egress hibrido = confirma antes de enviar).
+  let ctxNote = pendingNoteContext;
+  if (!ctxNote && (togState("togCerebro") || togState("togContexto")) && lastOpenedNote) {
+    if (cfg.egress === "local") {
+      ctxNote = null;
+    } else if (cfg.egress === "hibrido") {
+      if (confirm(`Anexar a nota "${lastOpenedNote.title}" (cofre, Uso Interno) a esta pergunta?`)) ctxNote = lastOpenedNote;
+    } else {
+      ctxNote = lastOpenedNote;
+    }
+  }
   let userContent = text;
-  if (pendingNoteContext) {
-    userContent = `Contexto (nota do cofre "${pendingNoteContext.title}"):\n\n${pendingNoteContext.body}\n\n---\nPergunta: ${text}`;
-    setStatus(`Enviando com a nota "${pendingNoteContext.title}".`);
+  if (ctxNote) {
+    userContent = `Contexto (nota do cofre "${ctxNote.title}"):\n\n${ctxNote.body}\n\n---\nPergunta: ${text}`;
     pendingNoteContext = null;
   }
   history.push({ role: "user", content: userContent });
 
-  setStatus("Pensando...");
+  // Sistema dinamico conforme as chavinhas.
+  let sys = SYSTEM_PROMPT;
+  if (togState("togCerebro")) sys += "\n\nO cofre Obsidian e a fonte mestra: priorize-o e sinalize claramente quando faltar dado do cofre (peca para abrir a nota no Cerebro).";
+  const wantWeb = togState("togInternet");
+
+  setStatus(wantWeb && cfg.provider === "gemini" ? "Pensando (com internet)..." : "Pensando...");
   try {
-    const reply = cfg.provider === "claude" ? await callClaude()
-                : cfg.provider === "openai" ? await callOpenAI()
-                : await callGemini();
+    const reply = cfg.provider === "claude" ? await callClaude(sys)
+                : cfg.provider === "openai" ? await callOpenAI(sys)
+                : await callGemini(sys, wantWeb);
     history.push({ role: "assistant", content: reply });
     addBotMsg(reply);
     setStatus("");
-    if (el("ttsOn").checked) speak(reply.replace(/[*#`>_]/g, ""));
+    if (togState("togVoz")) speak(reply.replace(/[*#`>_]/g, ""));
   } catch (e) {
     addMsg(e.message || ("Falha: " + e), "err");
     setStatus("");
   }
 }
 
-async function callClaude() {
+async function callClaude(sys = SYSTEM_PROMPT) {
   const model = (cfg.model || "").startsWith("claude") ? cfg.model : "claude-sonnet-4-6";
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -184,17 +212,18 @@ async function callClaude() {
       "anthropic-version": "2023-06-01",
       "anthropic-dangerous-direct-browser-access": "true",
     },
-    body: JSON.stringify({ model, max_tokens: 1500, system: SYSTEM_PROMPT, messages: history }),
+    body: JSON.stringify({ model, max_tokens: 1500, system: sys, messages: history }),
   });
   if (!res.ok) throw new Error(apiError("Claude", res.status, await res.text()));
   const data = await res.json();
   return (data.content || []).map((b) => b.text || "").join("").trim();
 }
 
-async function callGemini() {
-  const model = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.0-flash";
+async function callGemini(sys = SYSTEM_PROMPT, web = false) {
+  const model = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-1.5-flash";
   const contents = history.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-  const body = { contents, systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }, generationConfig: { maxOutputTokens: 1500 } };
+  const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 1500 } };
+  if (web) body.tools = [{ google_search: {} }]; // grounding de busca do Google (internet)
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
   const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   if (!res.ok) throw new Error(apiError("Gemini", res.status, await res.text()));
@@ -204,9 +233,9 @@ async function callGemini() {
     || "(resposta vazia — veja se o modelo em Config existe)";
 }
 
-async function callOpenAI() {
+async function callOpenAI(sys = SYSTEM_PROMPT) {
   const model = (cfg.model || "").startsWith("gpt") ? cfg.model : "gpt-4o-mini";
-  const msgs = [{ role: "system", content: SYSTEM_PROMPT }, ...history];
+  const msgs = [{ role: "system", content: sys }, ...history];
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "content-type": "application/json", "authorization": "Bearer " + cfg.apiKey },
@@ -389,6 +418,7 @@ async function openNote(id, name) {
   try {
     const txt = await graph(`/drives/${cfg.driveId}/items/${id}/content`, window._cofreToken, true);
     el("noteBody").textContent = txt;
+    lastOpenedNote = { title: name, body: txt };
     const btn = el("noteAnalyze");
     btn.classList.toggle("hidden", cfg.egress === "local");
     btn.onclick = () => analyzeNote(name, txt);
@@ -600,6 +630,7 @@ window.addEventListener("DOMContentLoaded", () => {
   hydrateCfgForm();
   renderProjetos();
   initAdm();
+  initToggles();
   renderNucleo();
   initSpeech();
   initNav();
