@@ -7,7 +7,7 @@
   <title>App Agente Damha Agro</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=38" />
+  <link rel="stylesheet" href="styles.css?v=39" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -148,6 +148,7 @@
           <input type="range" id="voiceRate" min="0.6" max="1.4" step="0.05" />
         </label>
         <button type="button" id="voiceTest" class="secondary">&#128266; Testar voz</button>
+        <label class="chk" style="margin-top:10px;display:block"><input type="checkbox" id="openSoundChk" /> Som de abertura (toca no 1&#186; toque)</label>
       </fieldset>
 
       <button id="saveCfg" class="send">Salvar configuracoes</button>
@@ -199,6 +200,6 @@
     </section>
   </main>
 
-  <script src="app.js?v=38"></script>
+  <script src="app.js?v=39"></script>
 </body>
 </html>

@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.27";
+const APP_VERSION = "1.28";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -50,6 +50,31 @@ let lastOpenedNote = null; // ultima nota aberta no Cerebro {title, body}
 let msalApp = null;
 let folderStack = [];      // navegacao do cofre
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* ---------- Som de abertura (chime leve, no 1o toque — autoplay e bloqueado) ---------- */
+let _openSoundDone = false;
+function openChime() {
+  if (_openSoundDone || localStorage.getItem("openSound") === "0") return;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) return;
+    const ac = new Ctx(); const now = ac.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {  // C-E-G-C, suave
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      const t = now + i * 0.12;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.16, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 0.6);
+    });
+    _openSoundDone = true;
+  } catch (e) { /* sem audio: ignora */ }
+}
+function armOpenSound() {
+  const h = () => { openChime(); window.removeEventListener("pointerdown", h); window.removeEventListener("keydown", h); };
+  window.addEventListener("pointerdown", h, { once: true });
+  window.addEventListener("keydown", h, { once: true });
+}
 
 /* ---------- Chavinhas do copiloto (Conversa) ---------- */
 const TOGGLES = ["togInternet", "togCerebro", "togContexto", "togVoz"];
@@ -790,6 +815,9 @@ window.addEventListener("DOMContentLoaded", () => {
   el("micBtn").onclick = toggleMic;
   el("stopVoz").onclick = stopSpeak;
   el("voiceTest").onclick = () => speakWith("Ola, Daniel! Sou o Copiloto Damha Agro.", parseFloat(el("voicePitch").value), parseFloat(el("voiceRate").value), el("voiceSel").value);
+  el("openSoundChk").checked = localStorage.getItem("openSound") !== "0";
+  el("openSoundChk").onchange = () => localStorage.setItem("openSound", el("openSoundChk").checked ? "1" : "0");
+  armOpenSound();
   el("saveCfg").onclick = saveCfg;
   el("provider").onchange = () => populateModels(el("provider").value);
   el("cofreLogin").onclick = cofreLogin;

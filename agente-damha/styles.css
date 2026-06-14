@@ -189,3 +189,42 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 
 /* sliders de voz */
 .field input[type=range]{padding:0;accent-color:var(--laranja);}
+
+/* ===== Dinamismo: transicoes de view, splash fantastica, microinteracoes ===== */
+@keyframes viewIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.view.active { animation: viewIn .42s cubic-bezier(.2,.7,.2,1) both; }
+
+/* Splash com halo pulsante + brilho no nome */
+.splash { position: relative; }
+.splash::before {
+  content: ""; position: absolute; left: 50%; top: 70px; width: 250px; height: 250px;
+  transform: translate(-50%, -30%); pointer-events: none; z-index: 0; filter: blur(8px);
+  background: radial-gradient(circle, rgba(240,142,35,.40), rgba(196,53,122,.14) 45%, transparent 70%);
+  animation: halo 4.2s ease-in-out infinite;
+}
+.splash-logo, .splash-title, .splash-sub, .appver { position: relative; z-index: 1; }
+@keyframes halo { 0%,100% { opacity:.45; transform: translate(-50%,-30%) scale(1); } 50% { opacity:.9; transform: translate(-50%,-30%) scale(1.1); } }
+.splash-title {
+  background: linear-gradient(90deg,#fff 0%,#fff 42%,#F08E23 50%,#fff 58%,#fff 100%);
+  background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: logoIn .8s ease-out both, shine 6.5s linear infinite;
+}
+@keyframes shine { 0% { background-position: 130% 0; } 100% { background-position: -130% 0; } }
+
+/* Botoes do menu: entrada escalonada + levitar no hover/toque */
+.launch-btn { animation: viewIn .5s ease both; transition: transform .14s ease, background .2s ease, box-shadow .2s ease; }
+.launch-btn:nth-child(2){ animation-delay:.06s } .launch-btn:nth-child(3){ animation-delay:.12s } .launch-btn:nth-child(4){ animation-delay:.18s }
+.launch-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.32); }
+.launch-btn:active { transform: scale(.97); }
+.launch-btn .ic { transition: transform .25s ease; }
+.launch-btn:hover .ic { transform: scale(1.12) rotate(-3deg); }
+
+/* Microinteracoes gerais */
+.send, .secondary, .mic, .tog, .chip-s, .chip { transition: transform .12s ease, background .2s ease, opacity .2s ease, box-shadow .2s ease; }
+.send:active, .secondary:active, .mic:active, .tog:active, .chip-s:active, .chip:active { transform: scale(.94); }
+.chip-s:hover, .tog:hover { transform: translateY(-1px); }
+.list li { transition: background .15s ease, transform .12s ease; }
+.list li:active { transform: scale(.99); }
+.msg { animation: viewIn .3s ease both; }
+.panelchart { animation: viewIn .45s ease both; }
+.navlink { transition: color .2s ease; }
