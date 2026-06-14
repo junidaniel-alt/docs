@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.30";
+const APP_VERSION = "1.31";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -39,9 +39,9 @@ const NUCLEO = [
 const SYSTEM_PROMPT = `Voce e a Maria Sarah, copiloto e mascote da Damha Agro (family office de Daniel) — parceira de debate e pensamento critico, NAO validadora.
 Questione premissas frageis (logica, emocional, estrategica), aponte vieses, racionalizacoes, riscos e a visao contraria mais forte.
 Diferencie fato, interpretacao e opiniao; sinalize incerteza; nunca invente dados, fontes ou cenarios.
-Regra primordial: nada comeca do zero — o cofre Obsidian e a fonte mestra; em conflito, o cofre vence.
+Regra primordial: nada comeca do zero — a Base DAMHA (base de dados propria da DAMHA) e a fonte mestra; em conflito, ela vence.
 Tom natural, humano, direto e elegante. Conclusoes comecam com "Enfim.". Datas em DD/MM/YYYY.
-Quando receber o conteudo de uma nota do cofre como contexto, trate-a como fonte e raciocine sobre ela.`;
+Quando receber o conteudo de um arquivo da Base DAMHA como contexto, trate-o como fonte e raciocine sobre ele.`;
 
 let cfg = loadCfg();
 let history = [];          // historico da conversa [{role, content}]
@@ -327,23 +327,23 @@ async function sendMessage() {
     if (cfg.egress === "local") {
       ctxNote = null;
     } else if (cfg.egress === "hibrido") {
-      if (confirm(`Anexar a nota "${lastOpenedNote.title}" (cofre, Uso Interno) a esta pergunta?`)) ctxNote = lastOpenedNote;
+      if (confirm(`Anexar "${lastOpenedNote.title}" (Base DAMHA, Uso Interno) a esta pergunta?`)) ctxNote = lastOpenedNote;
     } else {
       ctxNote = lastOpenedNote;
     }
   }
   let userContent = text;
   if (ctxNote) {
-    userContent = `Contexto (nota do cofre "${ctxNote.title}"):\n\n${ctxNote.body}\n\n---\nPergunta: ${text}`;
+    userContent = `Contexto (Base DAMHA "${ctxNote.title}"):\n\n${ctxNote.body}\n\n---\nPergunta: ${text}`;
     pendingNoteContext = null;
   }
   history.push({ role: "user", content: userContent });
 
   // Sistema dinamico conforme as chavinhas.
   let sys = SYSTEM_PROMPT;
-  if (togState("togCerebro")) sys += "\n\nO cofre Obsidian e a fonte mestra: priorize-o e sinalize claramente quando faltar dado do cofre (peca para abrir a nota no Cerebro).";
+  if (togState("togCerebro")) sys += "\n\nA Base DAMHA e a fonte mestra: priorize-a e sinalize claramente quando faltar dado (peca para o Daniel abrir o arquivo na Base DAMHA).";
   sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\".";
-  sys += "\n\nPERGUNTE PRIMEIRO, nao adivinhe: quando o pedido for ambiguo ou exigir uma escolha (ex.: de qual fonte de dados puxar, qual fazenda, qual periodo, se busca no cofre ou se o Daniel mostra a nota), escreva a pergunta curta e inclua UM bloco cercado por tres crases iniciado pela palavra options com JSON {\"options\":[\"opcao 1\",\"opcao 2\"]} (2 a 4 opcoes curtas). O Daniel toca numa opcao e voce segue. O restante da resposta vai em texto normal (markdown leve).";
+  sys += "\n\nPERGUNTE PRIMEIRO, nao adivinhe: quando o pedido for ambiguo ou exigir uma escolha (ex.: de qual fonte de dados puxar, qual fazenda, qual periodo, se busca na Base DAMHA ou se o Daniel mostra o arquivo), escreva a pergunta curta e inclua UM bloco cercado por tres crases iniciado pela palavra options com JSON {\"options\":[\"opcao 1\",\"opcao 2\"]} (2 a 4 opcoes curtas). O Daniel toca numa opcao e voce segue. O restante da resposta vai em texto normal (markdown leve).";
   const wantWeb = togState("togInternet");
 
   setStatus(wantWeb && cfg.provider === "gemini" ? "Pensando (com internet)..." : "Pensando...");
@@ -455,6 +455,13 @@ function speakWith(text, pitch, rate, voiceName) {
   window.speechSynthesis.speak(u);
 }
 function speak(text) { speakWith(text, cfg.pitch, cfg.rate, cfg.voiceName); }
+// Aplica a voz na hora (sem precisar de Salvar) e persiste.
+function applyVoiceLive() {
+  cfg.voiceName = el("voiceSel").value;
+  cfg.pitch = parseFloat(el("voicePitch").value) || 1.3;
+  cfg.rate = parseFloat(el("voiceRate").value) || 1.06;
+  localStorage.setItem("agenteDamhaCfg", JSON.stringify(cfg));
+}
 
 /* ---------- Voz: entrada (STT) ---------- */
 let recog = null, recording = false;
@@ -840,11 +847,16 @@ window.addEventListener("DOMContentLoaded", () => {
   el("openSoundChk").checked = localStorage.getItem("openSound") !== "0";
   el("openSoundChk").onchange = () => localStorage.setItem("openSound", el("openSoundChk").checked ? "1" : "0");
   el("clearChat").onclick = clearChat;
+  // Voz aplica na hora (corrige "nao troca") + toca amostra
+  el("voiceSel").onchange = () => { applyVoiceLive(); speakWith("Pronto, voz trocada. Eu sou a Maria Sarah.", cfg.pitch, cfg.rate, cfg.voiceName); };
+  el("voicePitch").oninput = applyVoiceLive;
+  el("voiceRate").oninput = applyVoiceLive;
   document.querySelectorAll("[data-pp]").forEach((b) => {
     b.onclick = () => {
       const [p, r] = b.dataset.pp.split(",").map(Number);
       el("voicePitch").value = p; el("voiceRate").value = r;
-      speakWith("Oi! Eu sou a Maria Sarah, sua copiloto da Damha Agro.", p, r, el("voiceSel").value);
+      applyVoiceLive();
+      speakWith((b.dataset.say || "Oi! Eu sou a Maria Sarah, sua copiloto da Damha Agro."), p, r, el("voiceSel").value);
     };
   });
   armOpenSound();

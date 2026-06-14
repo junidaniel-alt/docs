@@ -7,7 +7,7 @@
   <title>App Agente Damha Agro</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=41" />
+  <link rel="stylesheet" href="styles.css?v=42" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -27,7 +27,7 @@
   <nav class="summary" id="summary">
     <a data-go="home" class="navlink">Inicio</a>
     <a data-go="conversa" class="navlink">Copiloto</a>
-    <a data-go="cerebro" class="navlink">Cerebro</a>
+    <a data-go="cerebro" class="navlink">Base DAMHA</a>
     <a data-go="projetos" class="navlink">Projetos</a>
     <a data-go="config" class="navlink">Config</a>
   </nav>
@@ -38,12 +38,12 @@
       <div class="splash">
         <img class="splash-logo" src="assets/LOGO.png" alt="DAMHA" onerror="this.style.display='none'" />
         <h2 class="splash-title">App Agente <strong>Damha Agro</strong></h2>
-        <p class="splash-sub">Family Office / Holding &middot; cerebro, projetos e conversa por voz</p>
+        <p class="splash-sub">Family Office / Holding &middot; base de dados, projetos e conversa por voz</p>
         <span class="appver" id="appVer"></span>
       </div>
       <div class="launch">
         <button class="launch-btn" data-go="conversa"><span class="ic">&#129302;</span>Copiloto</button>
-        <button class="launch-btn" data-go="cerebro"><span class="ic">&#129504;</span>Cerebro</button>
+        <button class="launch-btn" data-go="cerebro"><span class="ic">&#129504;</span>Base DAMHA</button>
         <button class="launch-btn" data-go="projetos"><span class="ic">&#128193;</span>Projetos</button>
         <button class="launch-btn" data-go="config"><span class="ic">&#9881;</span>Config</button>
       </div>
@@ -63,8 +63,8 @@
       <div class="composer-row">
         <div class="toggles">
           <button type="button" class="tog" id="togInternet" title="Buscar na internet (melhor com Gemini)">&#127760; Internet</button>
-          <button type="button" class="tog" id="togCerebro" title="Usar o cofre (Cerebro) como fonte">&#129504; Cerebro</button>
-          <button type="button" class="tog" id="togContexto" title="Anexar a ultima nota aberta no Cerebro">&#128196; Contexto</button>
+          <button type="button" class="tog" id="togCerebro" title="Usar a Base DAMHA como fonte">&#129504; Base</button>
+          <button type="button" class="tog" id="togContexto" title="Anexar o ultimo arquivo aberto na Base DAMHA">&#128196; Contexto</button>
           <button type="button" class="tog on" id="togVoz" title="Responder em voz">&#128266; Voz</button>
           <button type="button" class="tog" id="stopVoz" title="Parar a voz agora">&#9209; Parar</button>
           <button type="button" class="tog" id="clearChat" title="Limpar a conversa">&#128465; Limpar</button>
@@ -73,12 +73,13 @@
       </div>
     </section>
 
-    <!-- ===== Cerebro (cofre) ===== -->
+    <!-- ===== Base DAMHA (cofre / dados proprios) ===== -->
     <section id="cerebro" class="view panel">
-      <h2>Cerebro</h2>
+      <h2>Base DAMHA</h2>
+      <p class="muted">Informacoes proprias da DAMHA para consulta.</p>
       <div class="nucleo" id="nucleo"></div>
       <div id="cofreAuth">
-        <p class="muted">Conecte sua conta Microsoft 365 para ler o cofre.</p>
+        <p class="muted">Conecte sua conta Microsoft 365 para consultar a Base DAMHA.</p>
         <button id="cofreLogin" class="secondary">Conectar M365</button>
         <p class="status" id="cofreStatus"></p>
       </div>
@@ -149,7 +150,8 @@
           <input type="range" id="voiceRate" min="0.6" max="1.4" step="0.05" />
         </label>
         <div class="toggles" style="margin-top:8px">
-          <button type="button" class="tog" data-pp="1.3,1.06">&#128578; Maria Sarah</button>
+          <button type="button" class="tog" data-pp="1.4,1.06" data-say="Oi! Eu sou a Maria Sarah, sua copiloto da Damha Agro.">&#128578; Maria Sarah</button>
+          <button type="button" class="tog" data-pp="1.05,1.0" data-say="Aqui e o Copilot Damha, pronto para ajudar.">&#129302; Copilot Damha</button>
           <button type="button" class="tog" data-pp="1.7,1.05">&#129516; Jovem</button>
           <button type="button" class="tog" data-pp="0.95,1.0">&#127919; Seria</button>
           <button type="button" class="tog" data-pp="1.45,1.18">&#10024; Animada</button>
@@ -176,7 +178,7 @@
       <!-- Config ADM (so para o administrador) -->
       <div id="admPanel" class="hidden">
         <fieldset class="field">
-          <legend>Config ADM — Cofre (Cerebro)</legend>
+          <legend>Config ADM — Base DAMHA</legend>
           <p class="muted" id="admWho"></p>
           <label>Modo de egress do cofre
             <select id="egress">
@@ -207,6 +209,6 @@
     </section>
   </main>
 
-  <script src="app.js?v=41"></script>
+  <script src="app.js?v=42"></script>
 </body>
 </html>
