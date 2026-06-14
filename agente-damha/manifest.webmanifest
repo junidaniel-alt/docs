@@ -1,6 +1,6 @@
 {
-  "name": "Agente DAMHA",
-  "short_name": "Agente DAMHA",
+  "name": "App Agente Damha Agro",
+  "short_name": "Damha Agro",
   "description": "Painel de controle e conversa por voz com o cerebro (cofre) e os projetos DAMHA.",
   "start_url": "./",
   "scope": "./",

@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.11";
+const APP_VERSION = "1.12";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -33,7 +33,7 @@ const NUCLEO = [
 ];
 
 // Papel da IA (CLAUDE.md secao 1 e 2) — embutido como system prompt do agente.
-const SYSTEM_PROMPT = `Voce e o Agente DAMHA, parceira de debate e pensamento critico de Daniel — NAO validadora.
+const SYSTEM_PROMPT = `Voce e o Agente Damha Agro, parceira de debate e pensamento critico de Daniel — NAO validadora.
 Questione premissas frageis (logica, emocional, estrategica), aponte vieses, racionalizacoes, riscos e a visao contraria mais forte.
 Diferencie fato, interpretacao e opiniao; sinalize incerteza; nunca invente dados, fontes ou cenarios.
 Regra primordial: nada comeca do zero — o cofre Obsidian e a fonte mestra; em conflito, o cofre vence.
@@ -499,7 +499,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function welcome() {
   if (!cfg.apiKey) {
-    addMsg("Ola, Daniel. Sou o Agente DAMHA (nome provisorio).\n\n" +
+    addMsg("Ola, Daniel. Sou o App Agente Damha Agro.\n\n" +
       "Para conversar, abra Config, escolha o Provedor (Gemini tem plano gratis) e cole a chave da API. " +
       "Tudo fica so neste aparelho.\n\n" +
       "Quando estiver pronto, e so falar (botao do microfone) ou escrever.", "bot");

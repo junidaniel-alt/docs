@@ -1,4 +1,4 @@
-# Agente DAMHA — Documento de Continuidade (o "vinculo")
+# App Agente Damha Agro — Documento de Continuidade (o "vinculo")
 
 > **Para que serve este arquivo:** este e o elo que NAO depende de nenhum chat.
 > Tudo que precisamos para continuar o projeto — visao, arquitetura, decisoes,
@@ -11,21 +11,27 @@
 
 1. Abra o Claude Code (web/app) apontando para o repositorio **`junidaniel-alt/docs`**.
 2. Use a branch **`claude/grafana-dashboards-skill-4zpkji`** (ou `main`, se ja tiver sido mesclada).
-3. Diga algo como:
-   > *"Leia `agente-damha/CONTINUIDADE.md` e continue o projeto do Agente DAMHA. Quero <sua nova ordem>."*
+3. Diga a **frase-gatilho** + a ordem. Exemplo:
+   > *"App Agente Damha Agro — leia `agente-damha/CONTINUIDADE.md` e atualize o app: <sua nova ordem>."*
 4. Eu leio este arquivo + o codigo em `agente-damha/` e retomo com contexto completo.
+
+### Frase-gatilho (convencao com o Daniel)
+Sempre que o Daniel disser **"App Agente Damha Agro"** e pedir para atualizar/aperfeicoar o app,
+o Claude do momento DEVE: (1) ler este `CONTINUIDADE.md` e o codigo da pasta, (2) reconectar todo o
+historico do projeto, (3) executar a atualizacao na integra e (4) atualizar este documento + a
+`APP_VERSION`. Isso vale em qualquer chat novo — o vinculo e o repositorio, nao a conversa.
 
 Pronto. O "vinculo" e este documento + o codigo versionado. Nao e preciso guardar o chat.
 
 ---
 
-## 2. O que e o Agente DAMHA
+## 2. O que e o App Agente Damha Agro
 
 App de celular (PWA — instala na tela inicial) que e **painel de controle + conversa por
 voz** com o **cerebro** (cofre Obsidian no M365) e com os **projetos/atas** (HTML no OneDrive).
 Roda **100% no aparelho do Daniel** — nao ha servidor nosso no meio.
 
-- **Nome provisorio:** "Agente DAMHA" (definitivo a definir; "Jarvis" foi descartado).
+- **Nome oficial:** "App Agente Damha Agro" (provisorios descartados: "Agente DAMHA", "Jarvis").
 - **Papel da IA:** parceira de debate e pensamento critico — NAO validadora (ver `/CLAUDE.md`).
 
 ---
@@ -74,7 +80,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 
 ---
 
-## 5. Estado atual (v1.11)
+## 5. Estado atual (v1.12)
 
 **Funciona:**
 - Conversa por voz (entrada Web Speech + saida SpeechSynthesis) e texto.

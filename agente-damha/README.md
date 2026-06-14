@@ -1,9 +1,9 @@
-# Agente DAMHA — app de celular (v1.0)
+# App Agente Damha Agro — app de celular
 
 Painel de controle + conversa por voz com o **cerebro** (cofre Obsidian) e os **projetos**.
 Roda como **PWA** (instala na tela inicial), **100% no seu aparelho** — nao ha servidor nosso no meio.
 
-> **Nome provisorio: "Agente DAMHA".** Daniel definira o nome definitivo. (Descartado "Jarvis".)
+> **Nome oficial: "App Agente Damha Agro".** (Provisorios descartados: "Agente DAMHA", "Jarvis".)
 
 ---
 
