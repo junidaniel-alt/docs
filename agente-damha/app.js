@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.23";
+const APP_VERSION = "1.24";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -312,6 +312,7 @@ async function callGemini(sys = SYSTEM_PROMPT, web = false) {
   const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } };
   if (web) body.tools = [{ google_search: {} }]; // grounding de busca do Google (internet)
   let lastErr = "";
+  let triedNoTools = false;
   for (let ci = 0; ci < candidates.length; ci++) {
     const model = candidates[ci];
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -325,6 +326,11 @@ async function callGemini(sys = SYSTEM_PROMPT, web = false) {
       }
       const status = res.status;
       lastErr = apiError("Gemini", status, await res.text());
+      if ((status === 400 || status === 403) && body.tools && !triedNoTools) {
+        delete body.tools; triedNoTools = true; // busca web nao habilitada: responde sem internet
+        setStatus("Busca web indisponivel nessa chave — respondendo sem internet...");
+        continue;
+      }
       if (status === 401 || status === 403) throw new Error(lastErr); // chave: nao adianta repetir
       if (status === 429 && attempt === 0) { setStatus("Cota atingida — tentando de novo..."); await sleep(1800); continue; }
       break; // tenta o proximo modelo
