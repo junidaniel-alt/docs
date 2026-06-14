@@ -68,6 +68,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 | `README.md` | Visao geral + como por no ar |
 | `BACKEND.md` | Esboco de backend (Camera 2 / futuro) |
 | `CONTINUIDADE.md` | **Este arquivo** — contexto e retomada |
+| `GUIA_INSTALACAO.md` | Passo a passo do zero (hospedagem, Azure, IA, config, instalar) |
 
 ### Pontos-chave no `app.js`
 - `APP_VERSION` (topo) — **fonte unica da versao**; bumpar a cada release. Aparece no canto da abertura.
