@@ -152,4 +152,5 @@ e pelo **navegador**.
   > Sintoma classico: se o login falha no celular, quase sempre e o Redirect URI que nao bate com a URL.
 - **API permissions** (Microsoft Graph, delegadas): `User.Read`, `Files.Read.All`, `Sites.Read.All`
   → se aparecer aviso, clicar em **"Conceder consentimento de administrador"**.
-- **Pendente de confirmar:** a URL real do GitHub Pages (hospedagem) e se ela ja esta no Redirect URI.
+- **Status:** login **confirmado funcionando em producao** (14/06/2026) — app abre no celular, conecta
+  M365 e le o cofre/projetos. Azure (Redirect URI SPA + permissoes) e GitHub Pages OK.
