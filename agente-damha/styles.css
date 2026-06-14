@@ -186,3 +186,6 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 .pc-leg { font-size: .72rem; margin-bottom: 2px; }
 .pc-svg { width: 100%; height: auto; display: block; }
 .pc-cap { color: var(--muted); font-size: .68rem; margin-top: 4px; }
+
+/* sliders de voz */
+.field input[type=range]{padding:0;accent-color:var(--laranja);}

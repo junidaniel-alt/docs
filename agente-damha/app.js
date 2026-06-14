@@ -11,13 +11,16 @@ const DEFAULTS = {
   provider: "gemini",
   model: "gemini-2.0-flash-lite",
   egress: "hibrido",
+  voiceName: "",   // "" = automatica (feminina pt-BR)
+  pitch: 1.3,      // tom (0.5 grave .. 2 agudo/jovem)
+  rate: 1.06,      // velocidade
   // Client ID do registro Azure "Agente DAMHA" (publico, nao e segredo)
   azureClient: "68d78834-f9ec-4f71-b64b-172e9281e832",
   // driveId do cofre (CLAUDE.md secao 3)
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.26";
+const APP_VERSION = "1.27";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -74,6 +77,9 @@ function saveCfg() {
     provider: el("provider").value,
     model: el("model").value.trim(),
     egress: el("egress").value,
+    voiceName: el("voiceSel").value,
+    pitch: parseFloat(el("voicePitch").value) || 1.3,
+    rate: parseFloat(el("voiceRate").value) || 1.06,
     azureClient: el("azureClient").value.trim(),
     driveId: el("driveId").value.trim() || DEFAULTS.driveId,
   };
@@ -121,8 +127,29 @@ function hydrateCfgForm() {
   el("provider").value = cfg.provider || "gemini";
   populateModels(cfg.provider || "gemini", cfg.model);
   el("egress").value = cfg.egress;
+  populateVoices();
+  el("voiceSel").value = cfg.voiceName || "";
+  el("voicePitch").value = cfg.pitch;
+  el("voiceRate").value = cfg.rate;
   el("azureClient").value = cfg.azureClient;
   el("driveId").value = cfg.driveId;
+}
+function populateVoices() {
+  const sel = el("voiceSel"); if (!sel) return;
+  const vs = ("speechSynthesis" in window) ? window.speechSynthesis.getVoices() : [];
+  const pt = vs.filter((v) => /^pt/i.test(v.lang));
+  const list = pt.length ? pt : vs;
+  const cur = sel.value || cfg.voiceName || "";
+  sel.innerHTML = "";
+  const auto = document.createElement("option");
+  auto.value = ""; auto.textContent = "Automatica (feminina pt-BR)";
+  sel.appendChild(auto);
+  list.forEach((v) => {
+    const o = document.createElement("option");
+    o.value = v.name; o.textContent = v.name + " (" + v.lang + ")";
+    if (v.name === cur) o.selected = true;
+    sel.appendChild(o);
+  });
 }
 
 const el = (id) => document.getElementById(id);
@@ -362,19 +389,25 @@ function pickVoice() {
   const vs = window.speechSynthesis.getVoices().filter((v) => /^pt/i.test(v.lang));
   const fem = vs.find((v) => /(Maria|Luciana|Francisca|Fernanda|Vit[oó]ria|Heloisa|Joana|Catarina|female|mulher|feminin)/i.test(v.name));
   chosenVoice = fem || vs[0] || null;
+  populateVoices();
 }
 if ("speechSynthesis" in window) { window.speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); }
+function voiceByName(name) {
+  const vs = ("speechSynthesis" in window) ? window.speechSynthesis.getVoices() : [];
+  return (name && vs.find((v) => v.name === name)) || chosenVoice || null;
+}
 function stopSpeak() { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }
-function speak(text) {
+function speakWith(text, pitch, rate, voiceName) {
   if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "pt-BR";
-  if (chosenVoice) u.voice = chosenVoice;
-  u.pitch = 1.5;  // mais agudo: voz feminina jovem
-  u.rate = 1.06;
+  const v = voiceByName(voiceName); if (v) u.voice = v;
+  u.pitch = Math.max(0.5, Math.min(2, pitch || 1.3));
+  u.rate = Math.max(0.5, Math.min(2, rate || 1.06));
   window.speechSynthesis.speak(u);
 }
+function speak(text) { speakWith(text, cfg.pitch, cfg.rate, cfg.voiceName); }
 
 /* ---------- Voz: entrada (STT) ---------- */
 let recog = null, recording = false;
@@ -756,6 +789,7 @@ window.addEventListener("DOMContentLoaded", () => {
   el("sendBtn").onclick = sendMessage;
   el("micBtn").onclick = toggleMic;
   el("stopVoz").onclick = stopSpeak;
+  el("voiceTest").onclick = () => speakWith("Ola, Daniel! Sou o Copiloto Damha Agro.", parseFloat(el("voicePitch").value), parseFloat(el("voiceRate").value), el("voiceSel").value);
   el("saveCfg").onclick = saveCfg;
   el("provider").onchange = () => populateModels(el("provider").value);
   el("cofreLogin").onclick = cofreLogin;
