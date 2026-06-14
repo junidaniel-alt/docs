@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.38";
+const APP_VERSION = "1.39";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -718,9 +718,11 @@ async function openNote(id, name) {
     el("noteBody").textContent = "Erro ao abrir: " + e.message;
   }
 }
-// Le uma planilha (.xlsx/.xlsb/.csv) da Base DAMHA e mostra como tabela (para a IA plotar dado real).
+// Le uma planilha (.xlsx/.xlsb/.csv) da Base DAMHA: mostra um MENU de abas e a tabela da aba escolhida.
+let _wb = null, _wbName = "";
 async function openSheet(id, name) {
   el("noteTitle").textContent = name;
+  el("sheetTabs").innerHTML = "";
   el("noteBody").textContent = "Lendo planilha...";
   el("noteView").classList.remove("hidden");
   try {
@@ -728,22 +730,31 @@ async function openSheet(id, name) {
     if (!res.ok) throw new Error("Graph " + res.status);
     const buf = await res.arrayBuffer();
     if (typeof XLSX === "undefined") { el("noteBody").textContent = "O leitor de planilha ainda nao carregou. Verifique a conexao e reabra."; return; }
-    const wb = XLSX.read(buf, { type: "array" });
-    const sheets = wb.SheetNames || [];
-    const ws = wb.Sheets[sheets[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: "" });
-    const compact = rows.slice(0, 40).map((r) => r.slice(0, 12).map((c) => String(c)).join(" | ")).join("\n");
-    const txt = `Planilha: ${name}\nAba: ${sheets[0]}` + (sheets.length > 1 ? ` (abas: ${sheets.join(", ")})` : "")
-      + `\n\n${compact}` + (rows.length > 40 ? `\n... (+${rows.length - 40} linhas)` : "");
-    el("noteBody").textContent = txt;
-    lastOpenedNote = { title: name, body: txt };
-    const btn = el("noteAnalyze");
-    btn.textContent = "Plotar/analisar com IA";
-    btn.classList.toggle("hidden", cfg.egress === "local");
-    btn.onclick = () => analyzeNote(name, txt);
+    _wb = XLSX.read(buf, { type: "array" }); _wbName = name;
+    const tabs = el("sheetTabs"); tabs.innerHTML = "";
+    (_wb.SheetNames || []).forEach((sn) => {
+      const b = document.createElement("button");
+      b.className = "chip-s"; b.textContent = "\u{1F4D1} " + sn;
+      b.onclick = () => { [...tabs.children].forEach((c) => c.classList.remove("on")); b.classList.add("on"); showSheet(sn); };
+      tabs.appendChild(b);
+    });
+    if (tabs.firstChild) tabs.firstChild.classList.add("on");
+    showSheet((_wb.SheetNames || [])[0]);
   } catch (e) {
     el("noteBody").textContent = "Erro ao ler planilha: " + e.message;
   }
+}
+function showSheet(sn) {
+  if (!_wb || !sn) return;
+  const rows = XLSX.utils.sheet_to_json(_wb.Sheets[sn], { header: 1, raw: false, defval: "" });
+  const compact = rows.slice(0, 40).map((r) => r.slice(0, 12).map((c) => String(c)).join(" | ")).join("\n");
+  const txt = `Planilha: ${_wbName}\nAba: ${sn}\n\n${compact}` + (rows.length > 40 ? `\n... (+${rows.length - 40} linhas)` : "");
+  el("noteBody").textContent = txt;
+  lastOpenedNote = { title: `${_wbName} — ${sn}`, body: txt };
+  const btn = el("noteAnalyze");
+  btn.textContent = "Plotar/analisar com IA";
+  btn.classList.toggle("hidden", cfg.egress === "local");
+  btn.onclick = () => analyzeNote(lastOpenedNote.title, txt);
 }
 function analyzeNote(title, body) {
   if (cfg.egress === "hibrido") {

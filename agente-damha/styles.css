@@ -265,3 +265,6 @@ body.light .list li:hover { background: #F0EAF6; }
 body.light .panelchart, body.light .kpi, body.light .msg.bot pre, body.light .msg.bot code { background: #F2ECF8; }
 body.light .launch-btn { background: #fff; }
 body.light .tog.on { background: var(--roxo); color: #fff; }
+
+/* aba selecionada (planilha) */
+.chip-s.on { background: var(--roxo); color: #fff; border-color: var(--magenta); }
