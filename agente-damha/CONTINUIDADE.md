@@ -117,6 +117,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 - **v1.9/1.10** — aba Projetos vira navegador real: lista `@PASTA CLAUDE/PROJETOS` + `12_REUNIOES_ATAS`,
   abre HTML renderizado. Subtitulos das abas removidos.
 - **v1.11** — etiqueta de versao no canto da abertura (constante `APP_VERSION`, fonte unica).
+- **v1.12** — nome oficial "App Agente Damha Agro" + convencao de frase-gatilho (secao 1).
 
 > Detalhe granular: `git log -- agente-damha/`.
 
@@ -126,7 +127,6 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 - Caixinhas (cards) mais bonitas para cada projeto, com descricao curta (hoje sao linhas de lista).
 - Streaming da resposta de IA (UX de voz mais fluida).
 - Modo de modelo local p/ notas mais sensiveis (zero egress).
-- Nome definitivo do app.
 - Handoff de fim de projeto no cofre `02_PROJETOS` (PAD_Aprendizados / 11_PADROES).
 
 ---
