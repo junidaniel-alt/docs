@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.46";
+const APP_VERSION = "1.47";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -479,11 +479,18 @@ async function sendMessage() {
 
   setStatus(wantWeb && cfg.provider === "gemini" ? "Pensando (com internet)..." : "Pensando...");
   try {
-    const reply = cfg.provider === "claude" ? await callClaude(sys)
-                : cfg.provider === "openai" ? await callOpenAI(sys)
-                : await callGemini(sys, wantWeb);
+    let reply;
+    if (cfg.provider === "gemini") {
+      const bubble = addMsg("", "bot");  // bolha que recebe o texto em streaming
+      const r = await streamGemini(sys, wantWeb, (t) => { bubble.textContent = plainForSpeech(t); el("chat").scrollTop = el("chat").scrollHeight; });
+      bubble.remove();
+      reply = r.ok ? r.text : await callGemini(sys, wantWeb); // fallback robusto (modelo alternativo)
+      addBotMsg(reply);
+    } else {
+      reply = cfg.provider === "claude" ? await callClaude(sys) : await callOpenAI(sys);
+      addBotMsg(reply);
+    }
     history.push({ role: "assistant", content: reply });
-    addBotMsg(reply);
     renderReport(reply);
     setStatus("");
     if (togState("togVoz")) speak(plainForSpeech(reply));
@@ -491,6 +498,39 @@ async function sendMessage() {
     addMsg(e.message || ("Falha: " + e), "err");
     setStatus("");
   }
+}
+// Gemini em streaming (texto aparece aos poucos). Retorna {ok, text} ou {ok:false}.
+async function streamGemini(sys, web, onText) {
+  try {
+    const model = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.5-flash";
+    const contents = recentHistory().map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+    const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } };
+    if (web) body.tools = [{ google_search: {} }];
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(cfg.apiKey)}`;
+    const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": cfg.apiKey }, body: JSON.stringify(body) });
+    if (!res.ok || !res.body) return { ok: false, status: res.status };
+    const reader = res.body.getReader(); const dec = new TextDecoder();
+    let buf = "", full = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n"); buf = lines.pop();
+      for (const line of lines) {
+        const t = line.trim();
+        if (!t.startsWith("data:")) continue;
+        const js = t.slice(5).trim();
+        if (!js || js === "[DONE]") continue;
+        try {
+          const j = JSON.parse(js);
+          const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+          const txt = parts.map((p) => p.text || "").join("");
+          if (txt) { full += txt; onText(full); }
+        } catch { /* fragmento parcial; ignora */ }
+      }
+    }
+    return full.trim() ? { ok: true, text: full.trim() } : { ok: false };
+  } catch (e) { return { ok: false }; }
 }
 
 async function callClaude(sys = SYSTEM_PROMPT) {
