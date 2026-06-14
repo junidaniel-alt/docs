@@ -360,20 +360,26 @@ function analyzeNote(title, body) {
 }
 
 /* ---------- Projetos (atalhos) ---------- */
-const PROJETOS = [
-  { nome: "Painel Dolar Futuros", url: "#" },
-  { nome: "Mission Control Mercado", url: "#" },
-  { nome: "Painel Commodities", url: "#" },
-  { nome: "USD/BRL Hedge", url: "#" },
-];
+/* ---------- Projetos ---------- */
+const PROJ_FOLDER = "01KCR6ZAJ5V6PDFRWZKZA3MIALRW5E6F64"; // 02_PROJETOS (CLAUDE.md)
 function renderProjetos() {
-  const ul = el("projetosList"); ul.innerHTML = "";
-  PROJETOS.forEach((p) => {
-    const li = document.createElement("li");
-    const a = document.createElement("a");
-    a.href = p.url; a.textContent = p.nome;
-    li.appendChild(a); ul.appendChild(li);
-  });
+  const ul = el("projetosList");
+  ul.innerHTML = "";
+  const li = document.createElement("li");
+  li.style.gridColumn = "1 / -1";
+  const btn = document.createElement("button");
+  btn.className = "secondary";
+  btn.style.width = "100%";
+  btn.textContent = "Abrir 02_PROJETOS no cofre";
+  btn.onclick = async () => {
+    if (await ensureCofre()) {
+      folderStack = [{ id: ROOT_FOLDER, name: "Cofre" }, { id: PROJ_FOLDER, name: "02_PROJETOS" }];
+      showView("cerebro");
+      await listFolder();
+    }
+  };
+  li.appendChild(btn);
+  ul.appendChild(li);
 }
 
 /* ---------- Sumario ativo ao rolar ---------- */
@@ -422,7 +428,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // erros visiveis (em vez de falhar em silencio)
   window.addEventListener("error", (ev) => { el("cofreStatus").textContent = "Erro: " + ev.message; });
   window.addEventListener("unhandledrejection", (ev) => { el("cofreStatus").textContent = "Falha: " + ((ev.reason && ev.reason.message) || ev.reason); });
-  el("cofreStatus").textContent = "Build v1.7 · app " + APP_CLIENT_ID.slice(0, 8);
+  el("cofreStatus").textContent = "Build v1.8 · app " + APP_CLIENT_ID.slice(0, 8);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   welcome();
   initAuthOnLoad();
