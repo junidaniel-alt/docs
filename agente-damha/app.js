@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.35";
+const APP_VERSION = "1.36";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -342,6 +342,44 @@ function drawModal() {
   document.querySelectorAll("#chartModal [data-ct]").forEach((b) => b.classList.toggle("on", b.dataset.ct === _modalType));
 }
 function closeChartModal() { el("chartModal").classList.add("hidden"); }
+// Rasteriza o SVG do modal em canvas (fundo escuro) e chama cb(canvas).
+function chartToCanvas(scale, cb) {
+  const svg = el("cmBody").querySelector("svg");
+  if (!svg) { cb(null); return; }
+  const clone = svg.cloneNode(true);
+  clone.setAttribute("width", "520"); clone.setAttribute("height", "240");
+  const xml = new XMLSerializer().serializeToString(clone);
+  const src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas"); c.width = 520 * scale; c.height = 240 * scale;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#1c0d2c"; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    cb(c);
+  };
+  img.onerror = () => cb(null);
+  img.src = src;
+}
+function downloadPng() {
+  chartToCanvas(2, (c) => {
+    if (!c) return;
+    const a = document.createElement("a");
+    a.href = c.toDataURL("image/png");
+    a.download = ((_modalSpec && _modalSpec.title) || "grafico").replace(/[^\w\-]+/g, "_") + ".png";
+    a.click();
+  });
+}
+function copyPng() {
+  chartToCanvas(2, (c) => {
+    if (!c) return;
+    if (!navigator.clipboard || !window.ClipboardItem) { downloadPng(); return; }
+    c.toBlob(async (b) => {
+      try { await navigator.clipboard.write([new ClipboardItem({ "image/png": b })]); el("cmTitle").textContent = "Copiado! " + (_modalSpec && _modalSpec.title || ""); }
+      catch (e) { downloadPng(); }
+    }, "image/png");
+  });
+}
 // Chips de sugestao
 const SUGGEST = [
   "Relatorio completo de cambio", "Me surpreenda", "Por que o dolar mexeu hoje?",
@@ -879,6 +917,8 @@ window.addEventListener("DOMContentLoaded", () => {
   el("openSoundChk").onchange = () => localStorage.setItem("openSound", el("openSoundChk").checked ? "1" : "0");
   el("clearChat").onclick = clearChat;
   el("cmClose").onclick = closeChartModal;
+  el("cmPng").onclick = downloadPng;
+  el("cmCopy").onclick = copyPng;
   document.querySelectorAll("#chartModal [data-ct]").forEach((b) => { b.onclick = () => { _modalType = b.dataset.ct; drawModal(); }; });
   el("chartModal").addEventListener("click", (e) => { if (e.target === el("chartModal")) closeChartModal(); });
   // Voz aplica na hora (corrige "nao troca") + toca amostra
