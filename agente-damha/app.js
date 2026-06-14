@@ -9,7 +9,7 @@
 const DEFAULTS = {
   apiKey: "",
   provider: "gemini",
-  model: "gemini-2.0-flash",
+  model: "gemini-1.5-flash",
   egress: "hibrido",
   // Client ID do registro Azure "Agente DAMHA" (publico, nao e segredo)
   azureClient: "68d78834-f9ec-4f71-b64b-172e9281e832",
@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.16";
+const APP_VERSION = "1.17";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -63,21 +63,42 @@ function saveCfg() {
   localStorage.setItem("agenteDamhaCfg", JSON.stringify(cfg));
   el("cfgStatus").textContent = "Salvo neste aparelho. " + new Date().toLocaleTimeString("pt-BR");
 }
-// Versoes selecionaveis por provedor
+// Versoes selecionaveis por provedor (id = nome real da API; label = texto claro)
 const MODELS = {
-  gemini: ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"],
-  claude: ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5-20251001"],
-  openai: ["gpt-4o-mini", "gpt-4o"],
+  gemini: [
+    { id: "gemini-1.5-flash", label: "Gemini 1.5 Flash — rapido, cota gratis folgada (recomendado)" },
+    { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash — novo, cota gratis menor" },
+    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash — mais novo" },
+    { id: "gemini-1.5-pro", label: "Gemini 1.5 Pro — mais capaz, cota menor" },
+    { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro — topo (pode exigir billing)" },
+  ],
+  claude: [
+    { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6 — equilibrio (recomendado)" },
+    { id: "claude-opus-4-8", label: "Claude Opus 4.8 — mais capaz" },
+    { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5 — rapido/barato" },
+  ],
+  openai: [
+    { id: "gpt-4o-mini", label: "GPT-4o mini — rapido/barato" },
+    { id: "gpt-4o", label: "GPT-4o — capaz" },
+    { id: "gpt-4.1", label: "GPT-4.1 — mais novo" },
+  ],
 };
 function populateModels(provider, selected) {
   const sel = el("model");
   sel.innerHTML = "";
   (MODELS[provider] || []).forEach((m) => {
     const o = document.createElement("option");
-    o.value = m; o.textContent = m;
-    if (m === selected) o.selected = true;
+    o.value = m.id; o.textContent = m.label;
+    if (m.id === selected) o.selected = true;
     sel.appendChild(o);
   });
+}
+// Mensagem de erro amigavel por status HTTP
+function apiError(provider, status, text) {
+  if (status === 429) return `Limite/cota do ${provider} atingido. Troque o modelo em Config (ex.: Gemini 1.5 Flash) ou aguarde ~1 min.`;
+  if (status === 401 || status === 403) return `Chave do ${provider} invalida ou sem permissao. Revise a chave em Config.`;
+  if (status === 400 || status === 404) return `Modelo do ${provider} indisponivel para essa chave. Escolha outro modelo em Config.`;
+  return `Erro ${provider} (${status}): ${String(text).slice(0, 160)}`;
 }
 function hydrateCfgForm() {
   el("apiKey").value = cfg.apiKey;
@@ -95,6 +116,27 @@ function addMsg(text, cls) {
   const d = document.createElement("div");
   d.className = "msg " + cls;
   d.textContent = text;
+  el("chat").appendChild(d);
+  el("chat").scrollTop = el("chat").scrollHeight;
+  return d;
+}
+// Markdown leve e seguro (escapa HTML) para as respostas da IA.
+function escapeHtml(s) { return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+function mdToHtml(t) {
+  let s = escapeHtml(t);
+  s = s.replace(/```([\s\S]*?)```/g, (m, c) => `<pre>${c.trim()}</pre>`);
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  s = s.replace(/^\s{0,3}#{1,4}\s*(.+)$/gm, "<strong>$1</strong>");
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+  s = s.replace(/^\s*[-*•]\s+(.+)$/gm, "&bull; $1");
+  s = s.replace(/\n/g, "<br>");
+  return s;
+}
+function addBotMsg(text) {
+  const d = document.createElement("div");
+  d.className = "msg bot";
+  d.innerHTML = mdToHtml(text);
   el("chat").appendChild(d);
   el("chat").scrollTop = el("chat").scrollHeight;
   return d;
@@ -123,9 +165,9 @@ async function sendMessage() {
                 : cfg.provider === "openai" ? await callOpenAI()
                 : await callGemini();
     history.push({ role: "assistant", content: reply });
-    addMsg(reply, "bot");
+    addBotMsg(reply);
     setStatus("");
-    if (el("ttsOn").checked) speak(reply);
+    if (el("ttsOn").checked) speak(reply.replace(/[*#`>_]/g, ""));
   } catch (e) {
     addMsg(e.message || ("Falha: " + e), "err");
     setStatus("");
@@ -144,7 +186,7 @@ async function callClaude() {
     },
     body: JSON.stringify({ model, max_tokens: 1500, system: SYSTEM_PROMPT, messages: history }),
   });
-  if (!res.ok) throw new Error(`Erro Claude (${res.status}): ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) throw new Error(apiError("Claude", res.status, await res.text()));
   const data = await res.json();
   return (data.content || []).map((b) => b.text || "").join("").trim();
 }
@@ -155,7 +197,7 @@ async function callGemini() {
   const body = { contents, systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }, generationConfig: { maxOutputTokens: 1500 } };
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
   const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error(`Erro Gemini (${res.status}): ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) throw new Error(apiError("Gemini", res.status, await res.text()));
   const data = await res.json();
   const cand = data.candidates && data.candidates[0];
   return ((cand && cand.content && cand.content.parts) || []).map((p) => p.text || "").join("").trim()
@@ -170,7 +212,7 @@ async function callOpenAI() {
     headers: { "content-type": "application/json", "authorization": "Bearer " + cfg.apiKey },
     body: JSON.stringify({ model, max_tokens: 1500, messages: msgs }),
   });
-  if (!res.ok) throw new Error(`Erro OpenAI (${res.status}): ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) throw new Error(apiError("OpenAI", res.status, await res.text()));
   const data = await res.json();
   return ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "").trim();
 }

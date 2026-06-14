@@ -164,3 +164,8 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 .inwrap { display: flex; gap: 6px; align-items: center; margin-top: 5px; }
 .inwrap input { flex: 1; margin-top: 0; }
 .eye { background: var(--roxo); border: 0; border-radius: 10px; padding: 0 13px; color: #fff; cursor: pointer; font-size: 1rem; line-height: 38px; }
+
+/* Formatacao das respostas da IA (markdown leve) */
+.msg.bot pre { background: #1c0d2c; border: 1px solid var(--roxo); border-radius: 8px; padding: 8px 10px; overflow-x: auto; margin: 6px 0; font-size: .85rem; white-space: pre-wrap; }
+.msg.bot code { background: #1c0d2c; padding: 1px 5px; border-radius: 5px; font-size: .9em; }
+.msg.bot strong { color: #fff; }
