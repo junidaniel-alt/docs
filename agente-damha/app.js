@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.21";
+const APP_VERSION = "1.22";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -46,6 +46,7 @@ let pendingNoteContext = null; // nota aprovada para envio (egress hibrido)
 let lastOpenedNote = null; // ultima nota aberta no Cerebro {title, body}
 let msalApp = null;
 let folderStack = [];      // navegacao do cofre
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ---------- Chavinhas do copiloto (Conversa) ---------- */
 const TOGGLES = ["togInternet", "togCerebro", "togContexto", "togVoz"];
@@ -304,17 +305,33 @@ async function callClaude(sys = SYSTEM_PROMPT) {
 }
 
 async function callGemini(sys = SYSTEM_PROMPT, web = false) {
-  const model = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.0-flash";
+  const chosen = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.0-flash";
+  const candidates = [chosen];
+  ["gemini-2.0-flash-lite", "gemini-2.0-flash"].forEach((m) => { if (!candidates.includes(m)) candidates.push(m); });
   const contents = history.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
   const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 1500 } };
   if (web) body.tools = [{ google_search: {} }]; // grounding de busca do Google (internet)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
-  const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error(apiError("Gemini", res.status, await res.text()));
-  const data = await res.json();
-  const cand = data.candidates && data.candidates[0];
-  return ((cand && cand.content && cand.content.parts) || []).map((p) => p.text || "").join("").trim()
-    || "(resposta vazia — veja se o modelo em Config existe)";
+  let lastErr = "";
+  for (let ci = 0; ci < candidates.length; ci++) {
+    const model = candidates[ci];
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
+      const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": cfg.apiKey }, body: JSON.stringify(body) });
+      if (res.ok) {
+        const data = await res.json();
+        const cand = data.candidates && data.candidates[0];
+        return ((cand && cand.content && cand.content.parts) || []).map((p) => p.text || "").join("").trim()
+          || "(resposta vazia — tente reformular)";
+      }
+      const status = res.status;
+      lastErr = apiError("Gemini", status, await res.text());
+      if (status === 401 || status === 403) throw new Error(lastErr); // chave: nao adianta repetir
+      if (status === 429 && attempt === 0) { setStatus("Cota atingida — tentando de novo..."); await sleep(1800); continue; }
+      break; // tenta o proximo modelo
+    }
+    if (ci < candidates.length - 1) setStatus("Trocando para " + candidates[ci + 1] + "...");
+  }
+  throw new Error(lastErr || "Falha no Gemini.");
 }
 
 async function callOpenAI(sys = SYSTEM_PROMPT) {
