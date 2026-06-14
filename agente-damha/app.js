@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.45";
+const APP_VERSION = "1.46";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -295,46 +295,49 @@ function fmtNum(v) {
     : v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 }
 function chartSVG(spec, type) {
-  const W = 520, H = 240, P = 38;
+  const W = 520, H = 240, P = 44;
   const labels = spec.labels || [];
   const series = (spec.series || []).filter((s) => Array.isArray(s.data) && s.data.length);
   if (!series.length) return "<div class='muted'>(sem dados no painel)</div>";
-  const all = series.flatMap((s) => s.data);
-  let min = Math.min(...all), max = Math.max(...all);
-  if (min === max) { min -= 1; max += 1; }
-  const range = max - min;
+  const hasRight = series.some((s) => s.axis === "right");
+  const scale = (arr) => { let mn = Math.min(...arr), mx = Math.max(...arr); if (mn === mx) { mn -= 1; mx += 1; } return { mn, mx, rg: (mx - mn) || 1 }; };
+  const leftData = series.filter((s) => s.axis !== "right").flatMap((s) => s.data);
+  const rightData = series.filter((s) => s.axis === "right").flatMap((s) => s.data);
+  const L = scale(leftData.length ? leftData : series.flatMap((s) => s.data));
+  const R = rightData.length ? scale(rightData) : L;
   const n = Math.max(1, (labels.length || series[0].data.length) - 1);
   const X = (i) => P + i * ((W - 2 * P) / n);
-  const Y = (v) => H - P - ((v - min) / range) * (H - 2 * P);
+  const Yl = (v) => H - P - ((v - L.mn) / L.rg) * (H - 2 * P);
+  const Yr = (v) => H - P - ((v - R.mn) / R.rg) * (H - 2 * P);
+  const Yof = (s) => (s.axis === "right" ? Yr : Yl);
   const colors = ["#6FCF6F", "#F08E23", "#C4357A", "#B8D4E8", "#DCD4E5"];
   let g = "";
-  [max, (min + max) / 2, min].forEach((v) => {
-    const yy = Y(v);
+  [L.mx, (L.mn + L.mx) / 2, L.mn].forEach((v) => {
+    const yy = Yl(v);
     g += `<line x1="${P}" y1="${yy}" x2="${W - P}" y2="${yy}" stroke="#5E3287" stroke-width="1" opacity="0.4"/>`;
     g += `<text x="4" y="${yy + 3}" fill="#B9AECB" font-size="10">${fmtNum(v)}</text>`;
   });
+  if (hasRight) [R.mx, (R.mn + R.mx) / 2, R.mn].forEach((v) => {
+    g += `<text x="${W - 4}" y="${Yr(v) + 3}" fill="#B8D4E8" font-size="10" text-anchor="end">${fmtNum(v)}</text>`;
+  });
   if (type === "bar") {
-    const s = series[0], step = (W - 2 * P) / s.data.length;
+    const s = series[0], Y = Yof(s), step = (W - 2 * P) / s.data.length;
     s.data.forEach((v, i) => {
       const cx = P + (i + 0.5) * step, yy = Y(v);
       g += `<rect x="${cx - step * 0.3}" y="${yy}" width="${step * 0.6}" height="${H - P - yy}" fill="${colors[0]}" rx="2"/>`;
     });
-  } else if (type === "area") {
-    series.forEach((s, si) => {
-      const pts = s.data.map((v, i) => `${X(i)},${Y(v)}`).join(" ");
-      g += `<polygon points="${P},${H - P} ${pts} ${X(s.data.length - 1)},${H - P}" fill="${colors[si % colors.length]}" opacity="0.18"/>`;
-      g += `<polyline points="${pts}" fill="none" stroke="${colors[si % colors.length]}" stroke-width="2"/>`;
-    });
   } else {
     series.forEach((s, si) => {
+      const Y = Yof(s);
       const pts = s.data.map((v, i) => `${X(i)},${Y(v)}`).join(" ");
-      g += `<polyline points="${pts}" fill="none" stroke="${colors[si % colors.length]}" stroke-width="2"/>`;
+      if (type === "area") g += `<polygon points="${P},${H - P} ${pts} ${X(s.data.length - 1)},${H - P}" fill="${colors[si % colors.length]}" opacity="0.16"/>`;
+      g += `<polyline points="${pts}" fill="none" stroke="${colors[si % colors.length]}" stroke-width="2"${s.axis === "right" ? ' stroke-dasharray="5 3"' : ""}/>`;
     });
   }
   [0, Math.round(n / 2), n].filter((v, i, a) => a.indexOf(v) === i).forEach((i) => {
     if (labels[i] != null) g += `<text x="${X(i)}" y="${H - 12}" fill="#B9AECB" font-size="10" text-anchor="middle">${escapeHtml(String(labels[i]))}</text>`;
   });
-  const leg = series.map((s, si) => `<span style="color:${colors[si % colors.length]}">&#9632; ${escapeHtml(s.name || ("serie " + (si + 1)))}</span>`).join(" &nbsp; ");
+  const leg = series.map((s, si) => `<span style="color:${colors[si % colors.length]}">&#9632; ${escapeHtml(s.name || ("serie " + (si + 1)))}${s.axis === "right" ? " (2o eixo)" : ""}</span>`).join(" &nbsp; ");
   return `<div class="pc-leg">${leg}</div><svg viewBox="0 0 ${W} ${H}" class="pc-svg" preserveAspectRatio="xMidYMid meet">${g}</svg>`;
 }
 function renderChart(spec) {
@@ -469,7 +472,7 @@ async function sendMessage() {
   // Sistema dinamico conforme as chavinhas.
   let sys = SYSTEM_PROMPT;
   if (togState("togCerebro")) sys += "\n\nA Base DAMHA e a fonte mestra: priorize-a e sinalize claramente quando faltar dado (peca para o Daniel abrir o arquivo na Base DAMHA).";
-  sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\" ou \"area\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". Para indicadores-chave, PODE incluir um bloco kpis com JSON {\"cards\":[{\"label\":\"...\",\"value\":\"...\",\"sub\":\"...\"}]} (ate 4 cartoes). Para um RELATORIO COMPLETO, pode incluir VARIOS blocos kpis e chart na mesma resposta, intercalados com texto curto (titulos e analise). Sem dados reais, marque source ilustrativo e avise.";
+  sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\" ou \"area\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. Para comparar series de escalas diferentes (ex.: dolar ~5 vs soja ~130), marque uma serie com \"axis\":\"right\" (2o eixo, linha tracejada). No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". Para indicadores-chave, PODE incluir um bloco kpis com JSON {\"cards\":[{\"label\":\"...\",\"value\":\"...\",\"sub\":\"...\"}]} (ate 4 cartoes). Para um RELATORIO COMPLETO, pode incluir VARIOS blocos kpis e chart na mesma resposta, intercalados com texto curto (titulos e analise). Sem dados reais, marque source ilustrativo e avise.";
   sys += "\n\nRELATORIO VIVO: se o Daniel pedir para adicionar/remover/trocar/atualizar algo no relatorio, responda com o RELATORIO ATUALIZADO COMPLETO (reescreva TODOS os blocos kpis e chart de novo, com a mudanca aplicada), nao so o trecho alterado.";
   sys += "\n\nPERGUNTE PRIMEIRO, nao adivinhe: quando o pedido for ambiguo ou exigir uma escolha (ex.: de qual fonte de dados puxar, qual fazenda, qual periodo, se busca na Base DAMHA ou se o Daniel mostra o arquivo), escreva a pergunta curta e inclua UM bloco cercado por tres crases iniciado pela palavra options com JSON {\"options\":[\"opcao 1\",\"opcao 2\"]} (2 a 4 opcoes curtas). O Daniel toca numa opcao e voce segue. O restante da resposta vai em texto normal (markdown leve).";
   const wantWeb = togState("togInternet");
