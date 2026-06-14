@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.14";
+const APP_VERSION = "1.15";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -491,25 +491,39 @@ function currentUserEmail() {
   } catch { return ""; }
 }
 const emailIsAdmin = () => { const e = currentUserEmail(); return !!e && ADMIN_EMAILS.includes(e); };
-const pinUnlocked = () => localStorage.getItem("admUnlocked") === "1";
-const isAdmin = () => emailIsAdmin() || pinUnlocked();
+
+// Destrava em MEMORIA (zera a cada abertura do app) + auto-trava por inatividade.
+let admUnlocked = false;
+let admTimer = null;
+const ADM_TIMEOUT_MS = 60000; // 1 minuto
+const isAdmin = () => emailIsAdmin() && admUnlocked;
+function admDoLock() { admUnlocked = false; if (admTimer) { clearTimeout(admTimer); admTimer = null; } }
+function admArmTimer() {
+  if (admTimer) clearTimeout(admTimer);
+  admTimer = setTimeout(() => { admUnlocked = false; admTimer = null; applyAdm(); showView("home"); }, ADM_TIMEOUT_MS);
+}
 
 function applyAdm() {
+  updateGreeting();
   const vis = isAdmin();
   document.querySelectorAll('[data-go="cerebro"]').forEach((e) => { e.style.display = vis ? "" : "none"; });
   el("admPanel").classList.toggle("hidden", !vis);
   el("admLock").classList.toggle("hidden", vis);
+  const email = currentUserEmail();
   if (vis) {
-    el("admWho").textContent = emailIsAdmin()
-      ? "Acesso de administrador: " + currentUserEmail()
-      : "Acesso de administrador: via PIN.";
-  } else {
-    const email = currentUserEmail();
-    el("admLockHint").textContent = email
-      ? `A conta ${email} nao e administradora. Use Conversa e Projetos normalmente — ou entre com o PIN / a conta do admin.`
-      : "Area restrita ao administrador. Entre com a conta Microsoft do admin ou com o PIN.";
-    if (el("cerebro").classList.contains("active")) showView("home");
+    el("admWho").textContent = "Administrador validado: " + email + " — trava automatica em 1 min.";
+    return;
   }
+  const eAdmin = emailIsAdmin();
+  el("admLockHint").textContent = !email
+    ? "Passo 1: valide sua conta Microsoft (admin)."
+    : !eAdmin
+      ? `A conta ${email} nao e administradora. Entre com a conta do admin.`
+      : "Conta validada. Passo 2: digite o PIN (acesso por 1 min).";
+  el("admPinInputWrap").style.display = eAdmin ? "" : "none";
+  el("admPinBtn").style.display = eAdmin ? "" : "none";
+  el("admConnectBtn").style.display = eAdmin ? "none" : "";
+  if (el("cerebro").classList.contains("active")) showView("home");
 }
 
 function initAdm() {
@@ -520,15 +534,18 @@ function initAdm() {
     el("keyToggle").style.opacity = show ? "1" : ".55";
   };
   el("admPinBtn").onclick = async () => {
+    if (!emailIsAdmin()) { el("admMsg").textContent = "Valide a conta Microsoft admin primeiro."; return; }
     if (await sha(el("admPinInput").value.trim()) === ADM_PIN_SHA) {
-      localStorage.setItem("admUnlocked", "1");
-      el("admPinInput").value = ""; el("admMsg").textContent = ""; applyAdm();
+      admUnlocked = true; admArmTimer();
+      el("admPinInput").value = ""; el("admMsg").textContent = "";
+      applyAdm();
+      if (window._cofreToken) openCofreRoot();
     } else {
       el("admMsg").textContent = "PIN incorreto.";
     }
   };
   el("admConnectBtn").onclick = () => cofreLogin();
-  el("admLockBtn").onclick = () => { localStorage.removeItem("admUnlocked"); applyAdm(); showView("home"); };
+  el("admLockBtn").onclick = () => { admDoLock(); applyAdm(); showView("home"); };
   el("saveAdm").onclick = saveCfg;
   applyAdm();
 }
@@ -558,13 +575,20 @@ window.addEventListener("DOMContentLoaded", () => {
   initAuthOnLoad();
 });
 
-function welcome() {
-  if (!cfg.apiKey) {
-    addMsg("Ola, Daniel. Sou o App Agente Damha Agro.\n\n" +
-      "Para conversar, abra Config, escolha o Provedor (Gemini tem plano gratis) e cole a chave da API. " +
-      "Tudo fica so neste aparelho.\n\n" +
-      "Quando estiver pronto, e so falar (botao do microfone) ou escrever.", "bot");
-  } else {
-    addMsg("Ola, Daniel. Pronto. Fale ou escreva — e lembre que sou parceira de debate, nao validadora.", "bot");
-  }
+let greetMsg = null;
+function userFirstName() {
+  try {
+    const a = msalApp && msalApp.getAllAccounts ? msalApp.getAllAccounts()[0] : null;
+    const n = a && (a.name || a.username) ? (a.name || a.username) : "";
+    const first = n ? n.split(/[ @._-]+/)[0] : "";
+    return first ? first.charAt(0).toUpperCase() + first.slice(1) : "";
+  } catch { return ""; }
 }
+function greetText() {
+  const nome = userFirstName() || "Daniel";
+  return cfg.apiKey
+    ? `Ola, ${nome}! Sou o App Agente Damha Agro. Fale ou escreva — e lembre que sou parceira de debate, nao validadora.`
+    : `Ola, ${nome}! Sou o App Agente Damha Agro. Para conversar, abra Config e cole a chave da API (Gemini tem plano gratis). Tudo fica so neste aparelho.`;
+}
+function updateGreeting() { if (greetMsg) greetMsg.textContent = greetText(); }
+function welcome() { greetMsg = addMsg(greetText(), "bot"); }

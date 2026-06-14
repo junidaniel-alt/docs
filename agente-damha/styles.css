@@ -137,7 +137,7 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 /* ===== Identificacao (§A9) ===== */
 .ident {
   display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
-  background: var(--roxo); margin: 14px; border-radius: 12px; overflow: hidden;
+  background: var(--roxo); margin: 16px 0 0; border-radius: 12px; overflow: hidden;
 }
 .ident div { background: var(--card); padding: 9px 11px; font-size: .74rem; }
 .ident span { display: block; color: var(--laranja); font-size: .62rem; letter-spacing: 1px; margin-bottom: 2px; }
@@ -146,9 +146,19 @@ fieldset.field label { display: block; margin-bottom: 10px; }
   .ident { grid-template-columns: repeat(3, 1fr); }
 }
 
-/* Etiqueta de versao no canto da abertura */
-#home { position: relative; }
-.appver { position: absolute; right: 6px; bottom: 2px; font-size: 11px; color: var(--lilas); opacity: .45; letter-spacing: .5px; }
+/* ===== Abertura (splash) ===== */
+.splash { text-align: center; padding: 22px 12px 8px; }
+.splash-logo {
+  width: 124px; height: auto;
+  filter: drop-shadow(0 8px 22px rgba(0,0,0,.40));
+  animation: logoIn .8s ease-out both, logoFloat 3.6s ease-in-out 0.8s infinite;
+}
+.splash-title { margin: 14px 0 2px; font-size: 1.4rem; font-weight: 300; letter-spacing: .5px; }
+.splash-title strong { font-weight: 800; }
+.splash-sub { margin: 0; color: var(--muted); font-size: .84rem; }
+.appver { display: inline-block; margin-top: 6px; font-size: 11px; color: var(--lilas); opacity: .55; letter-spacing: .5px; }
+@keyframes logoIn { from { opacity: 0; transform: translateY(16px) scale(.88); } to { opacity: 1; transform: none; } }
+@keyframes logoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 
 /* Campo com botao (olho da chave de API) */
 .inwrap { display: flex; gap: 6px; align-items: center; margin-top: 5px; }

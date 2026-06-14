@@ -81,7 +81,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 
 ---
 
-## 5. Estado atual (v1.14)
+## 5. Estado atual (v1.15)
 
 **Funciona:**
 - Conversa por voz (entrada Web Speech + saida SpeechSynthesis) e texto.
@@ -128,6 +128,10 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
   (lista `ADMIN_EMAILS` em app.js); PIN `252553` (hash em `ADM_PIN_SHA`) como atalho secundario.
   Terceiro que loga com a propria conta ve so Conversa/Projetos e apenas as pastas do OneDrive
   liberadas para a conta dele. Corrigido o Client ID real (`68d78834-...`).
+- **v1.15** — ADM em 2 passos (conta Microsoft → PIN), **sempre trancado ao abrir** (destrava so
+  em memoria) e **auto-trava em 1 min** (`ADM_TIMEOUT_MS`). Conversa **sauda pelo nome** de quem
+  logou (`userFirstName`). Abertura virou **splash** com logo DAMHA animado + nome + versao; bloco
+  de identificacao (§A9) movido para **dentro da Config** (nao aparece mais em todas as telas).
 
 > Detalhe granular: `git log -- agente-damha/`.
 

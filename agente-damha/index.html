@@ -7,7 +7,7 @@
   <title>App Agente Damha Agro</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=26" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -33,15 +33,20 @@
   </nav>
 
   <main>
-    <!-- ===== Menu inicial (botoes) ===== -->
+    <!-- ===== Abertura (splash + menu) ===== -->
     <section id="home" class="view active">
+      <div class="splash">
+        <img class="splash-logo" src="assets/LOGO.png" alt="DAMHA" onerror="this.style.display='none'" />
+        <h2 class="splash-title">App Agente <strong>Damha Agro</strong></h2>
+        <p class="splash-sub">Family Office / Holding &middot; cerebro, projetos e conversa por voz</p>
+        <span class="appver" id="appVer"></span>
+      </div>
       <div class="launch">
         <button class="launch-btn" data-go="conversa"><span class="ic">&#128172;</span>Conversa</button>
         <button class="launch-btn" data-go="cerebro"><span class="ic">&#129504;</span>Cerebro</button>
         <button class="launch-btn" data-go="projetos"><span class="ic">&#128193;</span>Projetos</button>
         <button class="launch-btn" data-go="config"><span class="ic">&#9881;</span>Config</button>
       </div>
-      <span class="appver" id="appVer"></span>
     </section>
 
     <!-- ===== Conversa (voz + chat) ===== -->
@@ -131,7 +136,7 @@
       <fieldset class="field hidden" id="admLock">
         <legend>&#128274; Area ADM</legend>
         <p class="muted" id="admLockHint"></p>
-        <label>PIN ADM
+        <label id="admPinInputWrap">PIN ADM
           <input type="password" id="admPinInput" inputmode="numeric" autocomplete="off" />
         </label>
         <button id="admPinBtn" class="secondary">Entrar com PIN</button>
@@ -161,19 +166,18 @@
           <button id="admLockBtn" class="secondary">Trancar ADM agora</button>
         </fieldset>
       </div>
+      <!-- ===== Identificacao (§A9) — so na Config ===== -->
+      <footer class="ident">
+        <div><span>Responsavel</span>Daniel Alves Feitoza Junior</div>
+        <div><span>Area</span>Financeiro-Holding / Family Office</div>
+        <div><span>Status</span>Revisado</div>
+        <div><span>Classificacao</span>Uso Interno e Confidencial</div>
+        <div><span>Versao</span>1.0</div>
+        <div><span>Emissao</span>13/06/2026</div>
+      </footer>
     </section>
   </main>
 
-  <!-- ===== Identificacao (§A9) ===== -->
-  <footer class="ident">
-    <div><span>Responsavel</span>Daniel Alves Feitoza Junior</div>
-    <div><span>Area</span>Financeiro-Holding / Family Office</div>
-    <div><span>Status</span>Revisado</div>
-    <div><span>Classificacao</span>Uso Interno e Confidencial</div>
-    <div><span>Versao</span>1.0</div>
-    <div><span>Emissao</span>13/06/2026</div>
-  </footer>
-
-  <script src="app.js?v=25"></script>
+  <script src="app.js?v=26"></script>
 </body>
 </html>
