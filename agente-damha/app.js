@@ -9,7 +9,7 @@
 const DEFAULTS = {
   apiKey: "",
   provider: "gemini",
-  model: "gemini-1.5-flash",
+  model: "gemini-2.0-flash",
   egress: "hibrido",
   // Client ID do registro Azure "Agente DAMHA" (publico, nao e segredo)
   azureClient: "68d78834-f9ec-4f71-b64b-172e9281e832",
@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.18";
+const APP_VERSION = "1.19";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -61,8 +61,11 @@ function initToggles() {
 
 /* ---------- Config ---------- */
 function loadCfg() {
-  try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem("agenteDamhaCfg") || "{}") }; }
-  catch { return { ...DEFAULTS }; }
+  try {
+    const c = { ...DEFAULTS, ...JSON.parse(localStorage.getItem("agenteDamhaCfg") || "{}") };
+    if (/^gemini-1\.5/.test(c.model || "")) c.model = "gemini-2.0-flash"; // Gemini 1.5 foi descontinuado
+    return c;
+  } catch { return { ...DEFAULTS }; }
 }
 function saveCfg() {
   cfg = {
@@ -79,10 +82,9 @@ function saveCfg() {
 // Versoes selecionaveis por provedor (id = nome real da API; label = texto claro)
 const MODELS = {
   gemini: [
-    { id: "gemini-1.5-flash", label: "Gemini 1.5 Flash — rapido, cota gratis folgada (recomendado)" },
-    { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash — novo, cota gratis menor" },
-    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash — mais novo" },
-    { id: "gemini-1.5-pro", label: "Gemini 1.5 Pro — mais capaz, cota menor" },
+    { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash — rapido, cota gratis (recomendado)" },
+    { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash-Lite — mais leve, cota maior" },
+    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash — mais novo e capaz" },
     { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro — topo (pode exigir billing)" },
   ],
   claude: [
@@ -220,7 +222,7 @@ async function callClaude(sys = SYSTEM_PROMPT) {
 }
 
 async function callGemini(sys = SYSTEM_PROMPT, web = false) {
-  const model = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-1.5-flash";
+  const model = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.0-flash";
   const contents = history.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
   const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 1500 } };
   if (web) body.tools = [{ google_search: {} }]; // grounding de busca do Google (internet)
