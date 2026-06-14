@@ -9,7 +9,7 @@
 const DEFAULTS = {
   apiKey: "",
   provider: "gemini",
-  model: "gemini-2.0-flash-lite",
+  model: "gemini-2.5-flash",
   egress: "hibrido",
   voiceName: "",   // "" = automatica (feminina pt-BR)
   pitch: 1.3,      // tom (0.5 grave .. 2 agudo/jovem)
@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.39";
+const APP_VERSION = "1.40";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -130,8 +130,8 @@ function saveCfg() {
 // Versoes selecionaveis por provedor (id = nome real da API; label = texto claro)
 const MODELS = {
   gemini: [
-    { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash-Lite — funcionando aqui (recomendado)" },
-    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash — igual ao STUDIO" },
+    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash — igual ao STUDIO (recomendado)" },
+    { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash-Lite — leve, cota separada" },
     { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
     { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro — topo (pode exigir billing)" },
   ],
@@ -480,18 +480,21 @@ async function callClaude(sys = SYSTEM_PROMPT) {
 }
 
 async function callGemini(sys = SYSTEM_PROMPT, web = false) {
-  // UMA chamada por mensagem (igual ao STUDIO) — sem fallback/retentativa que multiplica e estoura a cota.
-  const model = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.0-flash-lite";
+  // 1 chamada por mensagem; se o modelo escolhido der 429 (cota), tenta 1 modelo alternativo (outra cota).
+  const chosen = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.5-flash";
+  const alt = chosen === "gemini-2.5-flash" ? "gemini-2.0-flash-lite" : "gemini-2.5-flash";
   const contents = history.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
   const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } };
   if (web) body.tools = [{ google_search: {} }];
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
-  const opts = () => ({ method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": cfg.apiKey }, body: JSON.stringify(body) });
-  let res = await fetch(url, opts());
-  if (!res.ok && (res.status === 400 || res.status === 403) && body.tools) {
-    delete body.tools; // busca web nao habilitada nessa chave: responde sem internet (1 chamada extra so aqui)
-    res = await fetch(url, opts());
+  async function tryModel(model) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
+    const opts = () => ({ method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": cfg.apiKey }, body: JSON.stringify(body) });
+    let res = await fetch(url, opts());
+    if (!res.ok && (res.status === 400 || res.status === 403) && body.tools) { delete body.tools; res = await fetch(url, opts()); }
+    return res;
   }
+  let res = await tryModel(chosen);
+  if (res.status === 429) res = await tryModel(alt); // 1 alternativa silenciosa (outro modelo = outra cota)
   if (!res.ok) throw new Error(apiError("Gemini", res.status, await res.text()));
   const data = await res.json();
   const cand = data.candidates && data.candidates[0];
@@ -732,17 +735,38 @@ async function openSheet(id, name) {
     if (typeof XLSX === "undefined") { el("noteBody").textContent = "O leitor de planilha ainda nao carregou. Verifique a conexao e reabra."; return; }
     _wb = XLSX.read(buf, { type: "array" }); _wbName = name;
     const tabs = el("sheetTabs"); tabs.innerHTML = "";
+    const sel = (btn, fn) => { [...tabs.children].forEach((c) => c.classList.remove("on")); btn.classList.add("on"); fn(); };
+    const resumo = document.createElement("button");
+    resumo.className = "chip-s on"; resumo.textContent = "\u{1F4CB} Resumo";
+    resumo.onclick = () => sel(resumo, showInventory);
+    tabs.appendChild(resumo);
     (_wb.SheetNames || []).forEach((sn) => {
       const b = document.createElement("button");
       b.className = "chip-s"; b.textContent = "\u{1F4D1} " + sn;
-      b.onclick = () => { [...tabs.children].forEach((c) => c.classList.remove("on")); b.classList.add("on"); showSheet(sn); };
+      b.onclick = () => sel(b, () => showSheet(sn));
       tabs.appendChild(b);
     });
-    if (tabs.firstChild) tabs.firstChild.classList.add("on");
-    showSheet((_wb.SheetNames || [])[0]);
+    showInventory(); // abre mostrando o levantamento de todas as abas
   } catch (e) {
     el("noteBody").textContent = "Erro ao ler planilha: " + e.message;
   }
+}
+// Levantamento: lista todas as abas, suas colunas (1a linha preenchida) e nº de linhas.
+function showInventory() {
+  if (!_wb) return;
+  const lines = (_wb.SheetNames || []).map((sn) => {
+    const rows = XLSX.utils.sheet_to_json(_wb.Sheets[sn], { header: 1, defval: "" });
+    const header = rows.find((r) => r.some((c) => String(c).trim() !== "")) || [];
+    const cols = header.slice(0, 20).map((c) => String(c).trim()).filter(Boolean).join(", ");
+    return `• ${sn} — ${rows.length} linhas\n   colunas: ${cols || "(vazio)"}`;
+  }).join("\n\n");
+  const txt = `Levantamento da planilha "${_wbName}" — ${(_wb.SheetNames || []).length} abas:\n\n${lines}`;
+  el("noteBody").textContent = txt;
+  lastOpenedNote = { title: `${_wbName} — levantamento`, body: txt };
+  const btn = el("noteAnalyze");
+  btn.textContent = "Analisar com IA";
+  btn.classList.toggle("hidden", cfg.egress === "local");
+  btn.onclick = () => analyzeNote(lastOpenedNote.title, txt);
 }
 function showSheet(sn) {
   if (!_wb || !sn) return;
