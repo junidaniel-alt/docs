@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.34";
+const APP_VERSION = "1.35";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -202,16 +202,31 @@ function mdToHtml(t) {
   s = s.replace(/\n/g, "<br>");
   return s;
 }
+// Renderiza um relatorio: texto + VARIOS blocos (kpis/chart/options) na ordem em que aparecem.
+function renderBotInto(d, text) {
+  const re = /```(kpis|chart|options)\s*([\s\S]*?)```/gi;
+  let last = 0, m, any = false;
+  while ((m = re.exec(text))) {
+    const before = text.slice(last, m.index).trim();
+    if (before) { const p = document.createElement("div"); p.innerHTML = mdToHtml(before); d.appendChild(p); }
+    let data = null; try { data = JSON.parse(m[2].trim()); } catch { data = null; }
+    if (data) {
+      const tag = m[1].toLowerCase();
+      if (tag === "kpis") d.appendChild(renderKPIs(data));
+      else if (tag === "chart") d.appendChild(renderChart(data));
+      else d.appendChild(renderOptions(data));
+      any = true;
+    }
+    last = re.lastIndex;
+  }
+  const after = text.slice(last).trim();
+  if (after) { const p = document.createElement("div"); p.innerHTML = mdToHtml(after); d.appendChild(p); }
+  if (!d.childNodes.length || (!any && !after)) d.innerHTML = mdToHtml(text);
+}
 function addBotMsg(text) {
   const d = document.createElement("div");
   d.className = "msg bot";
-  const kp = extractBlock(text, "kpis");
-  const ch = extractBlock(kp.rest, "chart");
-  const op = extractBlock(ch.rest, "options");
-  d.innerHTML = mdToHtml(op.rest || ((kp.data || ch.data || op.data) ? "" : text));
-  if (kp.data) d.appendChild(renderKPIs(kp.data));
-  if (ch.data) d.appendChild(renderChart(ch.data));
-  if (op.data) d.appendChild(renderOptions(op.data));
+  renderBotInto(d, text);
   el("chat").appendChild(d);
   el("chat").scrollTop = el("chat").scrollHeight;
   return d;
@@ -242,10 +257,7 @@ function extractBlock(t, tag) {
 function extractChart(t) { const r = extractBlock(t, "chart"); return { rest: r.rest, spec: r.data }; }
 // Texto limpo (sem blocos chart/options) para a leitura em voz.
 function plainForSpeech(t) {
-  let r = extractBlock(t, "kpis").rest;
-  r = extractBlock(r, "chart").rest;
-  r = extractBlock(r, "options").rest;
-  return r.replace(/[*#`>_]/g, "");
+  return t.replace(/```(kpis|chart|options)\s*[\s\S]*?```/gi, "").replace(/[*#`>_]/g, "").trim();
 }
 // Botoes de escolha: a Maria Sarah pergunta primeiro e o toque envia a resposta.
 function renderOptions(spec) {
@@ -332,8 +344,8 @@ function drawModal() {
 function closeChartModal() { el("chartModal").classList.add("hidden"); }
 // Chips de sugestao
 const SUGGEST = [
-  "Me surpreenda", "Por que o dolar mexeu hoje?", "Compare USD, soja, milho e boi",
-  "Grafico ilustrativo da curva do dolar", "Resuma o que voce faz",
+  "Relatorio completo de cambio", "Me surpreenda", "Por que o dolar mexeu hoje?",
+  "Compare USD, soja, milho e boi", "Grafico ilustrativo da curva do dolar",
 ];
 function renderSuggest() {
   const box = el("suggest");
@@ -377,7 +389,7 @@ async function sendMessage() {
   // Sistema dinamico conforme as chavinhas.
   let sys = SYSTEM_PROMPT;
   if (togState("togCerebro")) sys += "\n\nA Base DAMHA e a fonte mestra: priorize-a e sinalize claramente quando faltar dado (peca para o Daniel abrir o arquivo na Base DAMHA).";
-  sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\" ou \"area\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". Para indicadores-chave, PODE incluir um bloco kpis com JSON {\"cards\":[{\"label\":\"...\",\"value\":\"...\",\"sub\":\"...\"}]} (ate 4 cartoes).";
+  sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\" ou \"area\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". Para indicadores-chave, PODE incluir um bloco kpis com JSON {\"cards\":[{\"label\":\"...\",\"value\":\"...\",\"sub\":\"...\"}]} (ate 4 cartoes). Para um RELATORIO COMPLETO, pode incluir VARIOS blocos kpis e chart na mesma resposta, intercalados com texto curto (titulos e analise). Sem dados reais, marque source ilustrativo e avise.";
   sys += "\n\nPERGUNTE PRIMEIRO, nao adivinhe: quando o pedido for ambiguo ou exigir uma escolha (ex.: de qual fonte de dados puxar, qual fazenda, qual periodo, se busca na Base DAMHA ou se o Daniel mostra o arquivo), escreva a pergunta curta e inclua UM bloco cercado por tres crases iniciado pela palavra options com JSON {\"options\":[\"opcao 1\",\"opcao 2\"]} (2 a 4 opcoes curtas). O Daniel toca numa opcao e voce segue. O restante da resposta vai em texto normal (markdown leve).";
   const wantWeb = togState("togInternet");
 
