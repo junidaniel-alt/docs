@@ -81,7 +81,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 
 ---
 
-## 5. Estado atual (v1.16)
+## 5. Estado atual (v1.21)
 
 **Funciona:**
 - Conversa por voz (entrada Web Speech + saida SpeechSynthesis) e texto.
@@ -140,6 +140,13 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
   egress hibrido), 🔊 Voz (TTS). Estados em localStorage (`tog_*`). Calls de IA parametrizadas
   por `sys`/`web`. STUDIO (`PROJETOS/2026.06.12_MISSION_CONTROL_MERCADO_FUTURO/Mission_Control_Web/`)
   e a referencia de engenharia de chat — fonte ainda nao lida (download via Graph trava em redirect).
+
+- **v1.18** — copiloto com chavinhas (Internet/Cerebro/Contexto/Voz).
+- **v1.19/1.20** — corrige modelos Gemini (1.5 descontinuado -> 404); lista so 2.0/2.5; migracao auto.
+- **v1.21** — **COPILOTO DAMHA (Fase 1)**: aba renomeada, **chips de sugestao** (`SUGGEST`/`renderSuggest`)
+  e a IA **gera graficos inline** — devolve bloco ```chart {json}``` que o app renderiza em SVG
+  (`extractChart`/`chartSVG`/`renderChart`; toque troca line/bar). Fase 2 = dados reais do cofre
+  (nao embutir dado confidencial no app publico; puxar via M365 em runtime).
 
 > Detalhe granular: `git log -- agente-damha/`.
 

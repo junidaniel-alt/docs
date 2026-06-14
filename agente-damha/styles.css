@@ -174,3 +174,15 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 .toggles { display: flex; flex-wrap: wrap; gap: 6px; }
 .tog { background: #241038; border: 1px solid var(--roxo); color: var(--muted); border-radius: 999px; padding: 5px 10px; font: inherit; font-size: .75rem; cursor: pointer; }
 .tog.on { background: var(--roxo); color: #fff; border-color: var(--magenta); }
+
+/* Chips de sugestao do Copiloto */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip-s { background: #241038; border: 1px solid var(--roxo); color: var(--lilas); border-radius: 999px; padding: 6px 11px; font: inherit; font-size: .76rem; cursor: pointer; }
+.chip-s:hover { background: var(--roxo); color: #fff; }
+
+/* Painel/grafico gerado pela IA */
+.panelchart { margin-top: 8px; background: #1c0d2c; border: 1px solid var(--roxo); border-radius: 12px; padding: 10px; cursor: pointer; }
+.pc-title { color: var(--laranja); font-weight: 700; font-size: .82rem; margin-bottom: 4px; }
+.pc-leg { font-size: .72rem; margin-bottom: 2px; }
+.pc-svg { width: 100%; height: auto; display: block; }
+.pc-cap { color: var(--muted); font-size: .68rem; margin-top: 4px; }

@@ -17,7 +17,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.20";
+const APP_VERSION = "1.21";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 
@@ -151,10 +151,91 @@ function mdToHtml(t) {
 function addBotMsg(text) {
   const d = document.createElement("div");
   d.className = "msg bot";
-  d.innerHTML = mdToHtml(text);
+  const { rest, spec } = extractChart(text);
+  d.innerHTML = mdToHtml(rest || (spec ? "" : text));
+  if (spec) d.appendChild(renderChart(spec));
   el("chat").appendChild(d);
   el("chat").scrollTop = el("chat").scrollHeight;
   return d;
+}
+// Extrai um bloco ```chart {json}``` da resposta (o resto vira texto).
+function extractChart(t) {
+  const m = t.match(/```chart\s*([\s\S]*?)```/i);
+  if (!m) return { rest: t, spec: null };
+  let spec = null;
+  try { spec = JSON.parse(m[1].trim()); } catch { spec = null; }
+  return { rest: t.replace(m[0], "").trim(), spec };
+}
+function fmtNum(v) {
+  return Math.abs(v) >= 1000
+    ? v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })
+    : v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}
+function chartSVG(spec, type) {
+  const W = 520, H = 240, P = 38;
+  const labels = spec.labels || [];
+  const series = (spec.series || []).filter((s) => Array.isArray(s.data) && s.data.length);
+  if (!series.length) return "<div class='muted'>(sem dados no painel)</div>";
+  const all = series.flatMap((s) => s.data);
+  let min = Math.min(...all), max = Math.max(...all);
+  if (min === max) { min -= 1; max += 1; }
+  const range = max - min;
+  const n = Math.max(1, (labels.length || series[0].data.length) - 1);
+  const X = (i) => P + i * ((W - 2 * P) / n);
+  const Y = (v) => H - P - ((v - min) / range) * (H - 2 * P);
+  const colors = ["#6FCF6F", "#F08E23", "#C4357A", "#B8D4E8", "#DCD4E5"];
+  let g = "";
+  [max, (min + max) / 2, min].forEach((v) => {
+    const yy = Y(v);
+    g += `<line x1="${P}" y1="${yy}" x2="${W - P}" y2="${yy}" stroke="#5E3287" stroke-width="1" opacity="0.4"/>`;
+    g += `<text x="4" y="${yy + 3}" fill="#B9AECB" font-size="10">${fmtNum(v)}</text>`;
+  });
+  if (type === "bar") {
+    const s = series[0], step = (W - 2 * P) / s.data.length;
+    s.data.forEach((v, i) => {
+      const cx = P + (i + 0.5) * step, yy = Y(v);
+      g += `<rect x="${cx - step * 0.3}" y="${yy}" width="${step * 0.6}" height="${H - P - yy}" fill="${colors[0]}" rx="2"/>`;
+    });
+  } else {
+    series.forEach((s, si) => {
+      const pts = s.data.map((v, i) => `${X(i)},${Y(v)}`).join(" ");
+      g += `<polyline points="${pts}" fill="none" stroke="${colors[si % colors.length]}" stroke-width="2"/>`;
+    });
+  }
+  [0, Math.round(n / 2), n].filter((v, i, a) => a.indexOf(v) === i).forEach((i) => {
+    if (labels[i] != null) g += `<text x="${X(i)}" y="${H - 12}" fill="#B9AECB" font-size="10" text-anchor="middle">${escapeHtml(String(labels[i]))}</text>`;
+  });
+  const leg = series.map((s, si) => `<span style="color:${colors[si % colors.length]}">&#9632; ${escapeHtml(s.name || ("serie " + (si + 1)))}</span>`).join(" &nbsp; ");
+  return `<div class="pc-leg">${leg}</div><svg viewBox="0 0 ${W} ${H}" class="pc-svg" preserveAspectRatio="xMidYMid meet">${g}</svg>`;
+}
+function renderChart(spec) {
+  const box = document.createElement("div");
+  box.className = "panelchart";
+  let type = spec.type === "bar" ? "bar" : "line";
+  const draw = () => {
+    box.innerHTML = `<div class="pc-title">&#128202; ${escapeHtml(spec.title || "Painel")}</div>`
+      + chartSVG(spec, type)
+      + `<div class="pc-cap">&#9889; painel${spec.source ? " &middot; " + escapeHtml(spec.source) : ""} &middot; toque para trocar tipo</div>`;
+  };
+  draw();
+  box.onclick = () => { type = type === "line" ? "bar" : "line"; draw(); };
+  return box;
+}
+// Chips de sugestao
+const SUGGEST = [
+  "Me surpreenda", "Por que o dolar mexeu hoje?", "Compare USD, soja, milho e boi",
+  "Grafico ilustrativo da curva do dolar", "Resuma o que voce faz",
+];
+function renderSuggest() {
+  const box = el("suggest");
+  box.innerHTML = "";
+  SUGGEST.forEach((s) => {
+    const b = document.createElement("button");
+    b.className = "chip-s";
+    b.textContent = s;
+    b.onclick = () => { el("input").value = s; sendMessage(); };
+    box.appendChild(b);
+  });
 }
 
 async function sendMessage() {
@@ -187,6 +268,7 @@ async function sendMessage() {
   // Sistema dinamico conforme as chavinhas.
   let sys = SYSTEM_PROMPT;
   if (togState("togCerebro")) sys += "\n\nO cofre Obsidian e a fonte mestra: priorize-o e sinalize claramente quando faltar dado do cofre (peca para abrir a nota no Cerebro).";
+  sys += "\n\nVoce e o Copiloto Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". O restante da resposta vai em texto normal (markdown leve).";
   const wantWeb = togState("togInternet");
 
   setStatus(wantWeb && cfg.provider === "gemini" ? "Pensando (com internet)..." : "Pensando...");
@@ -197,7 +279,7 @@ async function sendMessage() {
     history.push({ role: "assistant", content: reply });
     addBotMsg(reply);
     setStatus("");
-    if (togState("togVoz")) speak(reply.replace(/[*#`>_]/g, ""));
+    if (togState("togVoz")) speak(extractChart(reply).rest.replace(/[*#`>_]/g, ""));
   } catch (e) {
     addMsg(e.message || ("Falha: " + e), "err");
     setStatus("");
@@ -633,6 +715,7 @@ window.addEventListener("DOMContentLoaded", () => {
   renderProjetos();
   initAdm();
   initToggles();
+  renderSuggest();
   renderNucleo();
   initSpeech();
   initNav();
