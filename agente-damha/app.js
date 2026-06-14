@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.47";
+const APP_VERSION = "1.48";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -417,29 +417,95 @@ function renderSuggest() {
     box.appendChild(b);
   });
 }
-// Relatorio vivo (iteracao viva): renderiza os blocos da ultima resposta no canvas do Relatorio.
-function renderReport(text) {
-  if (!/```(kpis|chart)/i.test(text)) return; // so atualiza quando a resposta traz indicadores/graficos
-  const c = el("reportCanvas");
-  if (!c) return;
+/* ---------- Relatorio vivo (iteracao viva, contrato estilo STUDIO) ---------- */
+let REL = { titulo: "", blocos: [] };
+const REPORT_SYS = `\n\nMODO RELATORIO (responda SO em JSON, sem texto fora do JSON), contrato:
+{"reply":"sua leitura de analista, 1 a 4 frases","relatorio":{"titulo":"...","blocos":[...]} | null,"add_blocos":[...] | null,"remover_titulos":["titulo",...] | null}
+- "monte/relatorio de X" => relatorio completo (titulo + blocos).
+- "adicione/poe um grafico/bloco de Y" => add_blocos (bloco com MESMO titulo SUBSTITUI o existente).
+- "tira/remove o bloco Z" => remover_titulos.
+- pergunta/conversa => responda no reply (e, se ilustrar, mande add_blocos).
+Tipos de bloco:
+(1) {"tipo":"kpis","titulo":"...","larg":"cheia","itens":[{"label":"...","value":"...","sub":"..."}]}
+(2) {"tipo":"grafico","titulo":"...","larg":"meia","estilo":"linha"|"barras"|"area","labels":[...],"series":[{"name":"...","data":[numeros],"axis":"right"(opcional)}]}
+(3) {"tipo":"texto","titulo":"...","larg":"meia","conteudo":"analise qualitativa"}
+Sem dados reais, use valores ilustrativos e diga isso no reply. Max 12 pontos por serie.`;
+function reportApply(r) {
+  if (r.relatorio && (r.relatorio.blocos || r.relatorio.titulo)) REL = { titulo: r.relatorio.titulo || REL.titulo || "Relatorio", blocos: r.relatorio.blocos || [] };
+  if (r.remover_titulos && r.remover_titulos.length) {
+    const rem = r.remover_titulos.map((x) => (x || "").toLowerCase());
+    REL.blocos = (REL.blocos || []).filter((b) => rem.indexOf((b.titulo || "").toLowerCase()) < 0);
+  }
+  if (r.add_blocos && r.add_blocos.length) {
+    REL.blocos = REL.blocos || [];
+    r.add_blocos.forEach((nb) => {
+      const i = REL.blocos.findIndex((b) => (b.titulo || "").toLowerCase() === (nb.titulo || "").toLowerCase());
+      if (i >= 0) REL.blocos[i] = nb; else REL.blocos.push(nb);
+    });
+  }
+}
+function renderRel() {
+  const c = el("reportCanvas"); if (!c) return;
+  if (!(REL.blocos && REL.blocos.length) && !REL.titulo) { c.innerHTML = "<p class='muted'>Direcione acima para a Maria Sarah montar o relatorio.</p>"; return; }
   c.innerHTML = "";
-  renderBotInto(c, text);
-}
-const REP_SUGGEST = ["Relatorio completo de cambio", "Adicione um grafico do CDS", "Compare soja, milho e boi", "Resumo do dolar com indicadores"];
-function renderRepSuggest() {
-  const box = el("repSuggest"); if (!box) return;
-  box.innerHTML = "";
-  REP_SUGGEST.forEach((s) => {
-    const b = document.createElement("button");
-    b.className = "chip-s"; b.textContent = s;
-    b.onclick = () => { el("input").value = s; sendMessage(); };
-    box.appendChild(b);
+  const head = document.createElement("div");
+  head.innerHTML = `<div class="rel-titulo">${escapeHtml(REL.titulo || "Relatorio")}</div><div class="rel-sub">gerado pela Maria Sarah &middot; ${new Date().toLocaleString("pt-BR")}</div>`;
+  c.appendChild(head);
+  const grid = document.createElement("div"); grid.className = "relgrid";
+  (REL.blocos || []).forEach((b) => {
+    const card = document.createElement("div");
+    card.className = "relblk" + (b.larg === "cheia" || b.tipo === "kpis" ? " full" : "");
+    const h = document.createElement("div"); h.className = "relblk-h"; h.textContent = b.titulo || b.tipo; card.appendChild(h);
+    if (b.tipo === "kpis") card.appendChild(renderKPIs({ cards: b.itens || [] }));
+    else if (b.tipo === "grafico") {
+      const t = b.estilo === "barras" ? "bar" : b.estilo === "area" ? "area" : "line";
+      card.appendChild(renderChart({ title: b.titulo, type: t, labels: b.labels, series: b.series, source: b.source }));
+    } else { const p = document.createElement("div"); p.className = "relblk-txt"; p.innerHTML = mdToHtml(b.conteudo || ""); card.appendChild(p); }
+    grid.appendChild(card);
   });
+  c.appendChild(grid);
 }
+async function geminiOnce(sys, userMsg, web) {
+  const chosen = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.5-flash";
+  const alt = chosen === "gemini-2.5-flash" ? "gemini-2.0-flash-lite" : "gemini-2.5-flash";
+  const body = { contents: [{ role: "user", parts: [{ text: userMsg }] }], systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } };
+  if (web) body.tools = [{ google_search: {} }]; else body.generationConfig.responseMimeType = "application/json";
+  const run = async (model) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`, { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": cfg.apiKey }, body: JSON.stringify(body) });
+  let res = await run(chosen);
+  if (res.status === 429) res = await run(alt);
+  if (!res.ok) throw new Error(apiError("Gemini", res.status, await res.text()));
+  const data = await res.json();
+  const cand = data.candidates && data.candidates[0];
+  return ((cand && cand.content && cand.content.parts) || []).map((p) => p.text || "").join("");
+}
+function parseLooseJSON(raw) {
+  let s = String(raw).replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/, "").trim();
+  try { return JSON.parse(s); } catch {}
+  const m = s.match(/\{[\s\S]*\}/);
+  if (m) { try { return JSON.parse(m[0]); } catch {} }
+  return { reply: raw };
+}
+async function reportAsk(q) {
+  if (!cfg.apiKey) { el("repStatus").textContent = "Configure a chave da API em Config."; return; }
+  el("repStatus").textContent = "Montando...";
+  try {
+    const titles = (REL.blocos || []).map((b) => b.titulo).join(" | ") || "(vazio)";
+    const userMsg = `RELATORIO ATUAL (titulos dos blocos): ${titles}\n\nComando do Daniel: ${q}`;
+    const raw = await geminiOnce(SYSTEM_PROMPT + REPORT_SYS, userMsg, togState("togInternet"));
+    const r = parseLooseJSON(raw);
+    reportApply(r);
+    renderRel();
+    el("repStatus").textContent = r.reply || "";
+    if (togState("togVoz") && r.reply) speak(r.reply);
+  } catch (e) { el("repStatus").textContent = "Erro: " + e.message; }
+}
+const REP_SUGGEST = ["Relatorio completo de cambio", "Adicione um grafico do dolar", "Compare soja, milho e boi", "Tira o ultimo bloco"];
 function initReport() {
-  renderRepSuggest();
-  el("repSend").onclick = () => { const v = el("repInput").value.trim(); if (!v) return; el("input").value = v; el("repInput").value = ""; sendMessage(); };
+  const box = el("repSuggest");
+  if (box) { box.innerHTML = ""; REP_SUGGEST.forEach((s) => { const b = document.createElement("button"); b.className = "chip-s"; b.textContent = s; b.onclick = () => reportAsk(s); box.appendChild(b); }); }
+  el("repSend").onclick = () => { const v = el("repInput").value.trim(); if (!v) return; el("repInput").value = ""; reportAsk(v); };
   el("repInput").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); el("repSend").onclick(); } });
+  renderRel();
 }
 
 async function sendMessage() {
@@ -491,7 +557,6 @@ async function sendMessage() {
       addBotMsg(reply);
     }
     history.push({ role: "assistant", content: reply });
-    renderReport(reply);
     setStatus("");
     if (togState("togVoz")) speak(plainForSpeech(reply));
   } catch (e) {

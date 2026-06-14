@@ -278,3 +278,14 @@ body.light .tog.on { background: var(--roxo); color: #fff; }
 .pcard-t { font-weight: 700; font-size: .9rem; line-height: 1.2; }
 .pcard-d { color: var(--laranja); font-size: .68rem; letter-spacing: .5px; }
 body.light .pcard { background: #fff; }
+
+/* ===== Relatorio vivo (documento estilo STUDIO) ===== */
+.rel-titulo { font-size: 1.3rem; font-weight: 800; color: #fff; letter-spacing: .3px; margin: 4px 0 2px; }
+.rel-sub { color: var(--muted); font-size: .72rem; margin-bottom: 10px; }
+.relgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.relblk { background: #1c0d2c; border: 1px solid var(--roxo); border-radius: 12px; padding: 10px; animation: viewIn .35s ease both; }
+.relblk.full { grid-column: 1 / -1; }
+.relblk-h { color: var(--laranja); font-weight: 700; font-size: .8rem; margin-bottom: 6px; }
+.relblk-txt { font-size: .86rem; line-height: 1.45; }
+body.light .relblk { background: #F2ECF8; }
+body.light .rel-titulo { color: var(--txt); }
