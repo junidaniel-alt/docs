@@ -135,3 +135,21 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 A cada mudanca entregue: bumpar `APP_VERSION` em `app.js`, o `?v=NN` em `index.html`
 (css/js) e o nome do cache em `sw.js` — isso forca o celular a baixar a versao nova.
 Commitar com mensagem clara e dar push na branch de trabalho.
+
+---
+
+## 10. Azure / Entra ID — como gerenciar o login
+O login no cofre usa um **App Registration no Microsoft Entra ID** (antigo Azure AD).
+**Atencao:** isso NAO se gerencia pelo *app "Azure" do celular* (esse e so para recursos de nuvem);
+e pelo **navegador**.
+
+- **Onde:** `entra.microsoft.com` (ou `portal.azure.com`) → entrar com a conta M365 do Daniel
+  (daniel_feitoza@damhaagro...) → **Microsoft Entra ID → Registros de aplicativo (App registrations)**
+  → "Todos os aplicativos" → buscar pelo nome ou colar o **client ID** `934b3c6e-db97-434a-aff0-dd6d8b3b82d8`.
+- **Overview:** mostra o *Application (client) ID* — e o valor de **Config → Azure Client ID** no app.
+- **Authentication:** plataforma deve ser **Single-page application (SPA)**; o **Redirect URI** precisa
+  conter EXATAMENTE a URL de hospedagem do app (GitHub Pages, ex.: `https://<usuario>.github.io/docs/agente-damha/`).
+  > Sintoma classico: se o login falha no celular, quase sempre e o Redirect URI que nao bate com a URL.
+- **API permissions** (Microsoft Graph, delegadas): `User.Read`, `Files.Read.All`, `Sites.Read.All`
+  → se aparecer aviso, clicar em **"Conceder consentimento de administrador"**.
+- **Pendente de confirmar:** a URL real do GitHub Pages (hospedagem) e se ela ja esta no Redirect URI.
