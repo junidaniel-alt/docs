@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.56";
+const APP_VERSION = "1.57";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -100,6 +100,8 @@ const togState = (id) => localStorage.getItem("tog_" + id) === "1";
 function setTog(id, on) { localStorage.setItem("tog_" + id, on ? "1" : "0"); el(id).classList.toggle("on", on); }
 function initToggles() {
   if (localStorage.getItem("tog_togVoz") === null) localStorage.setItem("tog_togVoz", "1"); // voz on por padrao
+  if (localStorage.getItem("tog_togInternet") === null) localStorage.setItem("tog_togInternet", "1"); // tempo real on por padrao
+  if (localStorage.getItem("tog_togCerebro") === null) localStorage.setItem("tog_togCerebro", "1"); // Base DAMHA on por padrao
   TOGGLES.forEach((id) => {
     el(id).classList.toggle("on", togState(id));
     el(id).onclick = () => setTog(id, !togState(id));
@@ -645,9 +647,13 @@ async function reportAsk(q) {
   el("repStatus").textContent = "Montando...";
   try {
     const titles = (REL.blocos || []).map((b) => b.titulo).join(" | ") || "(vazio)";
-    const userMsg = `RELATORIO ATUAL (titulos dos blocos): ${titles}\n\nComando do Daniel: ${q}`;
+    let userMsg = `RELATORIO ATUAL (titulos dos blocos): ${titles}\n\nComando do Daniel: ${q}`;
+    const ctxNote = pickCtxNote(); // STUDIO tambem puxa a Base DAMHA (igual ao Copiloto)
+    if (ctxNote) { userMsg = `Contexto (Base DAMHA "${ctxNote.title}"):\n\n${ctxNote.body}\n\n---\n` + userMsg; pendingNoteContext = null; }
     const web = togState("togInternet");
-    const raw = await aiOnce(SYSTEM_PROMPT + REPORT_SYS + webNote(web), userMsg, web);
+    let sys = SYSTEM_PROMPT + REPORT_SYS + webNote(web);
+    if (togState("togCerebro")) sys += "\n\nA Base DAMHA e a fonte mestra: priorize o contexto anexado; se faltar dado, sinalize e peca para o Daniel abrir o arquivo na Base DAMHA.";
+    const raw = await aiOnce(sys, userMsg, web);
     const r = parseLooseJSON(raw);
     reportApply(r);
     renderRel();
@@ -664,6 +670,18 @@ function initReport() {
   renderRel();
 }
 
+// Contexto da Base DAMHA (cofre/memoria) — usado IGUAL no Copiloto e no STUDIO.
+// Nota aprovada (Analisar) ou, com as chavinhas Base/Contexto, a ultima nota aberta
+// (respeitando o egress: local nao envia; hibrido confirma; sempre envia direto).
+function pickCtxNote() {
+  let ctxNote = pendingNoteContext;
+  if (!ctxNote && (togState("togCerebro") || togState("togContexto")) && lastOpenedNote) {
+    if (cfg.egress === "local") ctxNote = null;
+    else if (cfg.egress === "hibrido") { if (confirm(`Anexar "${lastOpenedNote.title}" (Base DAMHA, Uso Interno) a esta pergunta?`)) ctxNote = lastOpenedNote; }
+    else ctxNote = lastOpenedNote;
+  }
+  return ctxNote;
+}
 async function sendMessage() {
   const text = el("input").value.trim();
   if (!text) return;
@@ -672,18 +690,7 @@ async function sendMessage() {
   el("input").value = "";
   addMsg(text, "user");
 
-  // Contexto do cofre: nota aprovada (Analisar) ou, com as chavinhas Cerebro/Contexto,
-  // a ultima nota aberta (respeitando o egress hibrido = confirma antes de enviar).
-  let ctxNote = pendingNoteContext;
-  if (!ctxNote && (togState("togCerebro") || togState("togContexto")) && lastOpenedNote) {
-    if (cfg.egress === "local") {
-      ctxNote = null;
-    } else if (cfg.egress === "hibrido") {
-      if (confirm(`Anexar "${lastOpenedNote.title}" (Base DAMHA, Uso Interno) a esta pergunta?`)) ctxNote = lastOpenedNote;
-    } else {
-      ctxNote = lastOpenedNote;
-    }
-  }
+  const ctxNote = pickCtxNote(); // mesma Base DAMHA do STUDIO (cofre/memoria)
   let userContent = text;
   if (ctxNote) {
     userContent = `Contexto (Base DAMHA "${ctxNote.title}"):\n\n${ctxNote.body}\n\n---\nPergunta: ${text}`;
