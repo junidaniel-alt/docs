@@ -20,12 +20,13 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.63";
+const APP_VERSION = "1.64";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
 const MASCOT_ITEM = "01KCR6ZAPEHV3QJN3DTNEJNQ2V6DJE7XMY"; // "Masconte M. Sarah.png"
 const MASCOT_KEY = "mascotDataUrl_v1";
+const MASCOT_ENABLED = false; // OFF ate a arte final da Maria Sarah (religar = true)
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
 const SHEET_RE = /\.(xlsx|xlsm|xlsb|xls|csv)$/i;
 
@@ -1135,6 +1136,7 @@ async function findMascotItem() {
   } catch (e) { return null; }
 }
 async function loadMascot() {
+  if (!MASCOT_ENABLED) { try { localStorage.removeItem(MASCOT_KEY); } catch (e) {} return; } // desligado ate a arte final
   let cached = null; try { cached = JSON.parse(localStorage.getItem(MASCOT_KEY) || "null"); } catch (e) { cached = null; }
   if (cached && cached.url) applyMascot(cached.url); // mostra o cache na hora
   if (!window._cofreToken) return; // sem M365 ainda; tenta de novo apos conectar
