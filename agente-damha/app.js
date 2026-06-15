@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.58";
+const APP_VERSION = "1.59";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -648,11 +648,15 @@ async function reportAsk(q) {
   try {
     const titles = (REL.blocos || []).map((b) => b.titulo).join(" | ") || "(vazio)";
     let userMsg = `RELATORIO ATUAL (titulos dos blocos): ${titles}\n\nComando do Daniel: ${q}`;
-    const ctxNote = pickCtxNote(); // STUDIO tambem puxa a Base DAMHA (igual ao Copiloto)
+    if (togState("togCerebro") && window._cofreToken && !pickCtxNote()) el("repStatus").textContent = "Consultando a Base DAMHA...";
+    const ctxNote = await getBaseContext(q); // STUDIO tambem puxa a Base DAMHA (igual ao Copiloto)
     if (ctxNote) { userMsg = `Contexto (Base DAMHA "${ctxNote.title}"):\n\n${ctxNote.body}\n\n---\n` + userMsg; pendingNoteContext = null; }
     const web = togState("togInternet");
     let sys = SYSTEM_PROMPT + REPORT_SYS + webNote(web);
-    if (togState("togCerebro")) sys += "\n\nA Base DAMHA e a fonte mestra: priorize o contexto anexado; se faltar dado, sinalize e peca para o Daniel abrir o arquivo na Base DAMHA.";
+    if (togState("togCerebro")) {
+      if (window._cofreToken) sys += "\n\nBASE DAMHA LIGADA: o app anexa automaticamente o arquivo do cofre mais relacionado. Use o contexto anexado como fonte mestra; se vier vazio, diga que nao achou e peca o assunto exato.";
+      else sys += "\n\nBASE DAMHA LIGADA, mas o M365 NAO esta conectado. Peca ao Daniel para conectar o M365 na aba Base.";
+    }
     const raw = await aiOnce(sys, userMsg, web);
     const r = parseLooseJSON(raw);
     reportApply(r);
@@ -758,7 +762,8 @@ async function sendMessage() {
   el("input").value = "";
   addMsg(text, "user");
 
-  const ctxNote = pickCtxNote(); // mesma Base DAMHA do STUDIO (cofre/memoria)
+  if (togState("togCerebro") && window._cofreToken && !pickCtxNote()) setStatus("Consultando a Base DAMHA...");
+  const ctxNote = await getBaseContext(text); // arquivo aberto OU busca autonoma no cofre
   let userContent = text;
   if (ctxNote) {
     userContent = `Contexto (Base DAMHA "${ctxNote.title}"):\n\n${ctxNote.body}\n\n---\nPergunta: ${text}`;
@@ -768,7 +773,10 @@ async function sendMessage() {
 
   // Sistema dinamico conforme as chavinhas.
   let sys = SYSTEM_PROMPT;
-  if (togState("togCerebro")) sys += "\n\nA Base DAMHA e a fonte mestra: priorize-a e sinalize claramente quando faltar dado (peca para o Daniel abrir o arquivo na Base DAMHA).";
+  if (togState("togCerebro")) {
+    if (window._cofreToken) sys += "\n\nBASE DAMHA LIGADA: o app busca e ANEXA automaticamente o arquivo do cofre (Base DAMHA) mais relacionado a pergunta. Use o contexto anexado como fonte mestra. Se nenhum contexto vier anexado, diga que nao achou na Base e peca o nome/assunto exato — NUNCA diga que nao consegue acessar arquivos.";
+    else sys += "\n\nBASE DAMHA LIGADA, mas o M365 NAO esta conectado neste aparelho. Peca ao Daniel para tocar em 'Conectar M365' na aba Base para voce consultar os arquivos do cofre.";
+  }
   sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\" ou \"area\" ou \"velas\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. Para PRECO de mercado (dolar, soja, milho, boi, mercado futuro) prefira \"type\":\"velas\" (candlestick): troque series por \"candles\":[{\"o\":abertura,\"h\":maxima,\"l\":minima,\"c\":fechamento},...] alinhado com labels — vela verde sobe, vermelha cai. Para comparar series de escalas diferentes (ex.: dolar ~5 vs soja ~130), marque uma serie com \"axis\":\"right\" (2o eixo, linha tracejada). No maximo 12 pontos/velas. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". Para indicadores-chave, PODE incluir um bloco kpis com JSON {\"cards\":[{\"label\":\"...\",\"value\":\"...\",\"sub\":\"...\"}]} (ate 4 cartoes). Para um RELATORIO COMPLETO, pode incluir VARIOS blocos kpis e chart na mesma resposta, intercalados com texto curto (titulos e analise). Sem dados reais, marque source ilustrativo e avise.";
   sys += "\n\nRELATORIO VIVO: se o Daniel pedir para adicionar/remover/trocar/atualizar algo no relatorio, responda com o RELATORIO ATUALIZADO COMPLETO (reescreva TODOS os blocos kpis e chart de novo, com a mudanca aplicada), nao so o trecho alterado.";
   sys += "\n\nPERGUNTE PRIMEIRO, nao adivinhe: quando o pedido for ambiguo ou exigir uma escolha (ex.: de qual fonte de dados puxar, qual fazenda, qual periodo, se busca na Base DAMHA ou se o Daniel mostra o arquivo), escreva a pergunta curta e inclua UM bloco cercado por tres crases iniciado pela palavra options com JSON {\"options\":[\"opcao 1\",\"opcao 2\"]} (2 a 4 opcoes curtas). O Daniel toca numa opcao e voce segue. O restante da resposta vai em texto normal (markdown leve).";
@@ -1063,6 +1071,39 @@ async function ensureCofre() {
   if (window._cofreToken) return true;
   await cofreLogin();      // pode redirecionar (a pagina recarrega)
   return !!window._cofreToken;
+}
+// Extrai palavras-chave da pergunta (tira acento e palavras vazias) para buscar no cofre.
+function searchTerms(text) {
+  const stop = new Set(["consulta", "consultar", "planilha", "arquivo", "arquivos", "tera", "havera", "informacao", "informacoes", "sobre", "qual", "quais", "dados", "dado", "para", "por", "com", "que", "essa", "esse", "isso", "minha", "meu", "the", "and", "uma", "tem", "vai", "esta", "aqui"]);
+  return (String(text).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").match(/[a-z0-9_]{3,}/g) || [])
+    .filter((w) => !stop.has(w)).slice(0, 6).join(" ");
+}
+// Busca AUTONOMA na Base DAMHA (cofre): acha o arquivo mais relevante e devolve o conteudo.
+async function cofreAutoSearch(qText) {
+  if (!window._cofreToken) return null;
+  const term = searchTerms(qText) || String(qText).slice(0, 40);
+  let data;
+  try { data = await graph(`/drives/${cfg.driveId}/root/search(q='${encodeURIComponent(term)}')?$top=8&$select=id,name,file,folder`, window._cofreToken); }
+  catch (e) { return null; }
+  const files = (data.value || []).filter((it) => it.file && /\.(md|txt|csv|json)$/i.test(it.name));
+  if (!files.length) return null;
+  const top = files[0];
+  let body = "";
+  try { body = await graph(`/drives/${cfg.driveId}/items/${top.id}/content`, window._cofreToken, true); }
+  catch (e) { return null; }
+  if (!body) return null;
+  return { title: top.name, body: String(body).slice(0, 12000) }; // limita o tamanho enviado
+}
+// Contexto da Base DAMHA: arquivo aberto manualmente OU busca autonoma no cofre (respeita egress).
+async function getBaseContext(qText) {
+  const manual = pickCtxNote();
+  if (manual) return manual;
+  if (!togState("togCerebro") || !window._cofreToken || cfg.egress === "local") return null;
+  let found = null;
+  try { found = await cofreAutoSearch(qText); } catch (e) { found = null; }
+  if (!found) return null;
+  if (cfg.egress === "hibrido" && !confirm(`Achei "${found.title}" na Base DAMHA. Anexar a esta pergunta?`)) return null;
+  return found;
 }
 async function cofreLogin() {
   el("cofreStatus").textContent = "Conectando...";
