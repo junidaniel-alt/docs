@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.51";
+const APP_VERSION = "1.52";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -181,31 +181,55 @@ function apiError(provider, status, text) {
   return `Erro ${provider} (${status}): ${reason.slice(0, 160)}`;
 }
 // Diagnostico definitivo: pergunta ao Google quais modelos a chave aceita (ListModels).
-// Resolve de vez o "modelo indisponivel" — diz se a chave e valida e seleciona um modelo que funciona.
-async function geminiDiag() {
-  const out = el("cfgStatus");
+// Resolve de vez o "modelo indisponivel" — diz se a chave e valida (Gemini, Claude OU GPT)
+// e, no Gemini, seleciona um modelo que funciona. SEMPRE devolve um veredito visivel.
+async function testKey() {
+  const out = el("keyTestMsg") || el("cfgStatus");
   const key = el("apiKey").value.trim();
-  if (!key) { out.textContent = "Cole a chave do Gemini primeiro."; return; }
-  if (el("provider").value !== "gemini") { out.textContent = "Selecione o provedor Gemini para testar a chave."; return; }
-  if (!/^AIza/.test(key)) out.textContent = "Aviso: chaves do Gemini comecam com \"AIza\". Testando assim mesmo...";
-  else out.textContent = "Testando a chave no Google...";
+  const prov = el("provider").value;
+  if (!key) { out.textContent = "Cole a chave primeiro."; return; }
+  out.textContent = "Testando a chave...";
   try {
-    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(key));
-    const text = await res.text();
-    if (!res.ok) { out.textContent = "Chave reprovada: " + apiError("Gemini", res.status, text); return; }
-    const data = JSON.parse(text);
-    const usable = (data.models || [])
-      .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
-      .map((m) => (m.name || "").replace(/^models\//, ""))
-      .filter((n) => /gemini/.test(n));
-    if (!usable.length) { out.textContent = "Chave valida, mas nenhum modelo Gemini de chat disponivel nela."; return; }
-    // Prioriza o modelo do STUDIO; senao o primeiro flash; senao qualquer um.
-    const pref = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-pro"];
-    const pick = pref.find((p) => usable.includes(p)) || usable.find((n) => /flash/.test(n)) || usable[0];
-    if (pick && [...el("model").options].some((o) => o.value === pick)) el("model").value = pick;
-    saveCfg();
-    out.textContent = "Chave OK! Selecionei o modelo " + pick + ". Modelos que sua chave aceita: " + usable.slice(0, 8).join(", ") + (usable.length > 8 ? "..." : "");
-  } catch (e) { out.textContent = "Erro no teste: " + (e.message || e); }
+    if (prov === "gemini") {
+      if (!/^AIza/.test(key)) out.textContent = "Aviso: chave do Gemini normalmente comeca com \"AIza\". Testando assim mesmo...";
+      const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(key));
+      const text = await res.text();
+      if (!res.ok) { out.textContent = "Chave Gemini REPROVADA: " + apiError("Gemini", res.status, text); return; }
+      const data = JSON.parse(text);
+      const usable = (data.models || [])
+        .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+        .map((m) => (m.name || "").replace(/^models\//, ""))
+        .filter((n) => /gemini/.test(n));
+      if (!usable.length) { out.textContent = "Chave Gemini valida, mas sem modelo de chat disponivel nela."; return; }
+      const pref = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-pro"];
+      const pick = pref.find((p) => usable.includes(p)) || usable.find((n) => /flash/.test(n)) || usable[0];
+      if (pick && [...el("model").options].some((o) => o.value === pick)) el("model").value = pick;
+      saveCfg();
+      out.textContent = "✅ Chave Gemini VALIDA! Modelo selecionado: " + pick + ". Aceita: " + usable.slice(0, 8).join(", ") + (usable.length > 8 ? "..." : "");
+      return;
+    }
+    if (prov === "claude") {
+      const res = await fetch("https://api.anthropic.com/v1/models", {
+        headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+      });
+      const text = await res.text();
+      if (!res.ok) { out.textContent = "Chave Claude REPROVADA: " + apiError("Claude", res.status, text); return; }
+      saveCfg();
+      out.textContent = "✅ Chave Claude (Anthropic) VALIDA! Pode usar o Copiloto.";
+      return;
+    }
+    if (prov === "openai") {
+      const res = await fetch("https://api.openai.com/v1/models", { headers: { "authorization": "Bearer " + key } });
+      const text = await res.text();
+      if (!res.ok) { out.textContent = "Chave OpenAI REPROVADA: " + apiError("OpenAI", res.status, text); return; }
+      saveCfg();
+      out.textContent = "✅ Chave OpenAI (GPT) VALIDA! Pode usar o Copiloto.";
+      return;
+    }
+    out.textContent = "Provedor desconhecido. Selecione Gemini, Claude ou OpenAI.";
+  } catch (e) {
+    out.textContent = "Nao deu pra testar (rede ou bloqueio CORS): " + (e.message || e) + ". Verifique a conexao e tente de novo.";
+  }
 }
 function hydrateCfgForm() {
   el("apiKey").value = cfg.apiKey;
@@ -1221,7 +1245,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   armOpenSound();
   el("saveCfg").onclick = saveCfg;
-  el("keyTest").onclick = geminiDiag;
+  el("keyTest").onclick = testKey;
   el("provider").onchange = () => populateModels(el("provider").value);
   el("cofreLogin").onclick = cofreLogin;
   el("input").addEventListener("keydown", (e) => {
