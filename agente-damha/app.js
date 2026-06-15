@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.54";
+const APP_VERSION = "1.55";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -378,18 +378,38 @@ function normCandle(d) {
     c: +(d.c ?? d.close ?? d.fech ?? d.fechamento),
   };
 }
-// Velas vem em spec.candles [{o,h,l,c}] ou na 1a serie (data de [o,h,l,c] ou {o,h,l,c}).
+// Detecta se um item ja e OHLC (array [o,h,l,c] ou objeto com o/open/abertura).
+function isOHLC(d) {
+  return Array.isArray(d) ? d.length >= 4 : (d && typeof d === "object" && ("o" in d || "open" in d || "abertura" in d || "h" in d || "high" in d));
+}
+// Velas REAIS: vem em spec.candles [{o,h,l,c}] ou na 1a serie quando ela ja e OHLC.
 function getCandles(spec) {
   let raw = Array.isArray(spec.candles) && spec.candles.length ? spec.candles
-    : ((spec.series || [])[0] && Array.isArray(spec.series[0].data) ? spec.series[0].data : []);
+    : ((spec.series || [])[0] && Array.isArray(spec.series[0].data) && spec.series[0].data.some(isOHLC) ? spec.series[0].data : []);
   return raw.map(normCandle).filter((k) => [k.o, k.h, k.l, k.c].every(Number.isFinite));
 }
-function hasCandles(spec) { return getCandles(spec).length > 0; }
+function hasOHLC(spec) { return getCandles(spec).length > 0; }
+// Padrao do dashboard (v5.0): "candle em todo grafico". Se houver OHLC real, usa.
+// Senao, deriva VELA DE VARIACAO HONESTA de qualquer serie de linha:
+// abre = valor anterior, fecha = valor atual, max/min = os dois valores reais (sem pavio inventado).
+function deriveCandles(spec) {
+  const real = getCandles(spec);
+  if (real.length) return { candles: real, derived: false };
+  const s = (spec.series || []).find((x) => Array.isArray(x.data) && x.data.length);
+  if (!s) return { candles: [], derived: false };
+  const d = s.data.map(Number).filter(Number.isFinite);
+  const out = [];
+  for (let i = 1; i < d.length; i++) { const o = d[i - 1], c = d[i]; out.push({ o, h: Math.max(o, c), l: Math.min(o, c), c }); }
+  return { candles: out, derived: true };
+}
+function canCandle(spec) { return deriveCandles(spec).candles.length > 0; }
 // Candlestick (velas) verde/vermelho — igual ao painel do MERCADO FUTURO.
 function candleSVG(spec, labels) {
   const W = 520, H = 240, P = 44;
-  const cd = getCandles(spec);
-  if (!cd.length) return "<div class='muted'>(sem dados de velas: preciso de abertura, maxima, minima e fechamento)</div>";
+  const dc = deriveCandles(spec);
+  const cd = dc.candles;
+  if (!cd.length) return "<div class='muted'>(sem dados para velas)</div>";
+  const lab = dc.derived ? (labels || []).slice(1) : (labels || []); // velas derivadas tem 1 a menos
   let mn = Math.min(...cd.map((k) => k.l)), mx = Math.max(...cd.map((k) => k.h));
   if (mn === mx) { mn -= 1; mx += 1; }
   const rg = (mx - mn) || 1;
@@ -411,11 +431,13 @@ function candleSVG(spec, labels) {
     g += `<line x1="${cx}" y1="${Y(k.h)}" x2="${cx}" y2="${Y(k.l)}" stroke="${col}" stroke-width="1.5"/>`;
     g += `<rect x="${cx - bw / 2}" y="${top}" width="${bw}" height="${bh}" fill="${col}" rx="1"/>`;
   });
+  const last = cd[cd.length - 1].c, yl = Y(last); // linha tracejada laranja do ultimo preco (igual ao dashboard)
+  g += `<line x1="${P}" y1="${yl}" x2="${W - P}" y2="${yl}" stroke="#F08E23" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>`;
   const n = cd.length - 1;
   [0, Math.round(n / 2), n].filter((v, i, a) => a.indexOf(v) === i).forEach((i) => {
-    if (labels[i] != null) g += `<text x="${P + (i + 0.5) * step}" y="${H - 12}" fill="#B9AECB" font-size="10" text-anchor="middle">${escapeHtml(String(labels[i]))}</text>`;
+    if (lab[i] != null) g += `<text x="${P + (i + 0.5) * step}" y="${H - 12}" fill="#B9AECB" font-size="10" text-anchor="middle">${escapeHtml(String(lab[i]))}</text>`;
   });
-  const leg = `<span style="color:${UP}">&#9632; alta (fech &ge; abert)</span> &nbsp; <span style="color:${DN}">&#9632; baixa</span>`;
+  const leg = `<span style="color:${UP}">&#9632; alta</span> &nbsp; <span style="color:${DN}">&#9632; baixa</span>${dc.derived ? ' &nbsp; <span style="color:#B9AECB">vela de variacao</span>' : ""}`;
   return `<div class="pc-leg">${leg}</div><svg viewBox="0 0 ${W} ${H}" class="pc-svg" preserveAspectRatio="xMidYMid meet">${g}</svg>`;
 }
 function chartSVG(spec, type) {
@@ -465,13 +487,18 @@ function chartSVG(spec, type) {
   const leg = series.map((s, si) => `<span style="color:${colors[si % colors.length]}">&#9632; ${escapeHtml(s.name || ("serie " + (si + 1)))}${s.axis === "right" ? " (2o eixo)" : ""}</span>`).join(" &nbsp; ");
   return `<div class="pc-leg">${leg}</div><svg viewBox="0 0 ${W} ${H}" class="pc-svg" preserveAspectRatio="xMidYMid meet">${g}</svg>`;
 }
+// Tipo final: respeita o pedido; se vier OHLC real sem tipo, ja abre em velas.
+function effectiveType(spec) {
+  const want = normType(spec.type);
+  if (want === "candle") return "candle";
+  if (want === "line" && hasOHLC(spec)) return "candle";
+  return want;
+}
 function renderChart(spec) {
   const box = document.createElement("div");
   box.className = "panelchart";
-  // Se vier candles e nenhum tipo, assume velas; senao respeita o tipo pedido.
-  const type = normType(spec.type) === "line" && hasCandles(spec) ? "candle" : normType(spec.type);
   box.innerHTML = `<div class="pc-title">&#128202; ${escapeHtml(spec.title || "Painel")}</div>`
-    + chartSVG(spec, type)
+    + chartSVG(spec, effectiveType(spec))
     + `<div class="pc-cap">&#9889; painel${spec.source ? " &middot; " + escapeHtml(spec.source) : ""} &middot; toque para ampliar</div>`;
   box.onclick = () => openChartModal(spec);
   return box;
@@ -480,9 +507,9 @@ function renderChart(spec) {
 let _modalSpec = null, _modalType = "line";
 function openChartModal(spec) {
   _modalSpec = spec;
-  _modalType = normType(spec.type) === "line" && hasCandles(spec) ? "candle" : normType(spec.type);
+  _modalType = effectiveType(spec);
   el("cmTitle").textContent = spec.title || "Painel";
-  const cb = el("cmCandle"); if (cb) cb.style.display = hasCandles(spec) ? "" : "none"; // botao Velas so com dados OHLC
+  const cb = el("cmCandle"); if (cb) cb.style.display = canCandle(spec) ? "" : "none"; // Velas vale p/ qualquer serie
   drawModal();
   el("chartModal").classList.remove("hidden");
 }
