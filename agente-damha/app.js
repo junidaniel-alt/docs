@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.53";
+const APP_VERSION = "1.54";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -360,9 +360,68 @@ function fmtNum(v) {
     ? v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })
     : v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 }
+// Normaliza o tipo de grafico vindo do contrato (aceita PT e EN).
+function normType(t) {
+  t = String(t || "").toLowerCase();
+  if (t === "bar" || t === "barra" || t === "barras") return "bar";
+  if (t === "area") return "area";
+  if (["candle", "candlestick", "vela", "velas"].includes(t)) return "candle";
+  return "line";
+}
+function normCandle(d) {
+  if (Array.isArray(d)) return { o: +d[0], h: +d[1], l: +d[2], c: +d[3] };
+  d = d || {};
+  return {
+    o: +(d.o ?? d.open ?? d.abertura),
+    h: +(d.h ?? d.high ?? d.max ?? d.maxima ?? d["máxima"]),
+    l: +(d.l ?? d.low ?? d.min ?? d.minima ?? d["mínima"]),
+    c: +(d.c ?? d.close ?? d.fech ?? d.fechamento),
+  };
+}
+// Velas vem em spec.candles [{o,h,l,c}] ou na 1a serie (data de [o,h,l,c] ou {o,h,l,c}).
+function getCandles(spec) {
+  let raw = Array.isArray(spec.candles) && spec.candles.length ? spec.candles
+    : ((spec.series || [])[0] && Array.isArray(spec.series[0].data) ? spec.series[0].data : []);
+  return raw.map(normCandle).filter((k) => [k.o, k.h, k.l, k.c].every(Number.isFinite));
+}
+function hasCandles(spec) { return getCandles(spec).length > 0; }
+// Candlestick (velas) verde/vermelho — igual ao painel do MERCADO FUTURO.
+function candleSVG(spec, labels) {
+  const W = 520, H = 240, P = 44;
+  const cd = getCandles(spec);
+  if (!cd.length) return "<div class='muted'>(sem dados de velas: preciso de abertura, maxima, minima e fechamento)</div>";
+  let mn = Math.min(...cd.map((k) => k.l)), mx = Math.max(...cd.map((k) => k.h));
+  if (mn === mx) { mn -= 1; mx += 1; }
+  const rg = (mx - mn) || 1;
+  const Y = (v) => H - P - ((v - mn) / rg) * (H - 2 * P);
+  const step = (W - 2 * P) / cd.length;
+  const UP = "#4A7B3E", DN = "#D63838"; // verde = alta, vermelho = baixa (paleta DAMHA)
+  let g = "";
+  [mx, (mn + mx) / 2, mn].forEach((v) => {
+    const yy = Y(v);
+    g += `<line x1="${P}" y1="${yy}" x2="${W - P}" y2="${yy}" stroke="#5E3287" stroke-width="1" opacity="0.4"/>`;
+    g += `<text x="4" y="${yy + 3}" fill="#B9AECB" font-size="10">${fmtNum(v)}</text>`;
+  });
+  cd.forEach((k, i) => {
+    const cx = P + (i + 0.5) * step;
+    const col = k.c >= k.o ? UP : DN;
+    const top = Math.min(Y(k.o), Y(k.c));
+    const bh = Math.max(2, Math.abs(Y(k.c) - Y(k.o)));
+    const bw = Math.max(3, step * 0.55);
+    g += `<line x1="${cx}" y1="${Y(k.h)}" x2="${cx}" y2="${Y(k.l)}" stroke="${col}" stroke-width="1.5"/>`;
+    g += `<rect x="${cx - bw / 2}" y="${top}" width="${bw}" height="${bh}" fill="${col}" rx="1"/>`;
+  });
+  const n = cd.length - 1;
+  [0, Math.round(n / 2), n].filter((v, i, a) => a.indexOf(v) === i).forEach((i) => {
+    if (labels[i] != null) g += `<text x="${P + (i + 0.5) * step}" y="${H - 12}" fill="#B9AECB" font-size="10" text-anchor="middle">${escapeHtml(String(labels[i]))}</text>`;
+  });
+  const leg = `<span style="color:${UP}">&#9632; alta (fech &ge; abert)</span> &nbsp; <span style="color:${DN}">&#9632; baixa</span>`;
+  return `<div class="pc-leg">${leg}</div><svg viewBox="0 0 ${W} ${H}" class="pc-svg" preserveAspectRatio="xMidYMid meet">${g}</svg>`;
+}
 function chartSVG(spec, type) {
   const W = 520, H = 240, P = 44;
   const labels = spec.labels || [];
+  if (type === "candle") return candleSVG(spec, labels);
   const series = (spec.series || []).filter((s) => Array.isArray(s.data) && s.data.length);
   if (!series.length) return "<div class='muted'>(sem dados no painel)</div>";
   const hasRight = series.some((s) => s.axis === "right");
@@ -409,7 +468,8 @@ function chartSVG(spec, type) {
 function renderChart(spec) {
   const box = document.createElement("div");
   box.className = "panelchart";
-  const type = spec.type === "bar" ? "bar" : "line";
+  // Se vier candles e nenhum tipo, assume velas; senao respeita o tipo pedido.
+  const type = normType(spec.type) === "line" && hasCandles(spec) ? "candle" : normType(spec.type);
   box.innerHTML = `<div class="pc-title">&#128202; ${escapeHtml(spec.title || "Painel")}</div>`
     + chartSVG(spec, type)
     + `<div class="pc-cap">&#9889; painel${spec.source ? " &middot; " + escapeHtml(spec.source) : ""} &middot; toque para ampliar</div>`;
@@ -419,8 +479,10 @@ function renderChart(spec) {
 // Modal de grafico em tela cheia (clica e "sai da tela")
 let _modalSpec = null, _modalType = "line";
 function openChartModal(spec) {
-  _modalSpec = spec; _modalType = spec.type === "bar" ? "bar" : "line";
+  _modalSpec = spec;
+  _modalType = normType(spec.type) === "line" && hasCandles(spec) ? "candle" : normType(spec.type);
   el("cmTitle").textContent = spec.title || "Painel";
+  const cb = el("cmCandle"); if (cb) cb.style.display = hasCandles(spec) ? "" : "none"; // botao Velas so com dados OHLC
   drawModal();
   el("chartModal").classList.remove("hidden");
 }
@@ -470,7 +532,7 @@ function copyPng() {
 // Chips de sugestao
 const SUGGEST = [
   "Relatorio completo de cambio", "Me surpreenda", "Por que o dolar mexeu hoje?",
-  "Compare USD, soja, milho e boi", "Grafico ilustrativo da curva do dolar",
+  "Compare USD, soja, milho e boi", "Grafico de velas do dolar",
 ];
 function renderSuggest() {
   const box = el("suggest");
@@ -494,8 +556,9 @@ const REPORT_SYS = `\n\nMODO RELATORIO (responda SO em JSON, sem texto fora do J
 Tipos de bloco:
 (1) {"tipo":"kpis","titulo":"...","larg":"cheia","itens":[{"label":"...","value":"...","sub":"..."}]}
 (2) {"tipo":"grafico","titulo":"...","larg":"meia","estilo":"linha"|"barras"|"area","labels":[...],"series":[{"name":"...","data":[numeros],"axis":"right"(opcional)}]}
+(2b) GRAFICO DE VELAS (candlestick): {"tipo":"grafico","titulo":"...","larg":"cheia","estilo":"velas","labels":["dia/periodo",...],"candles":[{"o":abertura,"h":maxima,"l":minima,"c":fechamento},...]}. Vela verde quando fechamento>=abertura, vermelha quando cai. Use para preco de dolar/soja/milho/boi e mercado futuro.
 (3) {"tipo":"texto","titulo":"...","larg":"meia","conteudo":"analise qualitativa"}
-Sem dados reais, use valores ilustrativos e diga isso no reply. Max 12 pontos por serie.`;
+Sem dados reais, use valores ilustrativos e diga isso no reply. Max 12 pontos/velas por serie.`;
 function reportApply(r) {
   if (r.relatorio && (r.relatorio.blocos || r.relatorio.titulo)) REL = { titulo: r.relatorio.titulo || REL.titulo || "Relatorio", blocos: r.relatorio.blocos || [] };
   if (r.remover_titulos && r.remover_titulos.length) {
@@ -524,8 +587,7 @@ function renderRel() {
     const h = document.createElement("div"); h.className = "relblk-h"; h.textContent = b.titulo || b.tipo; card.appendChild(h);
     if (b.tipo === "kpis") card.appendChild(renderKPIs({ cards: b.itens || [] }));
     else if (b.tipo === "grafico") {
-      const t = b.estilo === "barras" ? "bar" : b.estilo === "area" ? "area" : "line";
-      card.appendChild(renderChart({ title: b.titulo, type: t, labels: b.labels, series: b.series, source: b.source }));
+      card.appendChild(renderChart({ title: b.titulo, type: normType(b.estilo), labels: b.labels, series: b.series, candles: b.candles, source: b.source }));
     } else { const p = document.createElement("div"); p.className = "relblk-txt"; p.innerHTML = mdToHtml(b.conteudo || ""); card.appendChild(p); }
     grid.appendChild(card);
   });
@@ -565,7 +627,7 @@ async function reportAsk(q) {
     if (togState("togVoz") && r.reply) speak(r.reply);
   } catch (e) { el("repStatus").textContent = "Erro: " + e.message; }
 }
-const REP_SUGGEST = ["Relatorio completo de cambio", "Adicione um grafico do dolar", "Compare soja, milho e boi", "Tira o ultimo bloco"];
+const REP_SUGGEST = ["Relatorio completo de cambio", "Grafico de velas do dolar", "Candlestick do boi gordo", "Compare soja, milho e boi", "Tira o ultimo bloco"];
 function initReport() {
   const box = el("repSuggest");
   if (box) { box.innerHTML = ""; REP_SUGGEST.forEach((s) => { const b = document.createElement("button"); b.className = "chip-s"; b.textContent = s; b.onclick = () => reportAsk(s); box.appendChild(b); }); }
@@ -604,7 +666,7 @@ async function sendMessage() {
   // Sistema dinamico conforme as chavinhas.
   let sys = SYSTEM_PROMPT;
   if (togState("togCerebro")) sys += "\n\nA Base DAMHA e a fonte mestra: priorize-a e sinalize claramente quando faltar dado (peca para o Daniel abrir o arquivo na Base DAMHA).";
-  sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\" ou \"area\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. Para comparar series de escalas diferentes (ex.: dolar ~5 vs soja ~130), marque uma serie com \"axis\":\"right\" (2o eixo, linha tracejada). No maximo 12 pontos. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". Para indicadores-chave, PODE incluir um bloco kpis com JSON {\"cards\":[{\"label\":\"...\",\"value\":\"...\",\"sub\":\"...\"}]} (ate 4 cartoes). Para um RELATORIO COMPLETO, pode incluir VARIOS blocos kpis e chart na mesma resposta, intercalados com texto curto (titulos e analise). Sem dados reais, marque source ilustrativo e avise.";
+  sys += "\n\nVoce e a Maria Sarah, copiloto da Damha Agro. Quando ajudar a explicar, PODE incluir UM grafico: um unico bloco de codigo cercado por tres crases iniciado pela palavra chart, contendo JSON {\"title\":\"...\",\"type\":\"line\" ou \"bar\" ou \"area\" ou \"velas\",\"labels\":[...],\"series\":[{\"name\":\"...\",\"data\":[numeros]}],\"source\":\"...\"}. Para PRECO de mercado (dolar, soja, milho, boi, mercado futuro) prefira \"type\":\"velas\" (candlestick): troque series por \"candles\":[{\"o\":abertura,\"h\":maxima,\"l\":minima,\"c\":fechamento},...] alinhado com labels — vela verde sobe, vermelha cai. Para comparar series de escalas diferentes (ex.: dolar ~5 vs soja ~130), marque uma serie com \"axis\":\"right\" (2o eixo, linha tracejada). No maximo 12 pontos/velas. Se nao tiver dados reais, marque \"source\":\"ilustrativo\". Para indicadores-chave, PODE incluir um bloco kpis com JSON {\"cards\":[{\"label\":\"...\",\"value\":\"...\",\"sub\":\"...\"}]} (ate 4 cartoes). Para um RELATORIO COMPLETO, pode incluir VARIOS blocos kpis e chart na mesma resposta, intercalados com texto curto (titulos e analise). Sem dados reais, marque source ilustrativo e avise.";
   sys += "\n\nRELATORIO VIVO: se o Daniel pedir para adicionar/remover/trocar/atualizar algo no relatorio, responda com o RELATORIO ATUALIZADO COMPLETO (reescreva TODOS os blocos kpis e chart de novo, com a mudanca aplicada), nao so o trecho alterado.";
   sys += "\n\nPERGUNTE PRIMEIRO, nao adivinhe: quando o pedido for ambiguo ou exigir uma escolha (ex.: de qual fonte de dados puxar, qual fazenda, qual periodo, se busca na Base DAMHA ou se o Daniel mostra o arquivo), escreva a pergunta curta e inclua UM bloco cercado por tres crases iniciado pela palavra options com JSON {\"options\":[\"opcao 1\",\"opcao 2\"]} (2 a 4 opcoes curtas). O Daniel toca numa opcao e voce segue. O restante da resposta vai em texto normal (markdown leve).";
   const wantWeb = togState("togInternet");
