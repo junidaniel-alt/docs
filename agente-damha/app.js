@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.50";
+const APP_VERSION = "1.51";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -158,12 +158,54 @@ function populateModels(provider, selected) {
     sel.appendChild(o);
   });
 }
-// Mensagem de erro amigavel por status HTTP
+// Mensagem de erro amigavel por status HTTP — agora mostra a CAUSA REAL do Google.
 function apiError(provider, status, text) {
-  if (status === 429) return `Limite/cota do ${provider} atingido. Troque o modelo em Config (ex.: Gemini 2.0 Flash-Lite) ou aguarde ~1 min.`;
-  if (status === 401 || status === 403) return `Chave do ${provider} invalida ou sem permissao. Revise a chave em Config.`;
-  if (status === 400 || status === 404) return `Modelo do ${provider} indisponivel para essa chave. Escolha outro modelo em Config.`;
-  return `Erro ${provider} (${status}): ${String(text).slice(0, 160)}`;
+  let reason = "";
+  try { const j = JSON.parse(text); reason = (j.error && (j.error.message || j.error.status)) || ""; }
+  catch { reason = String(text || ""); }
+  const r = reason.toLowerCase();
+  if (provider === "Gemini") {
+    // 400 INVALID_ARGUMENT com "API key not valid" = a chave NAO e uma chave Gemini valida.
+    if (/api key not valid|api_key_invalid|invalid api key/.test(r))
+      return "Chave do Gemini invalida. As chaves do Google AI Studio comecam com \"AIza\". Gere uma em aistudio.google.com/apikey e cole em Config (use o botao Testar chave).";
+    if (/service_disabled|has not been used|api is disabled|enable it by visiting/.test(r))
+      return "A Generative Language API nao esta ativada no projeto dessa chave. Ative no Google Cloud (ou gere a chave direto no Google AI Studio, que ja vem ativada).";
+    if (/quota|rate limit|resource has been exhausted/.test(r) || status === 429)
+      return "Cota/limite do Gemini atingido. Troque o modelo em Config (ex.: Gemini 2.0 Flash-Lite) ou aguarde ~1 min.";
+    if (status === 404 || /not found|unsupported|not supported|is not available/.test(r))
+      return "Modelo do Gemini indisponivel para essa chave. Toque em Testar chave (Config) para ver quais modelos sua chave aceita. " + (reason ? "(" + reason.slice(0, 100) + ")" : "");
+  }
+  if (status === 429) return `Limite/cota do ${provider} atingido. Troque o modelo em Config ou aguarde ~1 min.`;
+  if (status === 401 || status === 403) return `Chave do ${provider} invalida ou sem permissao. ${reason ? "(" + reason.slice(0, 120) + ")" : "Revise a chave em Config."}`;
+  if (status === 400) return `${provider}: ${reason ? reason.slice(0, 160) : "requisicao invalida"} (400). Revise a chave/modelo em Config.`;
+  return `Erro ${provider} (${status}): ${reason.slice(0, 160)}`;
+}
+// Diagnostico definitivo: pergunta ao Google quais modelos a chave aceita (ListModels).
+// Resolve de vez o "modelo indisponivel" — diz se a chave e valida e seleciona um modelo que funciona.
+async function geminiDiag() {
+  const out = el("cfgStatus");
+  const key = el("apiKey").value.trim();
+  if (!key) { out.textContent = "Cole a chave do Gemini primeiro."; return; }
+  if (el("provider").value !== "gemini") { out.textContent = "Selecione o provedor Gemini para testar a chave."; return; }
+  if (!/^AIza/.test(key)) out.textContent = "Aviso: chaves do Gemini comecam com \"AIza\". Testando assim mesmo...";
+  else out.textContent = "Testando a chave no Google...";
+  try {
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(key));
+    const text = await res.text();
+    if (!res.ok) { out.textContent = "Chave reprovada: " + apiError("Gemini", res.status, text); return; }
+    const data = JSON.parse(text);
+    const usable = (data.models || [])
+      .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+      .map((m) => (m.name || "").replace(/^models\//, ""))
+      .filter((n) => /gemini/.test(n));
+    if (!usable.length) { out.textContent = "Chave valida, mas nenhum modelo Gemini de chat disponivel nela."; return; }
+    // Prioriza o modelo do STUDIO; senao o primeiro flash; senao qualquer um.
+    const pref = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-pro"];
+    const pick = pref.find((p) => usable.includes(p)) || usable.find((n) => /flash/.test(n)) || usable[0];
+    if (pick && [...el("model").options].some((o) => o.value === pick)) el("model").value = pick;
+    saveCfg();
+    out.textContent = "Chave OK! Selecionei o modelo " + pick + ". Modelos que sua chave aceita: " + usable.slice(0, 8).join(", ") + (usable.length > 8 ? "..." : "");
+  } catch (e) { out.textContent = "Erro no teste: " + (e.message || e); }
 }
 function hydrateCfgForm() {
   el("apiKey").value = cfg.apiKey;
@@ -1179,6 +1221,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   armOpenSound();
   el("saveCfg").onclick = saveCfg;
+  el("keyTest").onclick = geminiDiag;
   el("provider").onchange = () => populateModels(el("provider").value);
   el("cofreLogin").onclick = cofreLogin;
   el("input").addEventListener("keydown", (e) => {

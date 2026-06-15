@@ -98,6 +98,7 @@ main { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
 .composer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 .chk { font-size: .85rem; color: var(--lilas); }
 .status { font-size: .8rem; color: var(--muted); }
+.hint { display: block; margin-top: 6px; font-size: .74rem; color: var(--muted); line-height: 1.4; }
 
 /* ===== Nucleo (acesso rapido as notas-nucleo) ===== */
 .nucleo { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
