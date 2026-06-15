@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.55";
+const APP_VERSION = "1.56";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -646,7 +646,8 @@ async function reportAsk(q) {
   try {
     const titles = (REL.blocos || []).map((b) => b.titulo).join(" | ") || "(vazio)";
     const userMsg = `RELATORIO ATUAL (titulos dos blocos): ${titles}\n\nComando do Daniel: ${q}`;
-    const raw = await geminiOnce(SYSTEM_PROMPT + REPORT_SYS, userMsg, togState("togInternet"));
+    const web = togState("togInternet");
+    const raw = await aiOnce(SYSTEM_PROMPT + REPORT_SYS + webNote(web), userMsg, web);
     const r = parseLooseJSON(raw);
     reportApply(r);
     renderRel();
@@ -697,24 +698,20 @@ async function sendMessage() {
   sys += "\n\nRELATORIO VIVO: se o Daniel pedir para adicionar/remover/trocar/atualizar algo no relatorio, responda com o RELATORIO ATUALIZADO COMPLETO (reescreva TODOS os blocos kpis e chart de novo, com a mudanca aplicada), nao so o trecho alterado.";
   sys += "\n\nPERGUNTE PRIMEIRO, nao adivinhe: quando o pedido for ambiguo ou exigir uma escolha (ex.: de qual fonte de dados puxar, qual fazenda, qual periodo, se busca na Base DAMHA ou se o Daniel mostra o arquivo), escreva a pergunta curta e inclua UM bloco cercado por tres crases iniciado pela palavra options com JSON {\"options\":[\"opcao 1\",\"opcao 2\"]} (2 a 4 opcoes curtas). O Daniel toca numa opcao e voce segue. O restante da resposta vai em texto normal (markdown leve).";
   const wantWeb = togState("togInternet");
+  sys += webNote(wantWeb);
 
-  setStatus(wantWeb && cfg.provider === "gemini" ? "Pensando (com internet)..." : "Pensando...");
+  setStatus(wantWeb ? "Pensando (com internet)..." : "Pensando...");
+  const canStream = (cfg.provider || "gemini") === "gemini";
+  const bubble = canStream ? addMsg("", "bot") : null; // bolha de streaming so no Gemini
   try {
-    let reply;
-    if (cfg.provider === "gemini") {
-      const bubble = addMsg("", "bot");  // bolha que recebe o texto em streaming
-      const r = await streamGemini(sys, wantWeb, (t) => { bubble.textContent = plainForSpeech(t); el("chat").scrollTop = el("chat").scrollHeight; });
-      bubble.remove();
-      reply = r.ok ? r.text : await callGemini(sys, wantWeb); // fallback robusto (modelo alternativo)
-      addBotMsg(reply);
-    } else {
-      reply = cfg.provider === "claude" ? await callClaude(sys) : await callOpenAI(sys);
-      addBotMsg(reply);
-    }
+    const reply = await aiChat(sys, wantWeb, bubble ? (t) => { bubble.textContent = plainForSpeech(t); el("chat").scrollTop = el("chat").scrollHeight; } : null);
+    if (bubble) bubble.remove();
+    addBotMsg(reply);
     history.push({ role: "assistant", content: reply });
     setStatus("");
     if (togState("togVoz")) speak(plainForSpeech(reply));
   } catch (e) {
+    if (bubble) bubble.remove();
     addMsg(e.message || ("Falha: " + e), "err");
     setStatus("");
   }
@@ -753,26 +750,56 @@ async function streamGemini(sys, web, onText) {
   } catch (e) { return { ok: false }; }
 }
 
-async function callClaude(sys = SYSTEM_PROMPT) {
-  const model = (cfg.model || "").startsWith("claude") ? cfg.model : "claude-sonnet-4-6";
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": cfg.apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify({ model, max_tokens: 1500, system: sys, messages: recentHistory() }),
-  });
+/* ===== Camada multi-provedor (padrao BYOK do dashboard: Copiloto E STUDIO usam a MESMA;
+   Gemini, Claude e GPT falam com os dois ambientes, com busca web nos tres). ===== */
+function curModel(prefix, def) { return (cfg.model || "").startsWith(prefix) ? cfg.model : def; }
+function claudeHeaders() {
+  return { "content-type": "application/json", "x-api-key": cfg.apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
+}
+// Instrucao injetada quando a Internet esta ligada — vale para qualquer provedor.
+function webNote(web) {
+  return web ? "\n\nBUSCA WEB ATIVA: voce TEM uma ferramenta de busca na internet ligada agora. Use-a para dados atuais (cotacoes, cambio, noticias) e cite a fonte com a data. NUNCA responda que nao tem acesso a informacao em tempo real — pesquise e responda." : "";
+}
+// CHAT (multi-turno). onStream(parcial) opcional (so o Gemini transmite). Retorna texto.
+async function aiChat(sys, web, onStream) {
+  const p = cfg.provider || "gemini";
+  if (p === "claude") return await callClaude(sys, web);
+  if (p === "openai") return await callOpenAI(sys, web);
+  if (onStream) { const r = await streamGemini(sys, web, onStream); if (r.ok) return r.text; }
+  return await callGemini(sys, web); // fallback robusto (outro modelo)
+}
+// STUDIO (turno unico, ideal em JSON). Retorna o texto cru (JSON) pro parseLooseJSON.
+async function aiOnce(sys, userMsg, web) {
+  const p = cfg.provider || "gemini";
+  if (p === "claude") return await claudeOnce(sys, userMsg, web);
+  if (p === "openai") return await openaiOnce(sys, userMsg, web);
+  return await geminiOnce(sys, userMsg, web);
+}
+
+async function callClaude(sys = SYSTEM_PROMPT, web = false) {
+  const model = curModel("claude", "claude-sonnet-4-6");
+  const mk = (tools) => ({ model, max_tokens: 2048, system: sys, messages: recentHistory(), ...(tools ? { tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 4 }] } : {}) });
+  const post = (b) => fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: claudeHeaders(), body: JSON.stringify(b) });
+  let res = await post(mk(web));
+  if (!res.ok && web && (res.status === 400 || res.status === 404)) res = await post(mk(false)); // plano sem web search -> tenta sem
   if (!res.ok) throw new Error(apiError("Claude", res.status, await res.text()));
   const data = await res.json();
-  return (data.content || []).map((b) => b.text || "").join("").trim();
+  return (data.content || []).filter((b) => b.type === "text").map((b) => b.text || "").join("").trim() || "(resposta vazia — tente reformular)";
+}
+async function claudeOnce(sys, userMsg, web) {
+  const model = curModel("claude", "claude-sonnet-4-6");
+  const mk = (tools) => ({ model, max_tokens: 2048, system: sys, messages: [{ role: "user", content: userMsg }], ...(tools ? { tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 4 }] } : {}) });
+  const post = (b) => fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: claudeHeaders(), body: JSON.stringify(b) });
+  let res = await post(mk(web));
+  if (!res.ok && web && (res.status === 400 || res.status === 404)) res = await post(mk(false));
+  if (!res.ok) throw new Error(apiError("Claude", res.status, await res.text()));
+  const data = await res.json();
+  return (data.content || []).filter((b) => b.type === "text").map((b) => b.text || "").join("").trim();
 }
 
 async function callGemini(sys = SYSTEM_PROMPT, web = false) {
   // 1 chamada por mensagem; se o modelo escolhido der 429 (cota), tenta 1 modelo alternativo (outra cota).
-  const chosen = (cfg.model || "").startsWith("gemini") ? cfg.model : "gemini-2.5-flash";
+  const chosen = curModel("gemini", "gemini-2.5-flash");
   const alt = chosen === "gemini-2.5-flash" ? "gemini-2.0-flash-lite" : "gemini-2.5-flash";
   const contents = recentHistory().map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
   const body = { contents, systemInstruction: { parts: [{ text: sys }] }, generationConfig: { maxOutputTokens: 2048 } };
@@ -793,17 +820,42 @@ async function callGemini(sys = SYSTEM_PROMPT, web = false) {
     || "(resposta vazia — tente reformular)";
 }
 
-async function callOpenAI(sys = SYSTEM_PROMPT) {
-  const model = (cfg.model || "").startsWith("gpt") ? cfg.model : "gpt-4o-mini";
-  const msgs = [{ role: "system", content: sys }, ...recentHistory()];
+async function callOpenAI(sys = SYSTEM_PROMPT, web = false) {
+  const model = curModel("gpt", "gpt-4o-mini");
+  if (web) { try { return await openaiResponses(sys, recentHistory()); } catch (e) { /* sem web -> cai pro chat normal */ } }
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "content-type": "application/json", "authorization": "Bearer " + cfg.apiKey },
-    body: JSON.stringify({ model, max_tokens: 1500, messages: msgs }),
+    body: JSON.stringify({ model, max_tokens: 2048, messages: [{ role: "system", content: sys }, ...recentHistory()] }),
   });
   if (!res.ok) throw new Error(apiError("OpenAI", res.status, await res.text()));
   const data = await res.json();
   return ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "").trim();
+}
+async function openaiOnce(sys, userMsg, web) {
+  const model = curModel("gpt", "gpt-4o-mini");
+  if (web) { try { return await openaiResponses(sys, [{ role: "user", content: userMsg }]); } catch (e) { /* cai pro chat */ } }
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json", "authorization": "Bearer " + cfg.apiKey },
+    body: JSON.stringify({ model, max_tokens: 2048, messages: [{ role: "system", content: sys }, { role: "user", content: userMsg }], response_format: { type: "json_object" } }),
+  });
+  if (!res.ok) throw new Error(apiError("OpenAI", res.status, await res.text()));
+  const data = await res.json();
+  return ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "").trim();
+}
+// OpenAI com busca web (Responses API). Extracao blindada do output_text.
+async function openaiResponses(sys, msgs) {
+  const model = curModel("gpt", "gpt-4o-mini");
+  const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: { "content-type": "application/json", "authorization": "Bearer " + cfg.apiKey },
+    body: JSON.stringify({ model, input: [{ role: "system", content: sys }, ...msgs], tools: [{ type: "web_search_preview" }] }),
+  });
+  if (!res.ok) throw new Error(apiError("OpenAI", res.status, await res.text()));
+  const data = await res.json();
+  if (data.output_text) return String(data.output_text).trim();
+  return (data.output || []).flatMap((o) => (o.content || [])).map((c) => c.text || "").join("").trim();
 }
 
 function setStatus(s) { el("status").textContent = s; }
@@ -1335,7 +1387,9 @@ window.addEventListener("DOMContentLoaded", () => {
   armOpenSound();
   el("saveCfg").onclick = saveCfg;
   el("keyTest").onclick = testKey;
-  el("provider").onchange = () => populateModels(el("provider").value);
+  // Trocar de provedor/modelo SALVA na hora (antes so valia apos "Salvar" -> chat usava o provedor errado).
+  el("provider").onchange = () => { populateModels(el("provider").value); saveCfg(); };
+  el("model").onchange = saveCfg;
   el("cofreLogin").onclick = cofreLogin;
   el("input").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
