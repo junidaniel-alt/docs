@@ -558,6 +558,30 @@ function copyPng() {
     }, "image/png");
   });
 }
+// PDF do grafico: leva o SVG do modal para uma aba imprimivel (com marca DAMHA).
+function chartPdf() {
+  const svg = el("cmBody").querySelector("svg");
+  if (!svg) return;
+  const title = (_modalSpec && _modalSpec.title) || "Grafico DAMHA";
+  const src = (_modalSpec && _modalSpec.source) ? `<div style="color:#B9AECB;font-size:11px;margin-top:6px">Fonte: ${escapeHtml(_modalSpec.source)}</div>` : "";
+  openPrint(title, `<h1>${escapeHtml(title)}</h1><section class="blk">${svg.outerHTML}${src}</section>`);
+}
+// Compartilhar o grafico como imagem (PNG) pelo menu nativo (WhatsApp, etc.).
+function chartShare() {
+  chartToCanvas(2, (c) => {
+    if (!c) return;
+    const title = (_modalSpec && _modalSpec.title) || "Grafico DAMHA";
+    c.toBlob(async (b) => {
+      if (!b) { downloadPng(); return; }
+      const file = new File([b], title.replace(/[^\w\-]+/g, "_") + ".png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title, text: title + " — DAMHA Agro" }); return; }
+        catch (e) { if (e && e.name === "AbortError") return; }
+      }
+      downloadPng(); // fallback: baixa o PNG
+    }, "image/png");
+  });
+}
 // Chips de sugestao
 const SUGGEST = [
   "Relatorio completo de cambio", "Me surpreenda", "Por que o dolar mexeu hoje?",
@@ -1483,6 +1507,8 @@ window.addEventListener("DOMContentLoaded", () => {
   el("chatWa").onclick = chatWhats; el("chatShare").onclick = chatShare; el("chatPdf").onclick = chatPdf;
   el("cmClose").onclick = closeChartModal;
   el("cmPng").onclick = downloadPng;
+  el("cmPdf").onclick = chartPdf;
+  el("cmShare").onclick = chartShare;
   el("cmCopy").onclick = copyPng;
   document.querySelectorAll("#chartModal [data-ct]").forEach((b) => { b.onclick = () => { _modalType = b.dataset.ct; drawModal(); }; });
   el("chartModal").addEventListener("click", (e) => { if (e.target === el("chartModal")) closeChartModal(); });
