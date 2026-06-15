@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.62";
+const APP_VERSION = "1.63";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1121,16 +1121,32 @@ function shrinkImage(blob, maxW) {
     img.src = URL.createObjectURL(blob);
   });
 }
-async function loadMascot() {
-  const cached = localStorage.getItem(MASCOT_KEY);
-  if (cached) { applyMascot(cached); return; }
-  if (!window._cofreToken) return; // sem M365 ainda; tenta de novo apos conectar
+// Acha a melhor imagem da Maria Sarah no cofre: prefere a INDIVIDUAL (nome com app/avatar/perfil/
+// individual/sozinha/recorte) e penaliza folha de personagem (character/sheet/masconte/folha). Senao, a mais nova.
+async function findMascotItem() {
+  if (!window._cofreToken) return null;
   try {
-    const res = await fetch(`https://graph.microsoft.com/v1.0/drives/${cfg.driveId}/items/${MASCOT_ITEM}/content`, { headers: { Authorization: "Bearer " + window._cofreToken } });
+    const data = await graph(`/drives/${cfg.driveId}/root/search(q='sarah')?$top=30&$select=id,name,file,lastModifiedDateTime`, window._cofreToken);
+    const imgs = (data.value || []).filter((it) => it.file && /\.(png|jpe?g|webp)$/i.test(it.name) && /sarah|sarinha|mascote|masconte/i.test(it.name));
+    if (!imgs.length) return null;
+    const score = (n) => { n = (n || "").toLowerCase(); let s = 0; if (/(app|avatar|perfil|individual|sozinh|icon|recorte|crop)/.test(n)) s += 10; if (/(character|sheet|folha|masconte|v2|v3)/.test(n)) s -= 5; return s; };
+    imgs.sort((a, b) => score(b.name) - score(a.name) || (new Date(b.lastModifiedDateTime) - new Date(a.lastModifiedDateTime)));
+    return imgs[0];
+  } catch (e) { return null; }
+}
+async function loadMascot() {
+  let cached = null; try { cached = JSON.parse(localStorage.getItem(MASCOT_KEY) || "null"); } catch (e) { cached = null; }
+  if (cached && cached.url) applyMascot(cached.url); // mostra o cache na hora
+  if (!window._cofreToken) return; // sem M365 ainda; tenta de novo apos conectar
+  const item = await findMascotItem();
+  const id = item ? item.id : MASCOT_ITEM; // fallback: a folha do _ASSETS
+  if (cached && cached.id === id && cached.url) return; // ja e a imagem atual
+  try {
+    const res = await fetch(`https://graph.microsoft.com/v1.0/drives/${cfg.driveId}/items/${id}/content`, { headers: { Authorization: "Bearer " + window._cofreToken } });
     if (!res.ok) return;
     const blob = await res.blob();
     const url = await shrinkImage(blob, 520);
-    if (url) { try { localStorage.setItem(MASCOT_KEY, url); } catch (e) { /* cota cheia: usa so nesta sessao */ } applyMascot(url); }
+    if (url) { try { localStorage.setItem(MASCOT_KEY, JSON.stringify({ id, url })); } catch (e) { /* cota cheia: usa so nesta sessao */ } applyMascot(url); }
   } catch (e) { /* silencioso */ }
 }
 // Extrai palavras-chave da pergunta (tira acento e palavras vazias) para buscar no cofre.
