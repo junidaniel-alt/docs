@@ -158,6 +158,9 @@ fieldset.field label { display: block; margin-bottom: 10px; }
 .splash-title strong { font-weight: 800; }
 .splash-sub { margin: 0; color: var(--muted); font-size: .84rem; }
 .appver { display: inline-block; margin-top: 6px; font-size: 11px; color: var(--lilas); opacity: .55; letter-spacing: .5px; }
+/* Mascote Maria Sarah */
+.mascot-hero { display: block; max-width: 220px; width: 60%; height: auto; margin: 10px auto 0; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.35); animation: logoIn .7s ease both; }
+.mascot-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
 @keyframes logoIn { from { opacity: 0; transform: translateY(16px) scale(.88); } to { opacity: 1; transform: none; } }
 @keyframes logoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 

@@ -7,7 +7,7 @@
   <title>App Agente Damha Agro</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=71" />
+  <link rel="stylesheet" href="styles.css?v=72" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -43,6 +43,7 @@
         <img class="splash-logo" src="assets/LOGO.png" alt="DAMHA" onerror="this.style.display='none'" />
         <h2 class="splash-title">App Agente <strong>Damha Agro</strong></h2>
         <p class="splash-sub">Family Office / Holding &middot; base de dados, projetos e conversa por voz</p>
+        <img class="mascot-img mascot-hero" alt="Maria Sarah" style="display:none" />
         <span class="appver" id="appVer"></span>
       </div>
       <div class="launch">
@@ -56,7 +57,7 @@
 
     <!-- ===== Copiloto DAMHA (voz + chat + graficos) ===== -->
     <section id="conversa" class="view panel">
-      <h2>&#129302; Copiloto DAMHA</h2>
+      <h2><img class="mascot-img mascot-avatar" alt="Maria Sarah" style="display:none" /><span class="mascot-emoji">&#129302;</span> Copiloto DAMHA</h2>
       <div id="chat" class="chat" aria-live="polite"></div>
       <div class="chips" id="suggest"></div>
 
@@ -263,6 +264,6 @@
     <div id="cmBody" class="cmodal-body"></div>
   </div>
 
-  <script src="app.js?v=71"></script>
+  <script src="app.js?v=72"></script>
 </body>
 </html>

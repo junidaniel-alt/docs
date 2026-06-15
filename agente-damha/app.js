@@ -20,9 +20,12 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.60";
+const APP_VERSION = "1.61";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
+// Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
+const MASCOT_ITEM = "01KCR6ZAPEHV3QJN3DTNEJNQ2V6DJE7XMY"; // "Masconte M. Sarah.png"
+const MASCOT_KEY = "mascotDataUrl_v1";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
 const SHEET_RE = /\.(xlsx|xlsm|xlsb|xls|csv)$/i;
 
@@ -1066,6 +1069,7 @@ function revealCofre() {
 async function openCofreRoot() {
   revealCofre();
   folderStack = [{ id: ROOT_FOLDER, name: "Cofre" }];
+  loadMascot(); // ja temos token: garante o mascote
   await listFolder();
 }
 // No carregamento: processa o retorno do redirect e tenta token silencioso.
@@ -1083,6 +1087,7 @@ async function initAuthOnLoad() {
     catch { /* precisa de login interativo */ }
   }
   applyAdm();
+  loadMascot();
 }
 async function graph(path, token, asText = false) {
   const res = await fetch("https://graph.microsoft.com/v1.0" + path, {
@@ -1095,6 +1100,38 @@ async function ensureCofre() {
   if (window._cofreToken) return true;
   await cofreLogin();      // pode redirecionar (a pagina recarrega)
   return !!window._cofreToken;
+}
+// Mascote Maria Sarah: usa o cache; senao baixa do cofre (M365), encolhe e cacheia.
+function applyMascot(url) {
+  if (!url) return;
+  document.querySelectorAll(".mascot-img").forEach((im) => { im.src = url; im.style.display = ""; });
+  document.querySelectorAll(".mascot-emoji").forEach((e) => { e.style.display = "none"; });
+}
+function shrinkImage(blob, maxW) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const sc = Math.min(1, maxW / img.width);
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      try { resolve(c.toDataURL("image/png")); } catch (e) { resolve(""); }
+    };
+    img.onerror = () => resolve("");
+    img.src = URL.createObjectURL(blob);
+  });
+}
+async function loadMascot() {
+  const cached = localStorage.getItem(MASCOT_KEY);
+  if (cached) { applyMascot(cached); return; }
+  if (!window._cofreToken) return; // sem M365 ainda; tenta de novo apos conectar
+  try {
+    const res = await fetch(`https://graph.microsoft.com/v1.0/drives/${cfg.driveId}/items/${MASCOT_ITEM}/content`, { headers: { Authorization: "Bearer " + window._cofreToken } });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = await shrinkImage(blob, 520);
+    if (url) { try { localStorage.setItem(MASCOT_KEY, url); } catch (e) { /* cota cheia: usa so nesta sessao */ } applyMascot(url); }
+  } catch (e) { /* silencioso */ }
 }
 // Extrai palavras-chave da pergunta (tira acento e palavras vazias) para buscar no cofre.
 function searchTerms(text) {
@@ -1544,6 +1581,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const av = el("appVer"); if (av) av.textContent = "v" + APP_VERSION;
   el("cofreStatus").textContent = "Build v" + APP_VERSION + " · app " + APP_CLIENT_ID.slice(0, 8);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  loadMascot(); // mostra o mascote na hora se ja estiver em cache
   welcome();
   initAuthOnLoad();
 });
