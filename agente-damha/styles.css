@@ -39,7 +39,7 @@ body {
 .summary {
   position: sticky; top: 0; z-index: 20;
   display: flex; align-items: center; gap: 14px;
-  padding: 10px 16px; overflow-x: auto; white-space: nowrap;
+  padding: 10px 14px; overflow-x: auto; white-space: nowrap;
   background: rgba(45,21,69,.96); backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--roxo);
 }
