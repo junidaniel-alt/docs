@@ -7,7 +7,7 @@
   <title>App Agente Damha Agro</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=75" />
+  <link rel="stylesheet" href="styles.css?v=76" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -16,6 +16,19 @@
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';document.head.appendChild(s);"></script>
 </head>
 <body>
+  <!-- ===== Pre-abertura de luxo (animada + som surreal) ===== -->
+  <div id="intro" aria-hidden="true">
+    <div class="intro-core">
+      <span class="intro-halo"></span><span class="intro-halo h2"></span><span class="intro-halo h3"></span>
+      <img class="intro-logo" src="assets/LOGO.png" alt="DAMHA" onerror="this.style.display='none'" />
+      <span class="intro-shine"></span>
+    </div>
+    <h1 class="intro-title">App Agente <strong>DAMHA Agro</strong></h1>
+    <p class="intro-sub">FAMILY OFFICE &middot; HOLDING</p>
+    <div class="intro-bar"><span></span></div>
+    <i class="spk s1"></i><i class="spk s2"></i><i class="spk s3"></i><i class="spk s4"></i><i class="spk s5"></i><i class="spk s6"></i>
+  </div>
+
   <!-- ===== Cabecalho ===== -->
   <header class="topbar">
     <div class="topbar-title">
@@ -265,6 +278,6 @@
     <div id="cmBody" class="cmodal-body"></div>
   </div>
 
-  <script src="app.js?v=75"></script>
+  <script src="app.js?v=76"></script>
 </body>
 </html>

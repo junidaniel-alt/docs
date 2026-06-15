@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.64";
+const APP_VERSION = "1.65";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -65,15 +65,29 @@ function openChime() {
   if (_openSoundDone || localStorage.getItem("openSound") === "0") return;
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) return;
-    const ac = new Ctx(); const now = ac.currentTime;
-    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {  // C-E-G-C, suave
+    const ac = new Ctx(); if (ac.state === "suspended") ac.resume();
+    const now = ac.currentTime;
+    const master = ac.createGain(); master.gain.value = 0.85; master.connect(ac.destination);
+    // Pad grave e profundo (clima surreal/cinematografico)
+    [130.81, 196.00].forEach((f) => {
       const o = ac.createOscillator(), g = ac.createGain();
       o.type = "sine"; o.frequency.value = f;
-      const t = now + i * 0.12;
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.16, t + 0.03);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
-      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 0.6);
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.06, now + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 2.6);
+      o.connect(g).connect(master); o.start(now); o.stop(now + 2.7);
+    });
+    // Arpejo cristalino Cmaj9 com leve detune (shimmer de luxo)
+    [523.25, 659.25, 783.99, 987.77, 1174.66].forEach((f, i) => {
+      [-4, 5].forEach((det) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = "triangle"; o.frequency.value = f; o.detune.value = det;
+        const t = now + 0.18 + i * 0.13;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.11, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+        o.connect(g).connect(master); o.start(t); o.stop(t + 1.0);
+      });
     });
     _openSoundDone = true;
   } catch (e) { /* sem audio: ignora */ }
@@ -96,6 +110,16 @@ function armOpenSound() {
   const h = () => { openChime(); window.removeEventListener("pointerdown", h); window.removeEventListener("keydown", h); };
   window.addEventListener("pointerdown", h, { once: true });
   window.addEventListener("keydown", h, { once: true });
+}
+// Pre-abertura de luxo: toca o som surreal e dissolve a tela na home (toque pula).
+function runIntro() {
+  const intro = document.getElementById("intro");
+  if (!intro) return;
+  openChime(); // tenta o som ja (e re-armado no 1o gesto se o navegador bloquear)
+  const done = () => { if (intro.parentNode) intro.parentNode.removeChild(intro); };
+  const skip = () => { intro.classList.add("go"); setTimeout(done, 800); };
+  intro.addEventListener("pointerdown", () => { openChime(); skip(); }, { once: true });
+  setTimeout(done, 4200); // a animacao CSS ja esconde em ~4s; isso so remove do DOM
 }
 
 /* ---------- Chavinhas do copiloto (Conversa) ---------- */
@@ -1600,6 +1624,7 @@ window.addEventListener("DOMContentLoaded", () => {
   el("cofreStatus").textContent = "Build v" + APP_VERSION + " · app " + APP_CLIENT_ID.slice(0, 8);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   loadMascot(); // mostra o mascote na hora se ja estiver em cache
+  runIntro(); // pre-abertura de luxo
   welcome();
   initAuthOnLoad();
 });
