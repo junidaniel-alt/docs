@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.57";
+const APP_VERSION = "1.58";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Planilhas legiveis na Base DAMHA (lidas com SheetJS)
@@ -669,6 +669,74 @@ function initReport() {
   el("repInput").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); el("repSend").onclick(); } });
   renderRel();
 }
+
+/* ===== Exportar / Compartilhar (WhatsApp, Share nativo, PDF) — Copiloto e STUDIO ===== */
+// Marca de identificacao DAMHA (§A9) — vai no rodape de todo arquivo gerado.
+function identText() {
+  const d = new Date().toLocaleDateString("pt-BR");
+  return `Responsavel: Daniel Alves Feitoza Junior · Area: Financeiro-Holding/Family Office · Status: Revisado · Classificacao: Uso Interno e Confidencial · Versao: ${APP_VERSION} · Data de Emissao: ${d}`;
+}
+function waSend(text) { window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank"); }
+async function shareSmart(title, text) {
+  if (navigator.share) { try { await navigator.share({ title, text }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+  waSend(text); // fallback: WhatsApp direto
+}
+// Abre uma aba imprimivel (o navegador salva como PDF / compartilha). Estilo dark DAMHA.
+function openPrint(title, bodyHTML) {
+  const w = window.open("", "_blank");
+  if (!w) { alert("Permita abrir abas/pop-ups para gerar o PDF."); return; }
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+  <style>*{box-sizing:border-box}body{font-family:Calibri,'Segoe UI',Arial,sans-serif;background:#fff;color:#2A1840;padding:22px;margin:0}
+  h1{font-size:22px;margin:0 0 12px;background:linear-gradient(90deg,#F08C1E,#C4357A,#7B2D8B);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .blk{background:#2D1545;color:#DCD4E5;border-radius:12px;padding:12px 14px;margin:10px 0}
+  .blk h2{font-size:14px;margin:0 0 8px;color:#F08E23}
+  .kpis{display:flex;gap:8px;flex-wrap:wrap}.kpi{background:#3D2058;border-radius:10px;padding:8px 10px;min-width:120px;flex:1}
+  .kpi .kl{font-size:11px;color:#B9AECB}.kpi .kv{font-size:18px;font-weight:700}.kpi .ks{font-size:10px;color:#9b8fb5}
+  .txt{font-size:13px;line-height:1.5}svg{max-width:100%;height:auto}.pc-leg{font-size:11px;color:#B9AECB;margin-bottom:4px}
+  .bubble{border-radius:12px;padding:8px 12px;margin:8px 0;max-width:92%}.bubble.user{background:#5E3287;color:#fff;margin-left:auto}.bubble.bot{background:#2D1545;color:#DCD4E5}
+  .ident{margin-top:20px;border-top:2px solid #7B2D8B;padding-top:8px;font-size:10.5px;color:#6B5B86;line-height:1.5}
+  @page{margin:12mm}</style></head><body>${bodyHTML}<div class="ident">${escapeHtml(identText())}</div>
+  <scr`+`ipt>window.onload=function(){setTimeout(function(){window.focus();window.print();},350)}</scr`+`ipt></body></html>`);
+  w.document.close();
+}
+// ---- STUDIO (relatorio REL) ----
+function relIsEmpty() { return !REL || !(REL.blocos || []).length; }
+function relToText() {
+  let t = "*" + (REL.titulo || "Relatorio DAMHA") + "*\n";
+  (REL.blocos || []).forEach((b) => {
+    t += "\n*" + (b.titulo || b.tipo) + "*\n";
+    if (b.tipo === "kpis") (b.itens || []).forEach((it) => { t += `• ${it.label || ""}: ${it.value || ""}${it.sub ? " (" + it.sub + ")" : ""}\n`; });
+    else if (b.tipo === "grafico") t += `[grafico: ${b.titulo || ""}${b.source ? " · " + b.source : ""}]\n`;
+    else t += (b.conteudo || "").replace(/[#*`>]/g, "") + "\n";
+  });
+  return (t + "\n— " + identText()).trim();
+}
+function relPrintHTML() {
+  let h = `<h1>${escapeHtml(REL.titulo || "Relatorio DAMHA")}</h1>`;
+  (REL.blocos || []).forEach((b) => {
+    h += `<section class="blk"><h2>${escapeHtml(b.titulo || b.tipo)}</h2>`;
+    if (b.tipo === "kpis") h += `<div class="kpis">` + (b.itens || []).map((it) => `<div class="kpi"><div class="kl">${escapeHtml(it.label || "")}</div><div class="kv">${escapeHtml(it.value || "")}</div><div class="ks">${escapeHtml(it.sub || "")}</div></div>`).join("") + `</div>`;
+    else if (b.tipo === "grafico") h += chartSVG({ title: b.titulo, labels: b.labels, series: b.series, candles: b.candles }, effectiveType({ type: b.estilo, series: b.series, candles: b.candles }));
+    else h += `<div class="txt">${mdToHtml(b.conteudo || "")}</div>`;
+    h += `</section>`;
+  });
+  return h;
+}
+function relWhats() { if (relIsEmpty()) { el("repStatus").textContent = "Gere um relatorio primeiro."; return; } waSend(relToText()); }
+function relShare() { if (relIsEmpty()) { el("repStatus").textContent = "Gere um relatorio primeiro."; return; } shareSmart(REL.titulo || "Relatorio DAMHA", relToText()); }
+function relPdf() { if (relIsEmpty()) { el("repStatus").textContent = "Gere um relatorio primeiro."; return; } openPrint(REL.titulo || "Relatorio DAMHA", relPrintHTML()); }
+// ---- Copiloto (conversa) ----
+function chatHasContent() { return history.some((m) => m.role === "assistant"); }
+function chatToText() {
+  const lines = history.filter((m) => m.role !== "system").map((m) => (m.role === "user" ? "Voce: " : "Maria Sarah: ") + String(m.content).replace(/```[\s\S]*?```/g, "[grafico]").trim());
+  return ("*Conversa — Copiloto DAMHA*\n\n" + lines.join("\n\n") + "\n\n— " + identText()).trim();
+}
+function chatPrintHTML() {
+  return `<h1>Conversa — Copiloto DAMHA</h1>` + history.filter((m) => m.role !== "system").map((m) => `<div class="bubble ${m.role === "user" ? "user" : "bot"}">${escapeHtml(String(m.content).replace(/```[\s\S]*?```/g, "[grafico]")).replace(/\n/g, "<br>")}</div>`).join("");
+}
+function chatWhats() { if (!chatHasContent()) { setStatus("Converse antes de compartilhar."); return; } waSend(chatToText()); }
+function chatShare() { if (!chatHasContent()) { setStatus("Converse antes de compartilhar."); return; } shareSmart("Conversa Copiloto DAMHA", chatToText()); }
+function chatPdf() { if (!chatHasContent()) { setStatus("Converse antes de gerar o PDF."); return; } openPrint("Conversa Copiloto DAMHA", chatPrintHTML()); }
 
 // Contexto da Base DAMHA (cofre/memoria) — usado IGUAL no Copiloto e no STUDIO.
 // Nota aprovada (Analisar) ou, com as chavinhas Base/Contexto, a ultima nota aberta
@@ -1370,6 +1438,8 @@ window.addEventListener("DOMContentLoaded", () => {
   el("openSoundChk").checked = localStorage.getItem("openSound") !== "0";
   el("openSoundChk").onchange = () => localStorage.setItem("openSound", el("openSoundChk").checked ? "1" : "0");
   el("clearChat").onclick = clearChat;
+  el("relWa").onclick = relWhats; el("relShare").onclick = relShare; el("relPdf").onclick = relPdf;
+  el("chatWa").onclick = chatWhats; el("chatShare").onclick = chatShare; el("chatPdf").onclick = chatPdf;
   el("cmClose").onclick = closeChartModal;
   el("cmPng").onclick = downloadPng;
   el("cmCopy").onclick = copyPng;
