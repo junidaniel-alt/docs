@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.66";
+const APP_VERSION = "1.67";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1387,9 +1387,27 @@ let projStack = [];
 function renderProjetos() {
   el("projLogin").onclick = openProjetos;
   el("projBack").onclick = () => {
+    projExitFull();
     el("projViewer").classList.add("hidden");
     el("projBrowser").classList.remove("hidden");
   };
+  el("projFull").onclick = projToggleFull;
+  // Sair do fullscreen nativo (gesto/ESC) tambem volta o layout ao normal.
+  document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) projExitFull(); });
+}
+function projToggleFull() {
+  const v = el("projViewer");
+  if (v.classList.contains("full")) { projExitFull(); return; }
+  v.classList.add("full");
+  el("projFull").innerHTML = "&#10005; Sair";
+  if (v.requestFullscreen) { try { v.requestFullscreen(); } catch (e) { /* fallback CSS ja cobre */ } }
+}
+function projExitFull() {
+  const v = el("projViewer");
+  if (!v.classList.contains("full")) return;
+  v.classList.remove("full");
+  el("projFull").innerHTML = "&#9974; Tela cheia";
+  if (document.fullscreenElement && document.exitFullscreen) { try { document.exitFullscreen(); } catch (e) {} }
 }
 async function openProjetos() {
   el("projStatus").textContent = "Conectando...";

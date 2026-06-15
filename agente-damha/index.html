@@ -7,7 +7,7 @@
   <title>App Agente Damha Agro</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=76" />
+  <link rel="stylesheet" href="styles.css?v=77" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -151,7 +151,10 @@
         <ul id="projList" class="list"></ul>
       </div>
       <div id="projViewer" class="hidden">
-        <button id="projBack" class="chip">&#8249; Voltar aos projetos</button>
+        <div class="projbar">
+          <button id="projBack" class="chip">&#8249; Voltar aos projetos</button>
+          <button id="projFull" class="chip">&#9974; Tela cheia</button>
+        </div>
         <iframe id="projFrame" class="projframe" title="Projeto"></iframe>
       </div>
     </section>
@@ -278,6 +281,6 @@
     <div id="cmBody" class="cmodal-body"></div>
   </div>
 
-  <script src="app.js?v=77"></script>
+  <script src="app.js?v=78"></script>
 </body>
 </html>

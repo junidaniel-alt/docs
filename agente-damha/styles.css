@@ -119,6 +119,10 @@ main { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
 
 /* ===== Visualizador de projeto (iframe HTML) ===== */
 .projframe { width: 100%; height: 72vh; border: 1px solid var(--roxo); border-radius: 12px; background: #fff; margin-top: 8px; }
+.projbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+/* Visualizador em tela cheia (otimo no celular) */
+#projViewer.full { position: fixed; inset: 0; z-index: 9000; margin: 0; padding: calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom)); background: var(--bg); display: flex; flex-direction: column; }
+#projViewer.full .projframe { flex: 1; height: auto; margin-top: 8px; border-radius: 10px; }
 #projBack { margin-bottom: 6px; }
 
 /* ===== Cards (projetos) ===== */
