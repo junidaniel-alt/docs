@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.65";
+const APP_VERSION = "1.66";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -67,25 +67,42 @@ function openChime() {
     const Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) return;
     const ac = new Ctx(); if (ac.state === "suspended") ac.resume();
     const now = ac.currentTime;
-    const master = ac.createGain(); master.gain.value = 0.85; master.connect(ac.destination);
-    // Pad grave e profundo (clima surreal/cinematografico)
-    [130.81, 196.00].forEach((f) => {
+    const master = ac.createGain(); master.gain.value = 0.9; master.connect(ac.destination);
+
+    // 1) Brisa de campo: ruido branco filtrado (evoca lavoura aberta) — swell suave.
+    const dur = 2.6;
+    const buf = ac.createBuffer(1, Math.floor(ac.sampleRate * dur), ac.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * 0.5;
+    const noise = ac.createBufferSource(); noise.buffer = buf;
+    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.8;
+    bp.frequency.setValueAtTime(380, now); bp.frequency.exponentialRampToValueAtTime(2400, now + 1.6);
+    const ng = ac.createGain();
+    ng.gain.setValueAtTime(0, now); ng.gain.linearRampToValueAtTime(0.10, now + 0.7); ng.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
+    noise.connect(bp).connect(ng).connect(master); noise.start(now); noise.stop(now + dur);
+
+    // 2) Sweep sintetico ascendente (futurista, "ligando").
+    const sweep = ac.createOscillator(), sg = ac.createGain(), lp = ac.createBiquadFilter();
+    sweep.type = "sawtooth"; sweep.frequency.setValueAtTime(90, now); sweep.frequency.exponentialRampToValueAtTime(880, now + 0.9);
+    lp.type = "lowpass"; lp.frequency.setValueAtTime(300, now); lp.frequency.exponentialRampToValueAtTime(5200, now + 0.9);
+    sg.gain.setValueAtTime(0.0001, now); sg.gain.linearRampToValueAtTime(0.10, now + 0.25); sg.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
+    sweep.connect(lp).connect(sg).connect(master); sweep.start(now); sweep.stop(now + 1.2);
+
+    // 3) Pad grave quente (base).
+    [98.0, 146.83].forEach((f) => {
       const o = ac.createOscillator(), g = ac.createGain();
       o.type = "sine"; o.frequency.value = f;
-      g.gain.setValueAtTime(0, now);
-      g.gain.linearRampToValueAtTime(0.06, now + 0.6);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + 2.6);
+      g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.06, now + 0.6); g.gain.exponentialRampToValueAtTime(0.0001, now + 2.6);
       o.connect(g).connect(master); o.start(now); o.stop(now + 2.7);
     });
-    // Arpejo cristalino Cmaj9 com leve detune (shimmer de luxo)
-    [523.25, 659.25, 783.99, 987.77, 1174.66].forEach((f, i) => {
-      [-4, 5].forEach((det) => {
+
+    // 4) Arpejo pentatonico (C D E G A) — organico/natural, com leve detune (shimmer cristalino).
+    [523.25, 587.33, 659.25, 783.99, 880.0].forEach((f, i) => {
+      [-5, 6].forEach((det) => {
         const o = ac.createOscillator(), g = ac.createGain();
         o.type = "triangle"; o.frequency.value = f; o.detune.value = det;
-        const t = now + 0.18 + i * 0.13;
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.11, t + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+        const t = now + 0.55 + i * 0.12;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.10, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
         o.connect(g).connect(master); o.start(t); o.stop(t + 1.0);
       });
     });
