@@ -125,6 +125,8 @@ main { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
 #projViewer.full .projframe { flex: 1; height: auto; margin-top: 8px; border-radius: 10px; }
 #noteView.full { gap: 8px; }
 #noteView.full #noteBody { flex: 1; overflow: auto; max-height: none; }
+#relViewer.full { position: fixed; inset: 0; z-index: 9000; margin: 0; padding: calc(8px + env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom)); background: var(--bg); display: flex; flex-direction: column; overflow: auto; }
+#relViewer.full #reportCanvas { flex: 1; }
 #projBack { margin-bottom: 6px; }
 
 /* ===== Cards (projetos) ===== */

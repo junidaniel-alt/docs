@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.68";
+const APP_VERSION = "1.69";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1651,6 +1651,7 @@ window.addEventListener("DOMContentLoaded", () => {
   el("model").onchange = saveCfg;
   el("cofreLogin").onclick = cofreLogin;
   el("noteFull").onclick = () => toggleFull(el("noteView"), el("noteFull"));
+  el("relFull").onclick = () => toggleFull(el("relViewer"), el("relFull"));
   el("input").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
