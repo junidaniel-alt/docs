@@ -7,7 +7,7 @@
   <title>App Agente Damha Agro</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=79" />
+  <link rel="stylesheet" href="styles.css?v=80" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -200,6 +200,7 @@
         <label>Voz
           <select id="voiceSel"></select>
         </label>
+        <small class="hint" id="voiceHint"></small>
         <label>Tom (grave &#8594; agudo)
           <input type="range" id="voicePitch" min="0.5" max="2" step="0.1" />
         </label>
@@ -207,11 +208,11 @@
           <input type="range" id="voiceRate" min="0.6" max="1.4" step="0.05" />
         </label>
         <div class="toggles" style="margin-top:8px">
-          <button type="button" class="tog" data-voice="f" data-pp="1.4,1.06" data-say="Oi! Eu sou a Maria Sarah, sua copiloto da Damha Agro.">&#128578; Maria Sarah</button>
-          <button type="button" class="tog" data-voice="m" data-pp="0.95,1.0" data-say="Aqui e o Copilot Damha, pronto para ajudar.">&#129302; Copilot Damha</button>
-          <button type="button" class="tog" data-voice="f" data-pp="1.7,1.05">&#129516; Jovem</button>
-          <button type="button" class="tog" data-voice="m" data-pp="0.9,1.0">&#127919; Serio</button>
-          <button type="button" class="tog" data-voice="f" data-pp="1.45,1.18">&#10024; Animada</button>
+          <button type="button" class="tog" data-voice="f" data-pp="1.6,1.04" data-say="Oi! Eu sou a Maria Sarah, sua copiloto da Damha Agro.">&#128578; Maria Sarah</button>
+          <button type="button" class="tog" data-voice="m" data-pp="0.7,0.96" data-say="Aqui e o Copilot Damha, pronto para ajudar.">&#129302; Copilot Damha</button>
+          <button type="button" class="tog" data-voice="f" data-pp="1.85,1.1" data-say="Modo jovem, bem animada!">&#129516; Jovem</button>
+          <button type="button" class="tog" data-voice="m" data-pp="0.6,0.9" data-say="Modo serio e grave.">&#127919; Serio</button>
+          <button type="button" class="tog" data-voice="f" data-pp="1.5,1.22" data-say="Modo animada, cheia de energia!">&#10024; Animada</button>
         </div>
         <button type="button" id="voiceTest" class="secondary" style="margin-top:8px">&#128266; Testar voz</button>
         <label class="chk" style="margin-top:10px;display:block"><input type="checkbox" id="openSoundChk" /> Som de abertura (toca no 1&#186; toque)</label>
@@ -285,6 +286,6 @@
     <div id="cmBody" class="cmodal-body"></div>
   </div>
 
-  <script src="app.js?v=81"></script>
+  <script src="app.js?v=82"></script>
 </body>
 </html>

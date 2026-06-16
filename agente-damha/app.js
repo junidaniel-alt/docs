@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.70";
+const APP_VERSION = "1.71";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -293,20 +293,27 @@ function hydrateCfgForm() {
 function populateVoices() {
   const sel = el("voiceSel"); if (!sel) return;
   const vs = ("speechSynthesis" in window) ? window.speechSynthesis.getVoices() : [];
-  const pt = vs.filter((v) => /^pt/i.test(v.lang));
-  const others = vs.filter((v) => !/^pt/i.test(v.lang));
-  const list = [...pt, ...others]; // todas as vozes do aparelho, pt-BR primeiro
+  const seen = new Set();
+  const uniq = vs.filter((v) => { if (seen.has(v.name)) return false; seen.add(v.name); return true; }); // tira duplicadas
+  const pt = uniq.filter((v) => /^pt/i.test(v.lang));
+  const others = uniq.filter((v) => !/^pt/i.test(v.lang));
+  const list = [...pt, ...others]; // pt-BR primeiro
   const cur = sel.value || cfg.voiceName || "";
   sel.innerHTML = "";
   const auto = document.createElement("option");
   auto.value = ""; auto.textContent = "Automatica (feminina pt-BR)";
   sel.appendChild(auto);
   list.forEach((v) => {
+    const g = FEM_RE.test(v.name) ? "♀ " : MAL_RE.test(v.name) ? "♂ " : "";
     const o = document.createElement("option");
-    o.value = v.name; o.textContent = v.name + " (" + v.lang + ")";
+    o.value = v.name; o.textContent = g + v.name + " (" + v.lang + ")";
     if (v.name === cur) o.selected = true;
     sel.appendChild(o);
   });
+  const hint = el("voiceHint");
+  if (hint) hint.textContent = pt.length <= 1
+    ? "Seu aparelho expoe so 1 voz em portugues — por isso trocar a voz na lista soa igual. Para ter mais vozes, instale-as no Android (Config › Idioma e entrada › Conversao texto-voz › instalar vozes). Os botoes abaixo mudam tom/velocidade e ja soam bem diferentes mesmo com 1 voz."
+    : pt.length + " vozes em portugues no aparelho. Escolha acima ou use os presets abaixo.";
 }
 
 const el = (id) => document.getElementById(id);
