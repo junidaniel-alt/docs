@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.69";
+const APP_VERSION = "1.70";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1198,21 +1198,55 @@ function searchTerms(text) {
   return (String(text).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").match(/[a-z0-9_]{3,}/g) || [])
     .filter((w) => !stop.has(w)).slice(0, 6).join(" ");
 }
-// Busca AUTONOMA na Base DAMHA (cofre): acha o arquivo mais relevante e devolve o conteudo.
+// Le uma planilha do cofre/OneDrive e devolve um texto compacto (abas + amostra),
+// priorizando as abas cujo nome casa com a pergunta. Cap de tamanho pra nao estourar o envio.
+async function sheetItemToText(driveId, id, name, qText) {
+  const res = await fetch(`https://graph.microsoft.com/v1.0/drives/${driveId}/items/${id}/content`, { headers: { Authorization: "Bearer " + window._cofreToken } });
+  if (!res.ok) return "";
+  const buf = await res.arrayBuffer();
+  if (typeof XLSX === "undefined") return "";
+  const wb = XLSX.read(buf, { type: "array" });
+  const names = wb.SheetNames || [];
+  const terms = (searchTerms(qText) || "").split(" ").filter(Boolean);
+  const ranked = [...names].sort((a, b) => (terms.some((t) => b.toLowerCase().includes(t)) ? 1 : 0) - (terms.some((t) => a.toLowerCase().includes(t)) ? 1 : 0));
+  let out = `Planilha "${name}" — ${names.length} abas: ${names.join(", ")}\n`;
+  let budget = 13000;
+  for (const sn of ranked) {
+    if (budget < 400) break;
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, defval: "" });
+    const compact = rows.slice(0, 30).map((r) => r.slice(0, 12).map((c) => String(c)).join(" | ")).join("\n");
+    const block = `\n=== ABA: ${sn} (${rows.length} linhas) ===\n${compact}${rows.length > 30 ? `\n... (+${rows.length - 30} linhas)` : ""}\n`;
+    out += block.slice(0, budget); budget -= block.length;
+  }
+  return out.slice(0, 14000);
+}
+// Busca AUTONOMA na Base DAMHA: procura no cofre E no OneDrive pessoal, le notas (.md/.txt/.csv)
+// e PLANILHAS reais (.xlsx) — devolve o conteudo do arquivo mais relevante.
 async function cofreAutoSearch(qText) {
   if (!window._cofreToken) return null;
   const term = searchTerms(qText) || String(qText).slice(0, 40);
-  let data;
-  try { data = await graph(`/drives/${cfg.driveId}/root/search(q='${encodeURIComponent(term)}')?$top=8&$select=id,name,file,folder`, window._cofreToken); }
-  catch (e) { return null; }
-  const files = (data.value || []).filter((it) => it.file && /\.(md|txt|csv|json)$/i.test(it.name));
+  const q = encodeURIComponent(term);
+  const sel = "$top=10&$select=id,name,file,folder,lastModifiedDateTime,parentReference";
+  const items = [];
+  for (const base of [`/drives/${cfg.driveId}/root`, `/me/drive/root`]) { // cofre + drive pessoal (TRADE_DOLAR/DREs ficam fora do cofre)
+    try { const d = await graph(`${base}/search(q='${q}')?${sel}`, window._cofreToken); (d.value || []).forEach((it) => items.push(it)); } catch (e) { /* drive indisponivel: ignora */ }
+  }
+  const ok = (n) => /\.(md|txt|csv|json)$/i.test(n) || SHEET_RE.test(n);
+  const files = items.filter((it) => it.file && ok(it.name));
   if (!files.length) return null;
+  const terms = term.split(" ").filter(Boolean);
+  const score = (n) => { n = (n || "").toLowerCase(); let s = 0; terms.forEach((t) => { if (n.includes(t)) s += 3; }); return s; };
+  files.sort((a, b) => score(b.name) - score(a.name) || (new Date(b.lastModifiedDateTime) - new Date(a.lastModifiedDateTime)));
   const top = files[0];
-  let body = "";
-  try { body = await graph(`/drives/${cfg.driveId}/items/${top.id}/content`, window._cofreToken, true); }
-  catch (e) { return null; }
-  if (!body) return null;
-  return { title: top.name, body: String(body).slice(0, 12000) }; // limita o tamanho enviado
+  const drv = (top.parentReference && top.parentReference.driveId) || cfg.driveId;
+  try {
+    if (SHEET_RE.test(top.name) && !/\.csv$/i.test(top.name)) {
+      const t = await sheetItemToText(drv, top.id, top.name, qText);
+      return t ? { title: top.name, body: t } : null;
+    }
+    const body = await graph(`/drives/${drv}/items/${top.id}/content`, window._cofreToken, true);
+    return body ? { title: top.name, body: String(body).slice(0, 14000) } : null;
+  } catch (e) { return null; }
 }
 // Contexto da Base DAMHA: arquivo aberto manualmente OU busca autonoma no cofre (respeita egress).
 async function getBaseContext(qText) {
