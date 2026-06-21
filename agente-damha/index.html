@@ -7,7 +7,7 @@
   <title>App Agente Damha Agro</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=80" />
+  <link rel="stylesheet" href="styles.css?v=81" />
   <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
           onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
@@ -46,6 +46,7 @@
     <a data-go="conversa" class="navlink">Copiloto</a>
     <a data-go="relatorio" class="navlink">Studio</a>
     <a data-go="cerebro" class="navlink">Base</a>
+    <a id="goOmega" class="navlink" style="cursor:pointer">&#129504; Cerebro Omega</a>
     <a data-go="projetos" class="navlink">Projetos</a>
     <a data-go="config" class="navlink">Config</a>
   </nav>
@@ -64,6 +65,7 @@
         <button class="launch-btn" data-go="conversa"><span class="ic">&#129302;</span>Copiloto</button>
         <button class="launch-btn" data-go="relatorio"><span class="ic">&#128202;</span>Studio</button>
         <button class="launch-btn" data-go="cerebro"><span class="ic">&#129504;</span>Base DAMHA</button>
+        <button class="launch-btn" id="omegaBtn"><span class="ic">&#129504;</span>CEREBRO OMEGA<small class="lb-sub">Maria Sarah &middot; voz + cerebro</small></button>
         <button class="launch-btn" data-go="projetos"><span class="ic">&#128193;</span>Projetos</button>
         <button class="launch-btn" data-go="config"><span class="ic">&#9881;</span>Config</button>
       </div>
@@ -286,6 +288,6 @@
     <div id="cmBody" class="cmodal-body"></div>
   </div>
 
-  <script src="app.js?v=82"></script>
+  <script src="app.js?v=83"></script>
 </body>
 </html>

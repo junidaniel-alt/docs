@@ -66,6 +66,7 @@ main { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
 }
 .launch-btn:hover { background: var(--roxo); }
 .launch-btn .ic { font-size: 2rem; line-height: 1; }
+.launch-btn .lb-sub { font-size: .72rem; font-weight: 400; color: var(--lilas); opacity: .8; margin-top: -4px; }
 .topbar-title { cursor: pointer; }
 .panel h2 { margin: 0 0 12px; font-size: 1.15rem; }
 .panel h2 small { color: var(--muted); font-weight: 400; }

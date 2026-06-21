@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.71";
+const APP_VERSION = "1.72";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1145,6 +1145,11 @@ async function graph(path, token, asText = false) {
   if (!res.ok) throw new Error("Graph " + res.status);
   return asText ? res.text() : res.json();
 }
+// CEREBRO OMEGA — abre o painel (Maria Sarah voz + cerebro) em nova aba.
+// URL via Tailscale (PC ligado + Tailscale no celular). ?k=4002 ja entra com o PIN.
+// TODO: trocar por https://remoto.damhaagronegocios.com.br quando o Cloudflare ficar pronto.
+const OMEGA_URL = "http://100.76.183.90:8777/?k=4002";
+function openOmega() { window.open(OMEGA_URL, "_blank", "noopener"); }
 async function ensureCofre() {
   if (window._cofreToken) return true;
   await cofreLogin();      // pode redirecionar (a pagina recarrega)
@@ -1691,6 +1696,8 @@ window.addEventListener("DOMContentLoaded", () => {
   el("provider").onchange = () => { populateModels(el("provider").value); saveCfg(); };
   el("model").onchange = saveCfg;
   el("cofreLogin").onclick = cofreLogin;
+  if (el("goOmega")) el("goOmega").onclick = openOmega;
+  if (el("omegaBtn")) el("omegaBtn").onclick = openOmega;
   el("noteFull").onclick = () => toggleFull(el("noteView"), el("noteFull"));
   el("relFull").onclick = () => toggleFull(el("relViewer"), el("relFull"));
   el("input").addEventListener("keydown", (e) => {
