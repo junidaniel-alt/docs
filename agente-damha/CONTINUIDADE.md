@@ -81,17 +81,31 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 
 ---
 
-## 5. Estado atual (v1.44)
+## 5. Estado atual (v1.72)
 
 **Funciona:**
 - Conversa por voz (entrada Web Speech + saida SpeechSynthesis) e texto.
-- Multi-provedor de IA: Gemini (plano gratis), Claude, OpenAI — escolha em Config, com dropdown de modelo.
-- Cerebro: login M365 (MSAL, fluxo redirect p/ celular), navega e le notas do cofre; atalhos das notas-nucleo.
-- Egress hibrido (padrao): nota so vai pra IA quando o Daniel clica "Analisar com IA" e confirma.
-- **Projetos:** tela inicial com **Projetos** (21 pastas de `@PASTA CLAUDE/PROJETOS`) e **Atas / Reunioes**
-  (`12_REUNIOES_ATAS`); navega subpastas e **abre os HTML renderizados** dentro do app (iframe). Outros
-  arquivos (pptx/xlsx/pdf) abrem no OneDrive.
-- Identidade visual DAMHA + bloco de identificacao (§A9). Etiqueta de versao no canto da abertura.
+- **Multi-provedor unificado** (camada `aiChat`/`aiOnce`): Gemini, Claude e OpenAI funcionam IGUAL nos
+  DOIS ambientes (Copiloto e STUDIO), com **busca web em tempo real nos tres** (Gemini google_search,
+  Claude web_search, OpenAI Responses API). Trocar de provedor/modelo em Config **salva na hora**.
+  Botao **Testar chave** (ListModels) diz se a chave e valida e ja escolhe modelo que funciona.
+- **STUDIO** (aba renomeada de "Relatorio"): iteracao viva estilo Mission Control — contrato JSON
+  (reply/relatorio/add_blocos/remover_titulos), blocos kpis/grafico/texto.
+- Graficos: line/area/bar + **CANDLESTICK** (velas verde/vermelho); "vela de variacao honesta" quando
+  nao ha OHLC real (padrao do dashboard). Toque amplia (modal) com **PNG / PDF / Compartilhar**.
+- **Base DAMHA** (cofre): login M365; **busca autonoma** acha e anexa o arquivo mais relevante —
+  le notas (.md) E **planilhas reais (.xlsx)**, no cofre E no OneDrive pessoal (TRADE_DOLAR/DREs).
+- **Exportar/Compartilhar** (WhatsApp / Share nativo / PDF) no Copiloto E no STUDIO; PDF com marca §A9.
+- **Tela cheia** em Projetos/Atas, Base DAMHA (notas/planilhas) e STUDIO.
+- **Pre-abertura de luxo** animada + **som futurista/agro** (brisa + sweep + arpejo pentatonico).
+- **Botao CEREBRO OMEGA** (home + nav): abre em nova aba `http://100.76.183.90:8777/?k=4002`
+  (painel Maria Sarah, via Tailscale). Constante `OMEGA_URL` em app.js — trocar pelo
+  `https://remoto.damhaagronegocios.com.br` quando o Cloudflare ficar pronto.
+- Voz: lista limpa (dedupe + marca ♀/♂) + aviso de quantas vozes pt o aparelho tem; presets
+  bem distintos (Maria Sarah aguda x Copilot grave) pra diferenciar mesmo com 1 voz.
+- Internet e Base **ligadas por padrao** (tempo real sempre). Identidade DAMHA + §A9 na Config.
+- **Mascote Maria Sarah:** carregamento do cofre PRONTO mas DESLIGADO (`MASCOT_ENABLED=false`) ate a
+  arte final individual (auto-detecta a imagem no cofre quando religar).
 
 **Limites honestos:**
 - Voz de ENTRADA: cheia no Android/Chrome; instavel no iPhone (use o microfone do teclado iOS).
@@ -171,6 +185,29 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 - **v1.42/1.43** — vozes por **genero**: presets **Maria Sarah (feminina)** e **Copilot Damha (masculino)**.
 - **v1.44** — **ITERACAO VIVA**: aba **Relatorio** (canvas vivo) — direcione por texto/chips e a Maria Sarah
   monta/atualiza KPIs+graficos; pedidos de adicionar/remover reescrevem o relatorio completo (`renderReport`).
+- **v1.48** — Relatorio vivo com **contrato STUDIO** (iteracao incremental: add_blocos/remover_titulos).
+- **v1.49** — remove `thinkingConfig` do Gemini (causava 400 "modelo indisponivel").
+- **v1.50** — encurta rotulo do menu p/ caber Projetos na barra.
+- **v1.51** — **diagnostico real da chave**: `apiError` mostra a CAUSA do Google; botao **Testar chave**
+  (descobre que a chave AQ... nao era Gemini valida — Gemini comeca com AIza).
+- **v1.52** — Testar chave para **Gemini/Claude/GPT** com veredito visivel.
+- **v1.53** — aba renomeada para **STUDIO**.
+- **v1.54/1.55** — grafico **candlestick** (velas) + "vela de variacao honesta" (candle em todo grafico,
+  padrao do Mission Control); linha tracejada do ultimo preco.
+- **v1.56** — **camada multi-provedor** (Gemini/Claude/GPT) nos 2 ambientes + **busca web nos tres** +
+  salvar provedor na hora. (Causa do "chave excedeu" no STUDIO: ele chamava sempre o Gemini.)
+- **v1.57** — Base DAMHA tambem no STUDIO; Internet/Base ligadas por padrao (tempo real sempre).
+- **v1.58** — **exportar/compartilhar** (WhatsApp/Share/PDF) no Copiloto e STUDIO (PDF com §A9).
+- **v1.59** — Base DAMHA **busca autonoma** no cofre (acha e anexa sozinha).
+- **v1.60** — grafico em tela cheia gera **PDF** e **compartilha imagem** (PNG mantido).
+- **v1.61/1.62/1.63** — mascote Maria Sarah do cofre (home/topo/avatar), auto-detecta imagem individual.
+- **v1.64** — mascote DESLIGADO (`MASCOT_ENABLED=false`) ate a arte final.
+- **v1.65** — **pre-abertura de luxo** (animacao + som).
+- **v1.66** — som de abertura **futurista + agro** (brisa, sweep, arpejo pentatonico).
+- **v1.67/1.68/1.69** — botao **Tela cheia** em Projetos/Atas, Base DAMHA e STUDIO (`toggleFull`).
+- **v1.70** — Base **le planilhas reais (.xlsx)** e busca tambem no **OneDrive pessoal** (`sheetItemToText`).
+- **v1.71** — lista de vozes limpa (dedupe + ♀/♂) + aviso de vozes do aparelho + presets mais distintos.
+- **v1.72** — botao **CEREBRO OMEGA** (`OMEGA_URL`, abre painel Maria Sarah via Tailscale).
 
 > Detalhe granular: `git log -- agente-damha/`. Persona da IA = **Maria Sarah** (mascote do Copiloto Damha).
 > Leitura do cofre p/ Fase 2 ja viavel via `read_resource` (M365 connector): file:///{driveId}/{itemId}.
@@ -180,14 +217,20 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 ---
 
 ## 8. Proximos passos / ideias em aberto
-- **Comparar series (2o eixo)** e **Candle** (vela) no grafico (precisa dados OHLC).
-- **Cards de Projetos** com descricao curta (aba Projetos hoje e lista).
-- **Isolar o Copiloto como base reutilizavel** (quando os testes forem validados).
-- **Voz exclusiva da Maria Sarah** (TTS premium tipo ElevenLabs — pago).
-- **Billing do Gemini** (acao do Daniel) — fim definitivo do 429.
-- Streaming da resposta; modo de modelo local (zero egress); handoff no cofre `02_PROJETOS`.
-- Ja entregue do STUDIO: pop-out de grafico, KPIs, Area, relatorio completo, PNG, Iteracao Viva,
-  busca web (Gemini), leitor de planilha (Fase 2). Fonte STUDIO: `PROJETOS/2026.06.12_MISSION_CONTROL_MERCADO_FUTURO/Mission_Control_Web/STUDIO.html`.
+- **CEREBRO OMEGA — acesso:** trocar `OMEGA_URL` por `https://remoto.damhaagronegocios.com.br` quando o
+  Cloudflare ficar pronto (acaba com Tailscale/PIN/http). Pendencia do lado do PC: servidor precisa ouvir
+  em `0.0.0.0:8777` (nao 127.0.0.1) + liberar porta 8777 no Firewall do Windows.
+- **Confidencialidade (frente 2, em aberto):** reforcar controle do que sai do cofre pra IA — egress
+  hibrido com confirmacao + marcar dado confidencial. (Risco: dado interno indo p/ IA de terceiros.)
+- **Cotacao real (frente 3):** plugar AwesomeAPI (dolar gratis) + CEPEA/B3 nas velas/KPIs (hoje vem da
+  busca da IA). Cumpre a regra "nunca preco-modelo sem spot do dia".
+- **Persistencia (frente 4):** salvar historico de conversas e versoes de relatorio (nome/data).
+- **Chaves no aparelho:** unica protecao real = proxy/backend (deixaria de ser 100% estatico).
+- **Medidor de custo/uso** (internet sempre on + Claude pago = todo turno custa).
+- **Voz premium** da Maria Sarah (TTS nuvem) — Daniel disse "desconsidera, o que temos atende".
+- **Mascote:** religar (`MASCOT_ENABLED=true`) quando a arte individual final estiver no cofre.
+- **Ja ENTREGUE:** candlestick, tela cheia (3 lugares), export/share (WhatsApp/PDF/PNG), multi-provedor
+  nos 2 ambientes, busca web nos 3, Base le .xlsx real + OneDrive pessoal, pre-abertura de luxo, botao OMEGA.
 
 ---
 
