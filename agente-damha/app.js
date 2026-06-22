@@ -1148,7 +1148,7 @@ async function graph(path, token, asText = false) {
 // CEREBRO OMEGA — abre o painel (Maria Sarah voz + cerebro) em nova aba.
 // URL via Tailscale (PC ligado + Tailscale no celular). ?k=4002 ja entra com o PIN.
 // TODO: trocar por https://remoto.damhaagronegocios.com.br quando o Cloudflare ficar pronto.
-const OMEGA_URL = "http://100.76.183.90:8777/?k=4002";
+const OMEGA_URL = "https://remoto.damhaagronegocios.com.br";
 function openOmega() { window.open(OMEGA_URL, "_blank", "noopener"); }
 async function ensureCofre() {
   if (window._cofreToken) return true;
