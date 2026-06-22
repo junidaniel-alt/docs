@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.72";
+const APP_VERSION = "1.73";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -809,14 +809,14 @@ function relPdf() { if (relIsEmpty()) { el("repStatus").textContent = "Gere um r
 function chatHasContent() { return history.some((m) => m.role === "assistant"); }
 function chatToText() {
   const lines = history.filter((m) => m.role !== "system").map((m) => (m.role === "user" ? "Voce: " : "Maria Sarah: ") + String(m.content).replace(/```[\s\S]*?```/g, "[grafico]").trim());
-  return ("*Conversa — Copiloto DAMHA*\n\n" + lines.join("\n\n") + "\n\n— " + identText()).trim();
+  return ("*Conversa — CoPilot DAMHA*\n\n" + lines.join("\n\n") + "\n\n— " + identText()).trim();
 }
 function chatPrintHTML() {
-  return `<h1>Conversa — Copiloto DAMHA</h1>` + history.filter((m) => m.role !== "system").map((m) => `<div class="bubble ${m.role === "user" ? "user" : "bot"}">${escapeHtml(String(m.content).replace(/```[\s\S]*?```/g, "[grafico]")).replace(/\n/g, "<br>")}</div>`).join("");
+  return `<h1>Conversa — CoPilot DAMHA</h1>` + history.filter((m) => m.role !== "system").map((m) => `<div class="bubble ${m.role === "user" ? "user" : "bot"}">${escapeHtml(String(m.content).replace(/```[\s\S]*?```/g, "[grafico]")).replace(/\n/g, "<br>")}</div>`).join("");
 }
 function chatWhats() { if (!chatHasContent()) { setStatus("Converse antes de compartilhar."); return; } waSend(chatToText()); }
-function chatShare() { if (!chatHasContent()) { setStatus("Converse antes de compartilhar."); return; } shareSmart("Conversa Copiloto DAMHA", chatToText()); }
-function chatPdf() { if (!chatHasContent()) { setStatus("Converse antes de gerar o PDF."); return; } openPrint("Conversa Copiloto DAMHA", chatPrintHTML()); }
+function chatShare() { if (!chatHasContent()) { setStatus("Converse antes de compartilhar."); return; } shareSmart("Conversa CoPilot DAMHA", chatToText()); }
+function chatPdf() { if (!chatHasContent()) { setStatus("Converse antes de gerar o PDF."); return; } openPrint("Conversa CoPilot DAMHA", chatPrintHTML()); }
 
 // Contexto da Base DAMHA (cofre/memoria) — usado IGUAL no Copiloto e no STUDIO.
 // Nota aprovada (Analisar) ou, com as chavinhas Base/Contexto, a ultima nota aberta

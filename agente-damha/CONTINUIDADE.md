@@ -81,7 +81,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 
 ---
 
-## 5. Estado atual (v1.72)
+## 5. Estado atual (v1.73)
 
 **Funciona:**
 - Conversa por voz (entrada Web Speech + saida SpeechSynthesis) e texto.
@@ -98,9 +98,12 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 - **Exportar/Compartilhar** (WhatsApp / Share nativo / PDF) no Copiloto E no STUDIO; PDF com marca §A9.
 - **Tela cheia** em Projetos/Atas, Base DAMHA (notas/planilhas) e STUDIO.
 - **Pre-abertura de luxo** animada + **som futurista/agro** (brisa + sweep + arpejo pentatonico).
-- **Botao CEREBRO OMEGA** (home + nav): abre em nova aba `http://100.76.183.90:8777/?k=4002`
-  (painel Maria Sarah, via Tailscale). Constante `OMEGA_URL` em app.js — trocar pelo
-  `https://remoto.damhaagronegocios.com.br` quando o Cloudflare ficar pronto.
+- **Botao OMEGA** (home + nav; v1.73 renomeou "Cerebro Omega" → **OMEGA** com icone **Ω** no lugar do cerebro):
+  abre `https://remoto.damhaagronegocios.com.br` (painel Maria Sarah via **Cloudflare Access** — login por
+  e-mail/Microsoft SSO). Constante `OMEGA_URL` em app.js (ja apontando pro Cloudflare).
+- **CoPilot (v1.73):** "Copiloto" → **CoPilot** (nav, botao da home, cabecalho do chat e rotulos de export).
+  O icone de robo virou o **avatar oficial do CoPilot Damha** — `assets/copilot.png` (recorte 256px do
+  `CoPilot_Damha_isolado_HD` da pasta de avatares; 2D leve). O 3D segue so no OMEGA/PC (glb ~27MB pesa no celular).
 - Voz: lista limpa (dedupe + marca ♀/♂) + aviso de quantas vozes pt o aparelho tem; presets
   bem distintos (Maria Sarah aguda x Copilot grave) pra diferenciar mesmo com 1 voz.
 - Internet e Base **ligadas por padrao** (tempo real sempre). Identidade DAMHA + §A9 na Config.
@@ -208,6 +211,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 - **v1.70** — Base **le planilhas reais (.xlsx)** e busca tambem no **OneDrive pessoal** (`sheetItemToText`).
 - **v1.71** — lista de vozes limpa (dedupe + ♀/♂) + aviso de vozes do aparelho + presets mais distintos.
 - **v1.72** — botao **CEREBRO OMEGA** (`OMEGA_URL`, abre painel Maria Sarah via Tailscale).
+- **v1.73** — `OMEGA_URL` → **Cloudflare** (`https://remoto.damhaagronegocios.com.br`, login e-mail/Microsoft); botao "Cerebro Omega" → **OMEGA** (icone **Ω** no lugar do cerebro); **CoPilot**: "Copiloto" → **CoPilot** + avatar oficial do CoPilot Damha (`assets/copilot.png`) no botao da home e no cabecalho do chat (troca o robo).
 
 > Detalhe granular: `git log -- agente-damha/`. Persona da IA = **Maria Sarah** (mascote do Copiloto Damha).
 > Leitura do cofre p/ Fase 2 ja viavel via `read_resource` (M365 connector): file:///{driveId}/{itemId}.
