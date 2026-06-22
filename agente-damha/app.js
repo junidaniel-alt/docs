@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.75";
+const APP_VERSION = "1.76";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1149,7 +1149,44 @@ async function graph(path, token, asText = false) {
 // URL via Tailscale (PC ligado + Tailscale no celular). ?k=4002 ja entra com o PIN.
 // TODO: trocar por https://remoto.damhaagronegocios.com.br quando o Cloudflare ficar pronto.
 const OMEGA_URL = "https://remoto.damhaagronegocios.com.br";
-function openOmega() { window.open(OMEGA_URL, "_blank", "noopener"); }
+function _omOpen() { window.open(OMEGA_URL, "_blank", "noopener"); }
+function omShow(state) {
+  const g = el("omegaGate"); if (!g) return _omOpen();
+  g.style.display = "flex";
+  const sp = el("omegaGateSpin"), btns = el("omegaGateBtns"), t = el("omegaGateTitle"),
+        m = el("omegaGateMsg"), gl = el("omegaGateGlyph");
+  if (state === "offline") {
+    t.textContent = "Cerebro OMEGA fora do ar";
+    m.innerHTML = "O servidor (seu PC do OMEGA) parece estar <b>desligado</b>.<br>Ligue o PC e tente de novo.";
+    sp.style.display = "none"; btns.style.display = "flex"; gl.style.filter = "grayscale(.4) brightness(.85)";
+  } else {
+    t.textContent = "Conectando ao OMEGA…";
+    m.textContent = "Verificando se o Cerebro esta no ar…";
+    sp.style.display = "block"; btns.style.display = "none"; gl.style.filter = "none";
+  }
+}
+function omHide() { const g = el("omegaGate"); if (g) g.style.display = "none"; }
+// Beacon: tenta /ping (CORS). 'up' = no ar; 'down' = caiu (so afirma se o beacon ja funcionou antes); 'unknown' = sem certeza.
+async function pingOmega(ms) {
+  const c = new AbortController(); const tm = setTimeout(() => c.abort(), ms || 3500);
+  try {
+    await fetch(OMEGA_URL + "/ping?t=" + Date.now(), { mode: "cors", cache: "no-store", signal: c.signal });
+    clearTimeout(tm); try { localStorage.setItem("omega_ping_ok", "1"); } catch (e) {}
+    return "up";
+  } catch (e) {
+    clearTimeout(tm);
+    return localStorage.getItem("omega_ping_ok") === "1" ? "down" : "unknown";
+  }
+}
+async function openOmega() {
+  // Enquanto o beacon /ping nao estiver liberado no Cloudflare (nunca confirmado): abre direto, sem espera nem regressao.
+  if (localStorage.getItem("omega_ping_ok") !== "1") { pingOmega(2500); return _omOpen(); }
+  // Beacon ativo: confirma se esta no ar ANTES de abrir (assim nunca cai na tela de erro feia do navegador).
+  omShow("connecting");
+  const st = await pingOmega(3500);
+  if (st === "down") omShow("offline");
+  else { omHide(); _omOpen(); }
+}
 async function ensureCofre() {
   if (window._cofreToken) return true;
   await cofreLogin();      // pode redirecionar (a pagina recarrega)
@@ -1698,6 +1735,9 @@ window.addEventListener("DOMContentLoaded", () => {
   el("cofreLogin").onclick = cofreLogin;
   if (el("goOmega")) el("goOmega").onclick = openOmega;
   if (el("omegaBtn")) el("omegaBtn").onclick = openOmega;
+  if (el("omegaRetry")) el("omegaRetry").onclick = openOmega;
+  if (el("omegaForce")) el("omegaForce").onclick = () => { omHide(); _omOpen(); };
+  if (el("omegaClose")) el("omegaClose").onclick = omHide;
   el("noteFull").onclick = () => toggleFull(el("noteView"), el("noteFull"));
   el("relFull").onclick = () => toggleFull(el("relViewer"), el("relFull"));
   el("input").addEventListener("keydown", (e) => {

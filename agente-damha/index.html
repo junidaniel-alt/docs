@@ -46,7 +46,7 @@
     <a data-go="conversa" class="navlink">CoPilot</a>
     <a data-go="relatorio" class="navlink">Studio</a>
     <a data-go="cerebro" class="navlink">Base</a>
-    <a id="goOmega" class="navlink" style="cursor:pointer"><img src="assets/maria.png" alt="" style="width:1.4em;height:1.4em;object-fit:contain;border-radius:50%;vertical-align:middle;margin-right:3px"> OMEGA</a>
+    <a id="goOmega" class="navlink" style="cursor:pointer"><span style="display:inline-flex;align-items:center;justify-content:center;width:1.5em;height:1.5em;border-radius:50%;background:linear-gradient(135deg,#C4357A,#5E3287);color:#fff;font-weight:800;font-size:.82em;vertical-align:middle;margin-right:5px;box-shadow:0 1px 4px rgba(0,0,0,.35)">&#937;</span>OMEGA</a>
     <a data-go="projetos" class="navlink">Projetos</a>
     <a data-go="config" class="navlink">Config</a>
   </nav>
@@ -65,7 +65,7 @@
         <button class="launch-btn" data-go="conversa"><span class="ic"><img src="assets/copilot.png" alt="CoPilot" style="width:88px;height:88px;object-fit:contain;display:block"></span>CoPilot</button>
         <button class="launch-btn" data-go="relatorio"><span class="ic">&#128202;</span>Studio</button>
         <button class="launch-btn" data-go="cerebro"><span class="ic">&#129504;</span>Base DAMHA</button>
-        <button class="launch-btn" id="omegaBtn"><span class="ic"><img src="assets/maria.png" alt="Maria Sarah" style="width:88px;height:88px;object-fit:contain;display:block;border-radius:50%"></span>OMEGA<small class="lb-sub">Maria Sarah &middot; voz + cerebro</small></button>
+        <button class="launch-btn" id="omegaBtn"><span class="ic"><span style="display:flex;align-items:center;justify-content:center;width:88px;height:88px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#C4357A 0%,#7B2D8B 52%,#2D1545 100%);box-shadow:0 8px 26px rgba(123,45,139,.55),inset 0 2px 7px rgba(255,255,255,.28),inset 0 -6px 16px rgba(0,0,0,.35);font:800 52px/1 'Segoe UI',system-ui,sans-serif;color:#fff;text-shadow:0 3px 10px rgba(0,0,0,.45)">&#937;</span></span>OMEGA<small class="lb-sub">Cockpit ao vivo &middot; voz + mercado</small></button>
         <button class="launch-btn" data-go="projetos"><span class="ic">&#128193;</span>Projetos</button>
         <button class="launch-btn" data-go="config"><span class="ic">&#9881;</span>Config</button>
       </div>
@@ -288,6 +288,19 @@
     <div id="cmBody" class="cmodal-body"></div>
   </div>
 
-  <script src="app.js?v=83"></script>
+  <!-- Tela de "Cerebro OMEGA fora do ar" (em vez da tela de erro feia do navegador) -->
+  <div id="omegaGate" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#2D1545,#3D2058);color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;font-family:inherit">
+    <span id="omegaGateGlyph" style="display:flex;align-items:center;justify-content:center;width:104px;height:104px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#C4357A,#7B2D8B 55%,#2D1545);box-shadow:0 10px 34px rgba(123,45,139,.6),inset 0 2px 8px rgba(255,255,255,.28);font:800 60px/1 'Segoe UI',system-ui,sans-serif;color:#fff;text-shadow:0 3px 10px rgba(0,0,0,.45);margin-bottom:22px">&#937;</span>
+    <h2 id="omegaGateTitle" style="margin:0 0 8px;font-size:21px;font-weight:800;letter-spacing:.5px">Conectando ao OMEGA&hellip;</h2>
+    <p id="omegaGateMsg" style="margin:0 0 22px;max-width:340px;font-size:14px;line-height:1.5;color:#DCD4E5">Verificando se o C&eacute;rebro est&aacute; no ar&hellip;</p>
+    <div id="omegaGateSpin" style="width:34px;height:34px;border:3px solid rgba(255,255,255,.25);border-top-color:#F08E23;border-radius:50%;animation:omspin .8s linear infinite"></div>
+    <div id="omegaGateBtns" style="display:none;flex-direction:column;gap:10px;width:100%;max-width:300px">
+      <button id="omegaRetry" style="cursor:pointer;border:none;border-radius:12px;padding:13px;font:800 14px inherit;color:#1a1205;background:linear-gradient(90deg,#ffce8a,#F08E23);letter-spacing:.5px">Tentar de novo</button>
+      <button id="omegaForce" style="cursor:pointer;border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:12px;font:700 13px inherit;color:#DCD4E5;background:transparent">Abrir mesmo assim</button>
+      <button id="omegaClose" style="cursor:pointer;border:none;background:transparent;color:#9b8caa;font:600 12px inherit;padding:6px">Fechar</button>
+    </div>
+  </div>
+  <style>@keyframes omspin{to{transform:rotate(360deg)}}</style>
+  <script src="app.js?v=84"></script>
 </body>
 </html>
