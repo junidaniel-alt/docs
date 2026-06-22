@@ -211,6 +211,7 @@ PWA estatica, sem build, sem framework — HTML + CSS + JS puro.
 - **v1.70** — Base **le planilhas reais (.xlsx)** e busca tambem no **OneDrive pessoal** (`sheetItemToText`).
 - **v1.71** — lista de vozes limpa (dedupe + ♀/♂) + aviso de vozes do aparelho + presets mais distintos.
 - **v1.72** — botao **CEREBRO OMEGA** (`OMEGA_URL`, abre painel Maria Sarah via Tailscale).
+- **v1.74/1.75** — visual dos botoes: avatar **CoPilot grande** (88px) no botao; botao **OMEGA com o rosto da Maria Sarah** (avatar redondo 88px) + mini-avatar na nav (no lugar do icone Ω/🌌, que ficaram estranhos). Avatares em `assets/copilot.png` e `assets/maria.png`.
 - **v1.73** — `OMEGA_URL` → **Cloudflare** (`https://remoto.damhaagronegocios.com.br`, login e-mail/Microsoft); botao "Cerebro Omega" → **OMEGA** (icone **Ω** no lugar do cerebro); **CoPilot**: "Copiloto" → **CoPilot** + avatar oficial do CoPilot Damha (`assets/copilot.png`) no botao da home e no cabecalho do chat (troca o robo).
 
 > Detalhe granular: `git log -- agente-damha/`. Persona da IA = **Maria Sarah** (mascote do Copiloto Damha).
