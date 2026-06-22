@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#3D2058" />
+  <title>App Agente Damha Agro</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="stylesheet" href="styles.css?v=81" />
+  <!-- MSAL v3 (login Microsoft 365). jsDelivr com fallback para unpkg. -->
+  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"
+          onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';document.head.appendChild(s);"></script>
+  <!-- SheetJS: leitor de planilhas (.xlsx/.xlsb/.csv) da Base DAMHA -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+          onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';document.head.appendChild(s);"></script>
+</head>
+<body>
+  <!-- ===== Pre-abertura de luxo (animada + som surreal) ===== -->
+  <div id="intro" aria-hidden="true">
+    <div class="intro-core">
+      <span class="intro-halo"></span><span class="intro-halo h2"></span><span class="intro-halo h3"></span>
+      <img class="intro-logo" src="assets/LOGO.png" alt="DAMHA" onerror="this.style.display='none'" />
+      <span class="intro-shine"></span>
+    </div>
+    <h1 class="intro-title">App Agente <strong>DAMHA Agro</strong></h1>
+    <p class="intro-sub">FAMILY OFFICE &middot; HOLDING</p>
+    <div class="intro-bar"><span></span></div>
+    <i class="spk s1"></i><i class="spk s2"></i><i class="spk s3"></i><i class="spk s4"></i><i class="spk s5"></i><i class="spk s6"></i>
+  </div>
+
+  <!-- ===== Cabecalho ===== -->
+  <header class="topbar">
+    <div class="topbar-title">
+      <span class="kicker">FAMILY OFFICE / HOLDING</span>
+      <h1>Agente <strong>DAMHA Agro</strong></h1>
+    </div>
+    <img class="mascot-img mascot-top" alt="Maria Sarah" style="display:none" />
+    <img id="logo" class="logo" src="assets/LOGO.png" alt="DAMHA"
+         onerror="this.style.display='none'" />
+  </header>
+
+  <!-- ===== Navegacao (troca rapida de secao) ===== -->
+  <nav class="summary" id="summary">
+    <a data-go="home" class="navlink">Inicio</a>
+    <a data-go="conversa" class="navlink">Copiloto</a>
+    <a data-go="relatorio" class="navlink">Studio</a>
+    <a data-go="cerebro" class="navlink">Base</a>
+    <a id="goOmega" class="navlink" style="cursor:pointer">&#129504; Cerebro Omega</a>
+    <a data-go="projetos" class="navlink">Projetos</a>
+    <a data-go="config" class="navlink">Config</a>
+  </nav>
+
+  <main>
+    <!-- ===== Abertura (splash + menu) ===== -->
+    <section id="home" class="view active">
+      <div class="splash">
+        <img class="splash-logo" src="assets/LOGO.png" alt="DAMHA" onerror="this.style.display='none'" />
+        <h2 class="splash-title">App Agente <strong>Damha Agro</strong></h2>
+        <p class="splash-sub">Family Office / Holding &middot; base de dados, projetos e conversa por voz</p>
+        <img class="mascot-img mascot-hero" alt="Maria Sarah" style="display:none" />
+        <span class="appver" id="appVer"></span>
+      </div>
+      <div class="launch">
+        <button class="launch-btn" data-go="conversa"><span class="ic">&#129302;</span>Copiloto</button>
+        <button class="launch-btn" data-go="relatorio"><span class="ic">&#128202;</span>Studio</button>
+        <button class="launch-btn" data-go="cerebro"><span class="ic">&#129504;</span>Base DAMHA</button>
+        <button class="launch-btn" id="omegaBtn"><span class="ic">&#129504;</span>CEREBRO OMEGA<small class="lb-sub">Maria Sarah &middot; voz + cerebro</small></button>
+        <button class="launch-btn" data-go="projetos"><span class="ic">&#128193;</span>Projetos</button>
+        <button class="launch-btn" data-go="config"><span class="ic">&#9881;</span>Config</button>
+      </div>
+    </section>
+
+    <!-- ===== Copiloto DAMHA (voz + chat + graficos) ===== -->
+    <section id="conversa" class="view panel">
+      <h2><img class="mascot-img mascot-avatar" alt="Maria Sarah" style="display:none" /><span class="mascot-emoji">&#129302;</span> Copiloto DAMHA</h2>
+      <div id="chat" class="chat" aria-live="polite"></div>
+      <div class="chips" id="suggest"></div>
+
+      <div class="composer">
+        <button id="micBtn" class="mic" title="Falar" aria-label="Falar">&#127908;</button>
+        <textarea id="input" rows="1" placeholder="Fale ou escreva..."></textarea>
+        <button id="sendBtn" class="send" title="Enviar">Enviar</button>
+      </div>
+      <div class="composer-row">
+        <div class="toggles">
+          <button type="button" class="tog" id="togInternet" title="Buscar na internet em tempo real (Gemini, Claude e GPT)">&#127760; Internet</button>
+          <button type="button" class="tog" id="togCerebro" title="Usar a Base DAMHA como fonte">&#129504; Base</button>
+          <button type="button" class="tog" id="togContexto" title="Anexar o ultimo arquivo aberto na Base DAMHA">&#128196; Contexto</button>
+          <button type="button" class="tog on" id="togVoz" title="Responder em voz">&#128266; Voz</button>
+          <button type="button" class="tog" id="stopVoz" title="Parar a voz agora">&#9209; Parar</button>
+          <button type="button" class="tog" id="clearChat" title="Limpar a conversa">&#128465; Limpar</button>
+          <button type="button" class="tog" id="chatWa" title="Enviar a conversa para o WhatsApp">&#128241; WhatsApp</button>
+          <button type="button" class="tog" id="chatShare" title="Compartilhar a conversa">&#128279; Compartilhar</button>
+          <button type="button" class="tog" id="chatPdf" title="Gerar PDF da conversa">&#128424; PDF</button>
+        </div>
+        <span id="status" class="status"></span>
+      </div>
+    </section>
+
+    <!-- ===== Relatorio vivo (iteracao viva, estilo STUDIO) ===== -->
+    <section id="relatorio" class="view panel">
+      <h2>&#128202; STUDIO</h2>
+      <p class="muted">Iteracao viva: direcione e a Maria Sarah monta/atualiza o painel ao vivo — "relatorio completo de cambio", "adicione um grafico do CDS", "troca pra barras", "premissa dolar 5,90".</p>
+      <div class="composer">
+        <textarea id="repInput" rows="1" placeholder="Direcione o relatorio..."></textarea>
+        <button id="repSend" class="send" title="Gerar">Gerar</button>
+      </div>
+      <div class="chips" id="repSuggest" style="margin-top:10px"></div>
+      <div class="toggles" id="relExport" style="margin-top:8px">
+        <button type="button" class="tog" id="relWa" title="Enviar para o WhatsApp">&#128241; WhatsApp</button>
+        <button type="button" class="tog" id="relShare" title="Compartilhar (apps do aparelho)">&#128279; Compartilhar</button>
+        <button type="button" class="tog" id="relPdf" title="Gerar PDF / imprimir">&#128424; PDF</button>
+      </div>
+      <p id="repStatus" class="status" style="margin-top:8px"></p>
+      <div id="relViewer">
+        <div class="projbar" style="margin-top:10px"><button type="button" id="relFull" class="chip">&#9974; Tela cheia</button></div>
+        <div id="reportCanvas" style="margin-top:10px"></div>
+      </div>
+    </section>
+
+    <!-- ===== Base DAMHA (cofre / dados proprios) ===== -->
+    <section id="cerebro" class="view panel">
+      <h2>Base DAMHA</h2>
+      <p class="muted">Informacoes proprias da DAMHA para consulta.</p>
+      <div class="nucleo" id="nucleo"></div>
+      <div id="cofreAuth">
+        <p class="muted">Conecte sua conta Microsoft 365 para consultar a Base DAMHA.</p>
+        <button id="cofreLogin" class="secondary">Conectar M365</button>
+        <p class="status" id="cofreStatus"></p>
+      </div>
+      <div id="cofreBrowser" class="hidden">
+        <div class="crumbs" id="crumbs"></div>
+        <ul id="cofreList" class="list"></ul>
+        <article id="noteView" class="note hidden">
+          <header class="note-head">
+            <strong id="noteTitle"></strong>
+            <button id="noteFull" class="chip">&#9974; Tela cheia</button>
+            <button id="noteAnalyze" class="chip-warn">Analisar com IA</button>
+          </header>
+          <div id="sheetTabs" class="chips" style="margin-bottom:6px"></div>
+          <pre id="noteBody"></pre>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Projetos ===== -->
+    <section id="projetos" class="view panel">
+      <h2>Projetos</h2>
+      <div id="projAuth">
+        <p class="muted">Conecte o M365 para ver os projetos do OneDrive.</p>
+        <button id="projLogin" class="secondary">Conectar M365</button>
+        <p class="status" id="projStatus"></p>
+      </div>
+      <div id="projBrowser" class="hidden">
+        <div class="crumbs" id="projCrumbs"></div>
+        <ul id="projList" class="list"></ul>
+      </div>
+      <div id="projViewer" class="hidden">
+        <div class="projbar">
+          <button id="projBack" class="chip">&#8249; Voltar aos projetos</button>
+          <button id="projFull" class="chip">&#9974; Tela cheia</button>
+        </div>
+        <iframe id="projFrame" class="projframe" title="Projeto"></iframe>
+      </div>
+    </section>
+
+    <!-- ===== Configuracoes ===== -->
+    <section id="config" class="view panel">
+      <h2>Configuracoes</h2>
+      <p class="muted">Tudo fica salvo apenas neste aparelho (localStorage). Nada e enviado a servidores nossos.</p>
+
+      <div class="toggles" id="themeRow" style="margin-bottom:14px">
+        <button type="button" class="tog" data-theme="dark">&#127769; Escuro</button>
+        <button type="button" class="tog" data-theme="light">&#9728; Claro</button>
+      </div>
+
+      <label class="field">Chave da API (Gemini, Claude ou GPT)
+        <span class="inwrap">
+          <input type="password" id="apiKey" placeholder="cole sua chave aqui" autocomplete="off" />
+          <button type="button" id="keyToggle" class="eye" title="Mostrar/ocultar">&#128065;</button>
+        </span>
+        <button type="button" id="keyTest" class="secondary" style="margin-top:8px">&#129514; Testar chave (Gemini / Claude / GPT)</button>
+        <p id="keyTestMsg" class="status" style="margin-top:6px"></p>
+        <small class="hint">Testa a chave do provedor selecionado abaixo e diz na hora se e VALIDA ou REPROVADA. No Gemini, ainda escolhe sozinho um modelo que funciona. Chave do Gemini comeca com "AIza" (gere em aistudio.google.com/apikey).</small>
+      </label>
+
+      <label class="field">Provedor de IA
+        <select id="provider">
+          <option value="gemini" selected>Gemini (Google) — plano gratis</option>
+          <option value="claude">Claude (Anthropic)</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+        </select>
+      </label>
+
+      <label class="field">Versao / Modelo
+        <select id="model"></select>
+      </label>
+
+      <fieldset class="field">
+        <legend>Voz da assistente</legend>
+        <label>Voz
+          <select id="voiceSel"></select>
+        </label>
+        <small class="hint" id="voiceHint"></small>
+        <label>Tom (grave &#8594; agudo)
+          <input type="range" id="voicePitch" min="0.5" max="2" step="0.1" />
+        </label>
+        <label>Velocidade
+          <input type="range" id="voiceRate" min="0.6" max="1.4" step="0.05" />
+        </label>
+        <div class="toggles" style="margin-top:8px">
+          <button type="button" class="tog" data-voice="f" data-pp="1.6,1.04" data-say="Oi! Eu sou a Maria Sarah, sua copiloto da Damha Agro.">&#128578; Maria Sarah</button>
+          <button type="button" class="tog" data-voice="m" data-pp="0.7,0.96" data-say="Aqui e o Copilot Damha, pronto para ajudar.">&#129302; Copilot Damha</button>
+          <button type="button" class="tog" data-voice="f" data-pp="1.85,1.1" data-say="Modo jovem, bem animada!">&#129516; Jovem</button>
+          <button type="button" class="tog" data-voice="m" data-pp="0.6,0.9" data-say="Modo serio e grave.">&#127919; Serio</button>
+          <button type="button" class="tog" data-voice="f" data-pp="1.5,1.22" data-say="Modo animada, cheia de energia!">&#10024; Animada</button>
+        </div>
+        <button type="button" id="voiceTest" class="secondary" style="margin-top:8px">&#128266; Testar voz</button>
+        <label class="chk" style="margin-top:10px;display:block"><input type="checkbox" id="openSoundChk" /> Som de abertura (toca no 1&#186; toque)</label>
+      </fieldset>
+
+      <button id="saveCfg" class="send">Salvar configuracoes</button>
+      <p id="cfgStatus" class="status"></p>
+
+      <!-- Area ADM (restrita ao administrador: conta Microsoft OU PIN) -->
+      <fieldset class="field hidden" id="admLock">
+        <legend>&#128274; Area ADM</legend>
+        <p class="muted" id="admLockHint"></p>
+        <button id="admConnectBtn" class="secondary">1. Conectar conta Microsoft (admin)</button>
+        <label id="admPinInputWrap">2. PIN ADM
+          <input type="password" id="admPinInput" inputmode="numeric" autocomplete="off" />
+        </label>
+        <button id="admPinBtn" class="secondary">Entrar com PIN</button>
+        <p id="admMsg" class="status"></p>
+      </fieldset>
+
+      <!-- Config ADM (so para o administrador) -->
+      <div id="admPanel" class="hidden">
+        <fieldset class="field">
+          <legend>Config ADM — Base DAMHA</legend>
+          <p class="muted" id="admWho"></p>
+          <label>Modo de egress do cofre
+            <select id="egress">
+              <option value="hibrido" selected>Hibrido com confirmacao (recomendado)</option>
+              <option value="local">So leitura local (nada sai)</option>
+              <option value="aberto">Pode mandar (mais capaz)</option>
+            </select>
+          </label>
+          <label>Azure Client ID
+            <input type="text" id="azureClient" placeholder="00000000-0000-0000-0000-000000000000" />
+          </label>
+          <label>Drive ID do cofre
+            <input type="text" id="driveId" />
+          </label>
+          <button id="saveAdm" class="send">Salvar ADM</button>
+          <button id="admLockBtn" class="secondary">Trancar ADM agora</button>
+        </fieldset>
+      </div>
+      <!-- ===== Identificacao (§A9) — so na Config ===== -->
+      <footer class="ident">
+        <div><span>Responsavel</span>Daniel Alves Feitoza Junior</div>
+        <div><span>Area</span>Financeiro-Holding / Family Office</div>
+        <div><span>Status</span>Revisado</div>
+        <div><span>Classificacao</span>Uso Interno e Confidencial</div>
+        <div><span>Versao</span>1.0</div>
+        <div><span>Emissao</span>13/06/2026</div>
+      </footer>
+    </section>
+  </main>
+
+  <!-- ===== Modal de grafico em tela cheia (clica e sai da tela) ===== -->
+  <div id="chartModal" class="cmodal hidden">
+    <div class="cmodal-bar">
+      <span id="cmTitle"></span>
+      <span class="cmodal-tools">
+        <button type="button" class="ztbtn" data-ct="line">&#128200; Linha</button>
+        <button type="button" class="ztbtn" data-ct="area">&#128201; Area</button>
+        <button type="button" class="ztbtn" data-ct="bar">&#128202; Barra</button>
+        <button type="button" class="ztbtn" id="cmCandle" data-ct="candle">&#128367; Velas</button>
+        <button type="button" class="ztbtn" id="cmPng">&#128190; PNG</button>
+        <button type="button" class="ztbtn" id="cmPdf">&#128424; PDF</button>
+        <button type="button" class="ztbtn" id="cmShare">&#128279; Compartilhar</button>
+        <button type="button" class="ztbtn" id="cmCopy">&#128203; Copiar</button>
+        <button type="button" class="ztbtn" id="cmClose">&#10005; Fechar</button>
+      </span>
+    </div>
+    <div id="cmBody" class="cmodal-body"></div>
+  </div>
+
+  <script src="app.js?v=83"></script>
+</body>
+</html>
