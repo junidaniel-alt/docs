@@ -66,9 +66,9 @@ main { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
 }
 .launch-btn:hover { background: var(--roxo); }
 /* Caixa de icone uniforme: todos os cartoes da home ficam com a MESMA altura de icone */
-.launch-btn .ic { height: 104px; display: flex; align-items: center; justify-content: center; font-size: 3.2rem; line-height: 1; }
-.launch-btn .ic img { height: 100px !important; width: 100px !important; object-fit: contain; }
-.launch-btn .ic > span { width: 88px !important; height: 88px !important; font-size: 50px !important; }
+.launch-btn .ic { height: 88px; display: flex; align-items: center; justify-content: center; font-size: 3.4rem; line-height: 1; }
+.launch-btn .ic img { height: 82px !important; width: 82px !important; object-fit: contain; }
+.launch-btn .ic > span { width: 78px !important; height: 78px !important; font-size: 44px !important; }
 .launch-btn .lb-sub { font-size: .72rem; font-weight: 400; color: var(--lilas); opacity: .8; margin-top: -4px; }
 .topbar-title { cursor: pointer; }
 .panel h2 { margin: 0 0 12px; font-size: 1.15rem; }
