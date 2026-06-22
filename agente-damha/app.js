@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.79";
+const APP_VERSION = "1.80";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1157,8 +1157,12 @@ function omShow(state) {
         m = el("omegaGateMsg"), gl = el("omegaGateGlyph");
   if (state === "offline") {
     t.textContent = "Cerebro OMEGA fora do ar";
-    m.innerHTML = "O servidor (seu PC do OMEGA) parece estar <b>desligado</b>.<br>Ligue o PC e tente de novo.";
+    m.innerHTML = "O servidor (seu PC do OMEGA) esta <b>fora do ar</b>.<br>Ligue o PC e o <b>cloudflared</b>, e tente de novo.";
     sp.style.display = "none"; btns.style.display = "flex"; gl.style.filter = "grayscale(.4) brightness(.85)";
+  } else if (state === "unknown") {
+    t.textContent = "Abrir o Cerebro OMEGA";
+    m.innerHTML = "Nao consegui confirmar daqui se o servidor esta no ar.<br>Se ao abrir aparecer um erro do <b>Cloudflare (1033)</b>, o servidor esta <b>fora</b> — ligue o PC e o cloudflared.";
+    sp.style.display = "none"; btns.style.display = "flex"; gl.style.filter = "none";
   } else {
     t.textContent = "Conectando ao OMEGA…";
     m.textContent = "Verificando se o Cerebro esta no ar…";
@@ -1179,13 +1183,12 @@ async function pingOmega(ms) {
   }
 }
 async function openOmega() {
-  // Enquanto o beacon /ping nao estiver liberado no Cloudflare (nunca confirmado): abre direto, sem espera nem regressao.
-  if (localStorage.getItem("omega_ping_ok") !== "1") { pingOmega(2500); return _omOpen(); }
-  // Beacon ativo: confirma se esta no ar ANTES de abrir (assim nunca cai na tela de erro feia do navegador).
+  // Sempre mostra a "porta" bonita do OMEGA (nunca joga direto na tela de erro do Cloudflare).
   omShow("connecting");
   const st = await pingOmega(3500);
-  if (st === "down") omShow("offline");
-  else { omHide(); _omOpen(); }
+  if (st === "up") { omHide(); _omOpen(); }        // beacon confirmou: abre direto
+  else if (st === "down") omShow("offline");        // beacon ja funcionou antes e agora caiu: fora do ar
+  else omShow("unknown");                           // beacon ainda nao liberado: avisa e deixa abrir mesmo assim
 }
 async function ensureCofre() {
   if (window._cofreToken) return true;
