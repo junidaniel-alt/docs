@@ -61,14 +61,14 @@ main { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
 .launch { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
 .launch-btn {
   background: var(--card); border: 1px solid var(--roxo); border-radius: 18px;
-  padding: 30px 12px; color: var(--txt); font: inherit; font-size: 1.05rem; font-weight: 700;
-  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 18px 12px; color: var(--txt); font: inherit; font-size: 1.05rem; font-weight: 700;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
 .launch-btn:hover { background: var(--roxo); }
-/* Caixa de icone uniforme: todos os cartoes da home ficam com a MESMA altura de icone */
-.launch-btn .ic { height: 88px; display: flex; align-items: center; justify-content: center; font-size: 3.4rem; line-height: 1; }
-.launch-btn .ic img { height: 82px !important; width: 82px !important; object-fit: contain; }
-.launch-btn .ic > span { width: 78px !important; height: 78px !important; font-size: 44px !important; }
+/* Caixa de icone uniforme: avatar grande (a arte tem margem), emojis menores -> visual parelho */
+.launch-btn .ic { height: 92px; display: flex; align-items: center; justify-content: center; font-size: 2.6rem; line-height: 1; }
+.launch-btn .ic img { height: 92px !important; width: 92px !important; object-fit: contain; }
+.launch-btn .ic > span { width: 80px !important; height: 80px !important; font-size: 44px !important; }
 .launch-btn .lb-sub { font-size: .72rem; font-weight: 400; color: var(--lilas); opacity: .8; margin-top: -4px; }
 .topbar-title { cursor: pointer; }
 .panel h2 { margin: 0 0 12px; font-size: 1.15rem; }
