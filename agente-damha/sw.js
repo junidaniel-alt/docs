@@ -1,7 +1,7 @@
 /* Service worker — shell offline minimo do Agente DAMHA.
    Cacheia apenas a casca do app. NUNCA cacheia respostas da API Anthropic
    nem conteudo do cofre (dado confidencial nao deve persistir aqui). */
-const CACHE = "agente-damha-v80";
+const CACHE = "agente-damha-v184";  // acompanha o release (APP_VERSION) -> activate purga o cache antigo a cada deploy
 const SHELL = [
   "./index.html",
   "./styles.css",
@@ -32,6 +32,6 @@ self.addEventListener("fetch", (e) => {
         caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
         return res;
       })
-      .catch(() => caches.match(e.request))
+      .catch(() => caches.match(e.request, { ignoreSearch: true }))  // casa app.js?v=NN com a casca cacheada (offline robusto)
   );
 });
