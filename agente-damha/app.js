@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.82";
+const APP_VERSION = "1.83";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1145,9 +1145,9 @@ async function graph(path, token, asText = false) {
   if (!res.ok) throw new Error("Graph " + res.status);
   return asText ? res.text() : res.json();
 }
-// CEREBRO OMEGA — abre o painel (Maria Sarah voz + cerebro) em nova aba.
-// URL via Tailscale (PC ligado + Tailscale no celular). ?k=4002 ja entra com o PIN.
-// TODO: trocar por https://remoto.damhaagronegocios.com.br quando o Cloudflare ficar pronto.
+// CEREBRO OMEGA — abre o painel (Maria Sarah voz + cerebro + mercado) em nova aba.
+// Acesso via Cloudflare Access (login Microsoft) no dominio remoto; openOmega() confere o
+// beacon /ping antes de abrir e mostra a tela DAMHA de "fora do ar" se o PC estiver desligado.
 const OMEGA_URL = "https://remoto.damhaagronegocios.com.br";
 function _omOpen() { window.open(OMEGA_URL, "_blank", "noopener"); }
 function omShow(state) {
@@ -1582,18 +1582,8 @@ async function openHtml(id, name) {
   }
 }
 
-/* ---------- Sumario ativo ao rolar ---------- */
-function initScrollSpy() {
-  const links = [...document.querySelectorAll(".summary a")];
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (e.isIntersecting) {
-        links.forEach((l) => l.classList.toggle("active", l.getAttribute("href") === "#" + e.target.id));
-      }
-    });
-  }, { rootMargin: "-40% 0px -55% 0px" });
-  document.querySelectorAll("main section").forEach((s) => obs.observe(s));
-}
+/* (removido: initScrollSpy era codigo morto — o menu usa data-go, nao href#, e a funcao
+   nunca era chamada no init; o highlight do menu ja e feito por showView) */
 
 /* ---------- Navegacao por views (menu inicial + atalhos) ---------- */
 function showView(id) {
