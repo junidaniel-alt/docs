@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.86";
+const APP_VERSION = "1.87";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1636,6 +1636,22 @@ function applyAuthGate() {
   const g = el("authGate"); if (!g) return;
   g.style.display = (REQUIRE_LOGIN && !authOk) ? "flex" : "none";
 }
+// Entrada animada: autentica -> saudacao pelo nome -> revela o app (sessao ja salva no aparelho).
+function gateEnterAnimated() {
+  const g = el("authGate"), btn = el("authGateBtn"), msg = el("authGateMsg"), st = el("authGateStatus");
+  if (!g) { authOk = true; applyAuthGate(); return; }
+  if (btn) btn.disabled = true;
+  if (msg) msg.textContent = "Autenticando com a Microsoft…";
+  if (st) st.textContent = "Verificando sua conta";
+  setTimeout(() => {
+    let nm = ""; try { nm = (typeof userFirstName === "function" && userFirstName()) || ""; } catch (e) {}
+    if (msg) msg.innerHTML = "&#9989; Acesso liberado" + (nm ? " — bem-vindo, <b>" + escapeHtml(nm) + "</b>!" : "!");
+    if (st) st.textContent = "";
+    g.style.transition = "opacity .55s ease, transform .55s ease";
+    requestAnimationFrame(() => { g.style.opacity = "0"; g.style.transform = "scale(1.05)"; });
+    setTimeout(() => { authOk = true; applyAuthGate(); }, 560);
+  }, 780);
+}
 function applyAdm() {
   updateGreeting();
   applyAuthGate();
@@ -1735,7 +1751,7 @@ window.addEventListener("DOMContentLoaded", () => {
   el("model").onchange = saveCfg;
   el("cofreLogin").onclick = cofreLogin;
   if (el("authGateBtn")) el("authGateBtn").onclick = () => {
-    if (window._cofreToken) { authOk = true; applyAuthGate(); return; } // ja logado neste aparelho: confirma e entra
+    if (window._cofreToken) { gateEnterAnimated(); return; } // ja logado neste aparelho: entrada animada
     el("authGateStatus").textContent = "Redirecionando para o login da Microsoft...";
     cofreLogin();
   };
