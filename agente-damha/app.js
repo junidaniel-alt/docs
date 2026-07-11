@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.84";
+const APP_VERSION = "1.85";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1629,8 +1629,15 @@ function admArmTimer() {
   admTimer = setTimeout(() => { admUnlocked = false; admTimer = null; applyAdm(); showView("home"); }, ADM_TIMEOUT_MS);
 }
 
+// ===== Portao de acesso: o app so abre apos login Microsoft 365 =====
+const REQUIRE_LOGIN = true; // seguranca: sem login, ninguem usa (nem quem instalar)
+function applyAuthGate() {
+  const g = el("authGate"); if (!g) return;
+  g.style.display = (REQUIRE_LOGIN && !window._cofreToken) ? "flex" : "none";
+}
 function applyAdm() {
   updateGreeting();
+  applyAuthGate();
   const vis = isAdmin();
   document.querySelectorAll('[data-go="cerebro"]').forEach((e) => { e.style.display = vis ? "" : "none"; });
   el("admPanel").classList.toggle("hidden", !vis);
@@ -1726,6 +1733,7 @@ window.addEventListener("DOMContentLoaded", () => {
   el("provider").onchange = () => { populateModels(el("provider").value); saveCfg(); };
   el("model").onchange = saveCfg;
   el("cofreLogin").onclick = cofreLogin;
+  if (el("authGateBtn")) el("authGateBtn").onclick = () => { el("authGateStatus").textContent = "Redirecionando para o login da Microsoft..."; cofreLogin(); };
   if (el("goOmega")) el("goOmega").onclick = openOmega;
   if (el("omegaBtn")) el("omegaBtn").onclick = openOmega;
   if (el("omegaRetry")) el("omegaRetry").onclick = openOmega;

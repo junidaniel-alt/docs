@@ -29,6 +29,15 @@
     <i class="spk s1"></i><i class="spk s2"></i><i class="spk s3"></i><i class="spk s4"></i><i class="spk s5"></i><i class="spk s6"></i>
   </div>
 
+  <!-- ===== Portao de acesso (login Microsoft obrigatorio) ===== -->
+  <div id="authGate" style="display:flex;position:fixed;inset:0;z-index:9998;background:linear-gradient(160deg,#2D1545,#3D2058);color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;font-family:inherit">
+    <img src="assets/LOGO.png" alt="DAMHA" style="width:92px;height:92px;border-radius:50%;box-shadow:0 8px 26px rgba(0,0,0,.45);margin-bottom:20px" onerror="this.style.display='none'" />
+    <h2 style="margin:0 0 6px;font-size:20px;font-weight:800;letter-spacing:.5px">Acesso restrito</h2>
+    <p id="authGateMsg" style="margin:0 0 22px;max-width:330px;font-size:14px;line-height:1.5;color:#DCD4E5">Entre com sua conta <b>Microsoft 365</b> para acessar o App Agente Damha Agro.</p>
+    <button id="authGateBtn" style="cursor:pointer;border:none;border-radius:12px;padding:14px 24px;font:800 15px inherit;color:#1a1205;background:linear-gradient(90deg,#ffce8a,#F08E23);letter-spacing:.5px">&#128273; Entrar com Microsoft</button>
+    <p id="authGateStatus" style="margin-top:14px;font-size:12px;color:#9b8caa"></p>
+  </div>
+
   <!-- ===== Cabecalho ===== -->
   <header class="topbar">
     <div class="topbar-title">
@@ -301,6 +310,6 @@
     </div>
   </div>
   <style>@keyframes omspin{to{transform:rotate(360deg)}}</style>
-  <script src="app.js?v=88"></script>
+  <script src="app.js?v=89"></script>
 </body>
 </html>

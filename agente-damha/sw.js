@@ -1,7 +1,7 @@
 /* Service worker — shell offline minimo do Agente DAMHA.
    Cacheia apenas a casca do app. NUNCA cacheia respostas da API Anthropic
    nem conteudo do cofre (dado confidencial nao deve persistir aqui). */
-const CACHE = "agente-damha-v184";  // acompanha o release (APP_VERSION) -> activate purga o cache antigo a cada deploy
+const CACHE = "agente-damha-v185";  // acompanha o release (APP_VERSION) -> activate purga o cache antigo a cada deploy
 const SHELL = [
   "./index.html",
   "./styles.css",
