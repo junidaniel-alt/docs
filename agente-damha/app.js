@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveId: "b!1kJQvOKGPUaoCtP7BwPBCspAmqVU5CBNqGAvu6RBywKZB41v4RwsSoZLFB47yXm4",
 };
 // Versao do app (mostrada no canto da abertura). Bumpar a cada release.
-const APP_VERSION = "1.85";
+const APP_VERSION = "1.86";
 // Pasta raiz do cofre (CLAUDE.md secao 3)
 const ROOT_FOLDER = "01KCR6ZALNPTVWS2LBS5HYFDHIWJ3QGS7E";
 // Mascote Maria Sarah (_ASSETS do cofre). Carregado em runtime pela conta M365 e cacheado.
@@ -1128,7 +1128,7 @@ async function initAuthOnLoad() {
   await app.initialize();
   try {
     const resp = await app.handleRedirectPromise();
-    if (resp && resp.accessToken) { window._cofreToken = resp.accessToken; applyAdm(); if (isAdmin()) await openCofreRoot(); return; }
+    if (resp && resp.accessToken) { window._cofreToken = resp.accessToken; authOk = true; applyAdm(); if (isAdmin()) await openCofreRoot(); return; }
   } catch (e) { addMsg("Erro ao voltar do login: " + e.message, "err"); }
   const acc = app.getAllAccounts()[0];
   if (acc) {
@@ -1631,9 +1631,10 @@ function admArmTimer() {
 
 // ===== Portao de acesso: o app so abre apos login Microsoft 365 =====
 const REQUIRE_LOGIN = true; // seguranca: sem login, ninguem usa (nem quem instalar)
+let authOk = false; // confirmado NESTA abertura (reseta ao recarregar) -> a tela de acesso aparece toda vez
 function applyAuthGate() {
   const g = el("authGate"); if (!g) return;
-  g.style.display = (REQUIRE_LOGIN && !window._cofreToken) ? "flex" : "none";
+  g.style.display = (REQUIRE_LOGIN && !authOk) ? "flex" : "none";
 }
 function applyAdm() {
   updateGreeting();
@@ -1733,7 +1734,11 @@ window.addEventListener("DOMContentLoaded", () => {
   el("provider").onchange = () => { populateModels(el("provider").value); saveCfg(); };
   el("model").onchange = saveCfg;
   el("cofreLogin").onclick = cofreLogin;
-  if (el("authGateBtn")) el("authGateBtn").onclick = () => { el("authGateStatus").textContent = "Redirecionando para o login da Microsoft..."; cofreLogin(); };
+  if (el("authGateBtn")) el("authGateBtn").onclick = () => {
+    if (window._cofreToken) { authOk = true; applyAuthGate(); return; } // ja logado neste aparelho: confirma e entra
+    el("authGateStatus").textContent = "Redirecionando para o login da Microsoft...";
+    cofreLogin();
+  };
   if (el("goOmega")) el("goOmega").onclick = openOmega;
   if (el("omegaBtn")) el("omegaBtn").onclick = openOmega;
   if (el("omegaRetry")) el("omegaRetry").onclick = openOmega;
